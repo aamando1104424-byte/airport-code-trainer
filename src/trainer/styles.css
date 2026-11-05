@@ -335,3 +335,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .mapbox{overflow:auto;cursor:zoom-in}
 .mapbox.zoomed{cursor:zoom-out}
 .mapbox.zoomed svg{width:240%;max-width:none}
+/* 50 Busiest map: dashed box marking the zoomed-in Northeast; set badge */
+.map .zoombox{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-dasharray:5 4;opacity:.7}
+.tagb{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--bad);color:var(--paper);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}

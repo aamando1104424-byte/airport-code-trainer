@@ -73,16 +73,16 @@ function fmtTime(ms){const s=ms/1000;return s<60?s.toFixed(1)+'s':Math.floor(s/6
 let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2400);}
 
 /* catalog build */
-let AP=[],BY={},DECKMAP={},ALLDECKS=[];
+let AP=[],BY={},DECKMAP={},ALLDECKS=[],CODEDECKS={};
 function rebuild(){
-  const decks=DECKS.map(d=>({id:d.id,name:d.name,region:d.region,panels:d.panels.map(p=>({...p}))}));
+  const decks=DECKS.map(d=>({id:d.id,name:d.name,region:d.region,tag:d.tag,grid:d.grid,panels:d.panels.map(p=>({...p}))}));
   if(S.custom.length)decks.push({id:'my',name:'My Codes',region:'My Codes',custom:true,panels:null});
-  AP=[];BY={};DECKMAP={};
+  AP=[];BY={};DECKMAP={};CODEDECKS={};
   for(const d of decks){
     d.airports=d.custom?S.custom.map(c=>({...c,place:c.city,st:''}))
       :d.panels.flatMap((p,pi)=>p.codes.filter(c=>DATA_SETS.airports[c]).map(code=>({code,...DATA_SETS.airports[code],pi})));
     d.airports.forEach(a=>{a.deck=d.id;a.g=classify(a);if(!a.tip)a.tip=autoTip(a);if(!a.clue)a.clue=autoClue(a);if(!a.place)a.place=a.city;
-      if(!BY[a.code]){BY[a.code]=a;AP.push(a);}
+      if(!BY[a.code]){BY[a.code]=a;AP.push(a);}(CODEDECKS[a.code]||(CODEDECKS[a.code]=new Set())).add(d.id);
       if(!S.items[a.code])S.items[a.code]={box:0,due:0,r:0,w:0,learned:false};});
     layout(d);DECKMAP[d.id]=d;}
   ALLDECKS=decks;
@@ -90,7 +90,11 @@ function rebuild(){
 }
 const lab=a=>a.label||a.city;
 const studied=a=>{const it=S.items[a.code];return it&&(it.learned||it.r+it.w>0);};
-const twins=a=>AP.filter(o=>o.code!==a.code&&o.deck===a.deck&&o.code.slice(0,2)===a.code.slice(0,2));
+const twins=a=>AP.filter(o=>o.code!==a.code&&o.code.slice(0,2)===a.code.slice(0,2)&&[...(CODEDECKS[o.code]||[])].some(x=>CODEDECKS[a.code]?.has(x)));
+/* a code can be in more than one set (ATL is in Georgia and in the 50 Busiest).
+   Its "home" is the set you have most of picked, so lessons and maps show the set you're studying. */
+function deckRank(){const s=selSet();return ALLDECKS.map((d,i)=>({d,i,f:d.airports.length?d.airports.filter(a=>s.has(a.code)).length/d.airports.length:0})).sort((a,b)=>b.f-a.f||a.i-b.i).map(x=>x.d);}
+function homeOf(code){for(const d of deckRank()){const a=d.airports.find(x=>x.code===code);if(a)return a;}return BY[code];}
 function placeHL(a){const h=hl(a);return a.place.startsWith(a.city)?h+esc(a.place.slice(a.city.length)):`${h} <span class="placest">${esc(a.place)}</span>`;}
 
 /* ---------- map layout: one panel per state, laid out in a grid ---------- */
@@ -106,24 +110,39 @@ function layout(d){
       a.x=50+w*(c+.5)+(hash(a.code)-.5)*w*.3;a.y=80+h*(r+.5)+(hash(a.code+'y')-.5)*h*.3;a.pi=0;});return;}
   const W0=700,pad=14,gap=12,np=d.panels.length,cols=np===1?1:2,head=np>1?22:0,cw=(W0-2*pad-gap*(cols-1))/cols;
   const info=d.panels.map((p,i)=>{p.idx=i;const f=frameFor(p,d),k=Math.cos((f[1]+f[3])/2*Math.PI/180),gw=(f[2]-f[0])*k,gh=f[3]-f[1];return{p,f,k,gw,gh,asp:gh/gw};});
+  const lim=np===1?1.3:1.25,minA=np===1?.5:.62;
+  // default: two panels per row. A set can give its own grid: rows of columns, each column stacks panels.
+  const rows=d.grid?d.grid.map(r=>r.map(c=>({w:c.w,p:c.p.map(i=>info[i])})))
+    :Array.from({length:Math.ceil(np/cols)},(_,r)=>info.slice(r*cols,r*cols+cols).map(o=>({w:1,p:[o]})));
   let y=pad;d.P=[];
-  for(let r=0;r*cols<np;r++){
-    const row=info.slice(r*cols,r*cols+cols);
-    const lim=np===1?1.3:1.25;
-    let ch=Math.max(...row.map(o=>cw*Math.min(o.asp,lim)));ch=Math.max(ch,cw*(np===1?.5:.62));
-    row.forEach((o,ci)=>{
-      // a lone panel in the last row is centred
-      const x0=pad+ci*(cw+gap)+(row.length===1&&np>1?(cw+gap)/2:0),y0=y+head,x1=x0+cw,y1=y0+ch;
-      const s=Math.min(cw/o.gw,ch/o.gh),cxg=(o.f[0]+o.f[2])/2,cyg=(o.f[1]+o.f[3])/2;
-      const L0=cxg-(cw/s)/2/o.k,T=cyg+(ch/s)/2;
-      const P={st:o.p.st,name:o.p.name,x0,y0,x1,y1,k:o.k,s,L0,T,head:np>1};
-      P.proj=(lat,lon)=>({x:x0+(lon-L0)*o.k*s,y:y0+(T-lat)*s});
-      P.geo=[L0,T-ch/s,L0+cw/(s*o.k),T];
-      d.P.push(P);});
-    y+=head+ch+gap;
+  for(const row of rows){
+    const ncol=d.grid?row.length:cols,sw=d.grid?row.reduce((t,c)=>t+c.w,0):cols,avail=W0-2*pad-gap*(ncol-1);
+    row.forEach(c=>{c.cw=avail*c.w/sw;c.hs=c.p.map(o=>Math.max(c.cw*Math.min(o.asp,lim),c.cw*minA));c.nat=c.hs.reduce((t,h)=>t+h,0)+(c.p.length-1)*(head+gap);});
+    const RH=Math.max(...row.map(c=>c.nat));
+    // a lone panel in the last row is centred
+    let x=pad+(!d.grid&&row.length===1&&np>1?(cw+gap)/2:0);
+    for(const c of row){const extra=(RH-c.nat)/c.p.length;let yy=y;
+      c.p.forEach((o,j)=>{const x0=x,y0=yy+head,w=c.cw,ch=c.hs[j]+extra,x1=x0+w,y1=y0+ch;
+        const s=Math.min(w/o.gw,ch/o.gh),cxg=(o.f[0]+o.f[2])/2,cyg=(o.f[1]+o.f[3])/2;
+        const L0=cxg-(w/s)/2/o.k,T=cyg+(ch/s)/2;
+        const P={st:o.p.st,name:o.p.name,zoom:o.p.zoom,dense:!!o.p.dense,x0,y0,x1,y1,k:o.k,s,L0,T,head:np>1};
+        P.proj=(lat,lon)=>({x:x0+(lon-L0)*o.k*s,y:y0+(T-lat)*s});
+        P.geo=[L0,T-ch/s,L0+w/(s*o.k),T];
+        d.P[o.p.idx]=P;yy+=head+ch+gap;});
+      x+=c.cw+gap;}
+    y+=head+RH+gap;
   }
   d.W=W0;d.H=Math.round(y-gap+pad+24);d.box={x0:pad,y0:pad,x1:W0-pad,y1:d.H-24};
   d.airports.forEach(a=>{const p=d.P[a.pi].proj(a.lat,a.lon);a.x=p.x;a.y=p.y;});
+  const MIN=14;
+  for(let it=0;it<40;it++){let moved=false;
+    for(let i=0;i<d.airports.length;i++)for(let j=i+1;j<d.airports.length;j++){const a=d.airports[i],b=d.airports[j];if(a.pi!==b.pi)continue;
+      let dx=b.x-a.x,dy=b.y-a.y,dd=Math.hypot(dx,dy);if(dd>=MIN)continue;if(dd<.01){dx=1;dy=0;dd=1;}
+      const push=(MIN-dd)/2+.1;a.x-=dx/dd*push;a.y-=dy/dd*push;b.x+=dx/dd*push;b.y+=dy/dd*push;moved=true;}
+    for(const a of d.airports){const P=d.P[a.pi];a.x=clampv(a.x,P.x0+9,P.x1-9);a.y=clampv(a.y,P.y0+9,P.y1-9);}
+    if(!moved)break;}
+  // dashed box on a panel showing where a zoomed-in panel is
+  for(const P of d.P)P.zooms=(P.zoom||[]).map(j=>{const Z=d.P[j],a=P.proj(Z.geo[3],Z.geo[0]),b=P.proj(Z.geo[1],Z.geo[2]);return{x:a.x,y:a.y,w:b.x-a.x,h:b.y-a.y};});
 }
 const selSet=()=>new Set(S.sel);
 function SET(){const s=selSet();return AP.filter(a=>s.has(a.code));}
@@ -140,8 +159,9 @@ function options(a,pool=SET()){const base=pool.length>=4?pool:AP;return shuffle(
 function groupQueue(codes){const a=shuffle(codes.slice());let b=shuffle(codes.slice());if(b.length>1&&b[0]===a[a.length-1])b.push(b.shift());return a.concat(b);}
 
 /* lessons: one pattern per lesson, max 4 codes */
-function lessonsFor(){const out=[],s=selSet(),seen=new Set();
-  for(const d of ALLDECKS)for(let g=0;g<3;g++){const list=d.airports.filter(a=>s.has(a.code)&&a.g===g&&!seen.has(a.code));list.forEach(a=>seen.add(a.code));
+function lessonsFor(){const out=[],s=selSet(),home={};
+  for(const d of deckRank())for(const a of d.airports)if(s.has(a.code)&&!home[a.code])home[a.code]=d.id;
+  for(const d of ALLDECKS)for(let g=0;g<3;g++){const list=d.airports.filter(a=>s.has(a.code)&&a.g===g&&home[a.code]===d.id);
     for(let k=0;k<list.length;k+=4)out.push({deck:d,g,codes:list.slice(k,k+4).map(a=>a.code),title:GROUPS[g].name+(list.length>4?` ${k/4+1}`:'')});}
   return out;}
 const lessonDone=L=>L.codes.every(c=>S.items[c].learned);
@@ -159,9 +179,11 @@ function ringBox(r){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const [x,y] of r){if(x
 function panelPaths(P){
   if(P.paths)return P.paths;
   const g=P.geo,st=P.st,o=DATA_GEO.over[st]||{},ex=DATA_GEO.extras&&DATA_GEO.extras[st];
-  const nb=[];for(const k in DATA_GEO.states)if(k!==st&&boxHit(GEO_STATE_BOX[k],g))for(const r of DATA_GEO.states[k].rings)if(boxHit(ringBox(r),g))nb.push(r);
+  const grp=DATA_GEO.groups&&DATA_GEO.groups[st],mine=new Set(grp||[st]);
+  const nb=[];for(const k in DATA_GEO.states)if(!mine.has(k)&&boxHit(GEO_STATE_BOX[k],g))for(const r of DATA_GEO.states[k].rings)if(boxHit(ringBox(r),g))nb.push(r);
   const world=DATA_GEO.world.filter(r=>boxHit(ringBox(r),g));
-  const p={world:ringsPath(world,P),nb:ringsPath(nb,P),state:ringsPath(DATA_GEO.states[st]?.rings||[],P)};
+  const own=[];for(const k of mine)if(DATA_GEO.states[k]&&boxHit(GEO_STATE_BOX[k],g))for(const r of DATA_GEO.states[k].rings)if(boxHit(ringBox(r),g))own.push(r);
+  const p={world:ringsPath(world,P),nb:ringsPath(nb,P),state:ringsPath(own,P)};
   if(ex){
     p.mtn=ringsPath(ex.mtns.map(m=>m.pts),P,true);p.lake=ringsPath(ex.lakes.map(l=>l.pts),P,true);
     p.river=linesPath(ex.rivers.map(r=>r.pts),P,true);p.road=linesPath(ex.roads.map(r=>r.pts),P,true);
@@ -200,12 +222,12 @@ function placeLabels(items,pts){
     placed.push(best.R);res[it.key]=best;}
   return res;}
 const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
-function canvasLabeler(ctx,deck,list,mono){let cache=null,cfs=0;
-  return (c,fs)=>{
-    if(!cache||cfs!==fs){cfs=fs;ctx.save();ctx.font=`600 ${fs}px ${mono}`;
-      const items=list.map(q=>{const P=deck.P[q.a.pi]||deck.P[0];return{key:q.a.code,x:q.x,y:q.y,w:ctx.measureText(lab(q.a)).width+8,h:fs*1.15,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
-      ctx.restore();const res=placeLabels(items,list.map(q=>({x:q.x,y:q.y})));cache={};
-      for(const q of list){const r=res[q.a.code].R;cache[q.a.code]={x:r.x0,y:r.y0+fs*.85,bottom:r.y1,lead:res[q.a.code].ring>0,lx:clampv(q.x,r.x0,r.x1),ly:clampv(q.y,r.y0,r.y1)};}}
+function canvasLabeler(ctx,deck,list,mono){const memo=new Map();
+  return (c,fs,vis)=>{const V=vis||list,key=fs+'|'+V.map(q=>q.a.code).join(',');let cache=memo.get(key);
+    if(!cache){if(memo.size>80)memo.clear();ctx.save();ctx.font=`600 ${fs}px ${mono}`;
+      const items=V.map(q=>{const P=deck.P[q.a.pi]||deck.P[0];return{key:q.a.code,x:q.x,y:q.y,w:ctx.measureText(lab(q.a)).width+8,h:fs*1.15,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
+      ctx.restore();const res=placeLabels(items,list.map(q=>({x:q.x,y:q.y})));cache={};memo.set(key,cache);
+      for(const q of V){const r=res[q.a.code].R;cache[q.a.code]={x:r.x0,y:r.y0+fs*.85,bottom:r.y1,lead:res[q.a.code].ring>0,lx:clampv(q.x,r.x0,r.x1),ly:clampv(q.y,r.y0,r.y1)};}}
     return cache[c.a.code];};}
 /* canvas map for the games */
 function drawGeoCanvas(ctx,d,COL,scale){
@@ -225,6 +247,7 @@ function drawGeoCanvas(ctx,d,COL,scale){
     ctx.globalAlpha=.28;ctx.strokeStyle=COL.mid;ctx.lineWidth=2.2;ctx.stroke(q.road);
     if(p.park){ctx.setLineDash([4,5]);ctx.globalAlpha=.45;ctx.lineWidth=1.2;ctx.stroke(q.park);ctx.setLineDash([]);}
     ctx.globalAlpha=.85;ctx.strokeStyle=COL.mid;ctx.lineWidth=1.6;ctx.stroke(q.state);
+    if(P.zooms.length){ctx.setLineDash([5,4]);ctx.globalAlpha=.8;ctx.lineWidth=1.4;for(const z of P.zooms)ctx.strokeRect(z.x,z.y,z.w,z.h);ctx.setLineDash([]);}
     ctx.restore();
     ctx.save();ctx.strokeStyle=COL.mid;ctx.globalAlpha=.7;ctx.lineWidth=1.5;ctx.strokeRect(P.x0,P.y0,w,h);
     if(P.head){ctx.globalAlpha=.9;ctx.fillStyle=COL.mid;ctx.font=`600 ${Math.max(11,10/scale)}px ${mono}`;ctx.textAlign='left';ctx.fillText(P.name.toUpperCase(),P.x0+1,P.y0-6);}
@@ -244,18 +267,22 @@ function mapSVG(deck,o={}){
     if(p.park)s+=`<path class="gpark" d="${p.park}"/>`;
     s+=`<path class="gmtn" d="${p.mtn}"/><path class="gmtnh" d="${p.mtn}"/><path class="glake" d="${p.lake}"/><path class="griver" d="${p.river}"/>`;
     if(p.div)s+=`<path class="gdiv" d="${p.div}"/>`;
-    s+=`<path class="road" d="${p.road}"/><path class="stline" d="${p.state}"/>${extrasSVG(P)}</g><rect class="pframe" x="${f1(P.x0)}" y="${f1(P.y0)}" width="${f1(w)}" height="${f1(h)}"/>`;
+    s+=`<path class="road" d="${p.road}"/><path class="stline" d="${p.state}"/>${extrasSVG(P)}${P.zooms.map(z=>`<rect class="zoombox" x="${f1(z.x)}" y="${f1(z.y)}" width="${f1(z.w)}" height="${f1(z.h)}"/>`).join('')}</g><rect class="pframe" x="${f1(P.x0)}" y="${f1(P.y0)}" width="${f1(w)}" height="${f1(h)}"/>`;
   }
   const show=a=>o.all||(o.labeled&&o.labeled.has(a.code));
-  const items=list.filter(show).map(a=>{const P=deck.P[a.pi]||deck.P[0];return{key:a.code,x:a.x,y:a.y,w:Math.max(31,lab(a).length*6.9)+8,h:31,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
-  const L=placeLabels(items,list.map(a=>({x:a.x,y:a.y})));
+  const items=list.filter(show).map(a=>{const P=deck.P[a.pi]||deck.P[0];return{key:a.code,x:a.x,y:a.y,w:Math.max(31,lab(a).length*6.9)+8,h:31,dense:P.dense,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
+  const pts=list.map(a=>({x:a.x,y:a.y}));let L;
+  for(let pass=0;pass<4;pass++){L=placeLabels(items,pts);let ch=false;
+    for(const it of items)if(!it.short&&L[it.key].ring>=(it.dense?2:3)){it.short=true;it.w=39;it.h=17;ch=true;}
+    if(!ch)break;}
+  const SH=Object.fromEntries(items.map(it=>[it.key,it.short]));
   for(const a of list){const isT=o.target===a.code;
     const cls=`apt g${a.g}${isT?' target':''}${o.dim&&!show(a)&&!isT?' dim':''}`;
     s+=`<g class="${cls}" transform="translate(${f1(a.x)},${f1(a.y)})">${isT?'<circle class="pulse" r="7"/>':''}<circle class="core" r="6"/><line x1="0" y1="-6" x2="0" y2="-10"/><line x1="0" y1="6" x2="0" y2="10"/><line x1="-6" y1="0" x2="-10" y2="0"/><line x1="6" y1="0" x2="10" y2="0"/></g>`;}
   for(const a of list){if(!L[a.code])continue;const r=L[a.code].R,right=L[a.code].ux<0;
     if(L[a.code].ring>0)s+=`<line class="lead" x1="${f1(a.x)}" y1="${f1(a.y)}" x2="${f1(clampv(a.x,r.x0,r.x1))}" y2="${f1(clampv(a.y,r.y0,r.y1))}"/>`;
     const tx=right?r.x1:r.x0,an=right?'end':'start';
-    s+=`<text class="lab-code" x="${f1(tx)}" y="${f1(r.y0+12)}" text-anchor="${an}">${a.code}</text><text class="lab-city" x="${f1(tx)}" y="${f1(r.y0+26)}" text-anchor="${an}">${esc(lab(a))}</text>`;}
+    s+=`<text class="lab-code" x="${f1(tx)}" y="${f1(r.y0+12)}" text-anchor="${an}">${a.code}</text>${SH[a.code]?'':`<text class="lab-city" x="${f1(tx)}" y="${f1(r.y0+26)}" text-anchor="${an}">${esc(lab(a))}</text>`}`;}
   return s+`</svg>`;
 }
 
@@ -342,7 +369,7 @@ function picker(){
   let err='';const open=new Set();
   function setRow(d,s){const on=d.airports.filter(a=>s.has(a.code)).length,n=d.airports.length,m=d.airports.filter(a=>S.items[a.code].box>=4).length;
     return `<div class="setrow${on===n?' on':on?' part':''}">
-      <label class="deck-h"><input type="checkbox" data-deck="${d.id}" ${on===n?'checked':''}><span class="sn"><b>${esc(d.name)}</b><span class="k">${n} codes · ${m} mastered</span></span></label>
+      <label class="deck-h"><input type="checkbox" data-deck="${d.id}" ${on===n?'checked':''}><span class="sn"><b>${esc(d.name)}${d.tag?` <span class="tagb">${esc(d.tag)}</span>`:''}</b><span class="k">${n} codes · ${m} mastered</span></span></label>
       <button class="btn sm" data-only="${d.id}">Study only this</button>
       <details data-open="${d.id}" ${open.has(d.id)?'open':''}><summary>Pick single codes</summary>
       ${d.airports.map(a=>`<div class="pickrow"><label class="pick"><input type="checkbox" data-code="${a.code}" ${s.has(a.code)?'checked':''}>${flaps(a.code)}<span class="c">${esc(a.place)}</span></label>${d.custom?`<button class="link" data-rm="${a.code}">Remove</button>`:''}</div>`).join('')}
@@ -400,7 +427,7 @@ function lesson(L){
   shuffle(L.codes.slice()).forEach(c=>steps.push({t:'quiz',c}));
   let i=0,timer=null;const missed=new Set(),extra={};
   function render(){
-    const s=steps[i],a=BY[s.c],deck=DECKMAP[a.deck];
+    const s=steps[i],a=L.deck.airports.find(x=>x.code===s.c)||BY[s.c],deck=DECKMAP[a.deck];
     let h=topbar(L.title,`${Math.min(i+1,steps.length)}/${steps.length}`)+`<div class="progress"><i style="width:${i/steps.length*100}%"></i></div><div class="stage g${a.g}">`;
     if(s.t==='meet'){
       h+=`<span class="k">New code ${s.n} of ${L.codes.length}</span>
@@ -478,7 +505,7 @@ function recall(opts={}){
   let i=0,firstTry=0,xp=0,hints=0,mode='ask',timer=null;const missed=new Set(),reins=new Set();
   const title=opts.list?'Your Misses':'Recall';
   function render(){
-    const a=BY[queue[i]],deck=DECKMAP[a.deck];mode='ask';hints=0;
+    const a=homeOf(queue[i]),deck=DECKMAP[a.deck];mode='ask';hints=0;
     main.innerHTML=topbar(title,`${i+1}/${queue.length}`)+`
     <div class="progress"><i style="width:${i/queue.length*100}%"></i></div>
     <div class="stage">
@@ -778,13 +805,15 @@ function defenderRun(deck,diffKey){
     drawGeoCanvas(ctx,deck,COL,scale);
     ctx.fillStyle=COL.mid;for(const b of BASES){ctx.beginPath();ctx.moveTo(b.x-12,H);ctx.lineTo(b.x,H-14);ctx.lineTo(b.x+12,H);ctx.fill();}
     const blinkOn=Math.floor(clock*4)%2===0;
+    const vis=cities.filter(c=>!deck.P[c.a.pi]?.dense||c.reveal>0||c.flash>0||bombs.some(b=>b.c===c&&!b.locked)),visS=new Set(vis);
     for(const c of cities){const threats=bombs.filter(b=>b.c===c&&!b.locked),threat=threats.length>0;
       const col=c.flash>0?COL.red:threat?(blinkOn?COL.amb:COL.hi):(c.dmg?COL.mid:COL.hi);
       ctx.fillStyle=col;ctx.fillRect(c.x-9,c.y-5,5,9);ctx.fillRect(c.x-3,c.y-10,6,14);ctx.fillRect(c.x+4,c.y-3,5,7);
       if(c.dmg){ctx.fillStyle=COL.red;for(let k=0;k<Math.min(3,c.dmg);k++)ctx.fillRect(c.x-8+k*6,c.y+7,4,2);}
       if(threat){ctx.strokeStyle=col;ctx.lineWidth=1.5;const r=16;ctx.beginPath();
         [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{ctx.moveTo(c.x+sx*r,c.y+sy*(r-6));ctx.lineTo(c.x+sx*r,c.y+sy*r);ctx.lineTo(c.x+sx*(r-6),c.y+sy*r);});ctx.stroke();}
-      ctx.font=`600 ${fs}px ${MONO}`;const P=LBL(c,fs);P.al='left';ctx.textAlign='left';
+      if(!visS.has(c))continue;
+      ctx.font=`600 ${fs}px ${MONO}`;const P=LBL(c,fs,vis);P.al='left';ctx.textAlign='left';
       if(P.lead){ctx.save();ctx.strokeStyle=COL.hi;ctx.globalAlpha=.7;ctx.lineWidth=1.2;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(c.x,c.y);ctx.lineTo(P.lx,P.ly);ctx.stroke();ctx.restore();}
       ctx.fillStyle=threat?col:COL.mid;const tx=P.x;ctx.fillText(lab(c.a),tx,P.y);
       const hl=threats.reduce((m,b)=>Math.max(m,b.hl),0);
@@ -995,11 +1024,13 @@ function towerRun(deck,dk){
     drawGeoCanvas(ctx,deck,COL,scale);
     if(!reduce){const a=clock*1.1;for(let k=0;k<14;k++){ctx.globalAlpha=.14*(1-k/14);ctx.strokeStyle=COL.mid;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(CX,CY);ctx.lineTo(CX+RR*1.1*Math.cos(a-k*.035),CY+RR*1.1*Math.sin(a-k*.035));ctx.stroke();}ctx.globalAlpha=1;}
     const blink=Math.floor(clock*4)%2===0,selNeed=sel&&sel.state!=='gone'?sel.need:null;
+    const vis=ports.filter(q=>!deck.P[q.a.pi]?.dense||q===selNeed||q.reveal>0||planes.some(p=>p.state!=='gone'&&(p.need===q||p.target===q))),visS=new Set(vis);
     for(const q of ports){
       ctx.strokeStyle=COL.mid;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(q.x,q.y,6,0,7);ctx.stroke();
       ctx.beginPath();[[0,-6,0,-10],[0,6,0,10],[-6,0,-10,0],[6,0,10,0]].forEach(([a,b,c,d])=>{ctx.moveTo(q.x+a,q.y+b);ctx.lineTo(q.x+c,q.y+d);});ctx.stroke();
       if(q===selNeed){ctx.strokeStyle=COL.amb;ctx.lineWidth=1.8;const r=15+(blink?2:0);ctx.beginPath();[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{ctx.moveTo(q.x+sx*r,q.y+sy*(r-6));ctx.lineTo(q.x+sx*r,q.y+sy*r);ctx.lineTo(q.x+sx*(r-6),q.y+sy*r);});ctx.stroke();}
-      ctx.font=`600 ${fs}px ${MONO}`;const P=LBL(q,fs);ctx.textAlign='left';
+      if(!visS.has(q))continue;
+      ctx.font=`600 ${fs}px ${MONO}`;const P=LBL(q,fs,vis);ctx.textAlign='left';
       if(P.lead){ctx.save();ctx.strokeStyle=COL.hi;ctx.globalAlpha=.7;ctx.lineWidth=1.2;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(P.lx,P.ly);ctx.stroke();ctx.restore();}
       ctx.fillStyle=q===selNeed?COL.amb:COL.hi;const tx=P.x;ctx.fillText(lab(q.a),tx,P.y);
       if(q.reveal>0){ctx.globalAlpha=Math.min(1,q.reveal);boxes(q.a.code,3,tx,P.y+fs*.45,'left',fs*.95,q.rcol||COL.good);ctx.globalAlpha=1;}

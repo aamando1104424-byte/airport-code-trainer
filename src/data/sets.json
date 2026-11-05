@@ -1,6 +1,7 @@
 {
  "about": "Airport database. airports: key = IATA code, value = the airport. sets: course sets in order; each panel is one state map and lists its codes.",
  "regions": [
+  "Hardcore",
   "Southwest",
   "West",
   "Southeast",
@@ -8,6 +9,117 @@
   "Midwest"
  ],
  "sets": [
+  {
+   "id": "top50",
+   "name": "50 Busiest Airports",
+   "region": "Hardcore",
+   "tag": "Hardcore",
+   "panels": [
+    {
+     "st": "US48",
+     "name": "Lower 48",
+     "codes": [
+      "ATL",
+      "LAX",
+      "ORD",
+      "DFW",
+      "DEN",
+      "SFO",
+      "SEA",
+      "LAS",
+      "MCO",
+      "CLT",
+      "PHX",
+      "IAH",
+      "MIA",
+      "BOS",
+      "MSP",
+      "FLL",
+      "DTW",
+      "SLC",
+      "SAN",
+      "MDW",
+      "TPA",
+      "PDX",
+      "BNA",
+      "AUS",
+      "DAL",
+      "STL",
+      "HOU",
+      "SJC",
+      "OAK",
+      "MSY",
+      "RDU",
+      "SMF",
+      "MCI",
+      "SNA",
+      "SAT",
+      "CLE",
+      "PIT",
+      "IND",
+      "RSW",
+      "CVG",
+      "CMH"
+     ],
+     "zoom": [
+      1
+     ],
+     "dense": true
+    },
+    {
+     "st": "USNE",
+     "name": "Northeast (zoomed in)",
+     "codes": [
+      "JFK",
+      "LGA",
+      "EWR",
+      "PHL",
+      "BWI",
+      "IAD",
+      "DCA"
+     ]
+    },
+    {
+     "st": "HI",
+     "name": "Hawaii",
+     "codes": [
+      "HNL"
+     ]
+    },
+    {
+     "st": "PR",
+     "name": "Puerto Rico",
+     "codes": [
+      "SJU"
+     ]
+    }
+   ],
+   "grid": [
+    [
+     {
+      "w": 1,
+      "p": [
+       0
+      ]
+     }
+    ],
+    [
+     {
+      "w": 1.7,
+      "p": [
+       1
+      ]
+     },
+     {
+      "w": 1,
+      "p": [
+       2,
+       3
+      ]
+     }
+    ]
+   ]
+  },
   {
    "id": "az",
    "name": "Arizona",
@@ -4299,6 +4411,13 @@
    "lon": -100.496,
    "tip": "S from San Angelo, then J-T: “San Angelo, Just Texas.”",
    "clue": "San Angelo Just Texas"
+  },
+  "SJU": {
+   "city": "San Juan",
+   "place": "San Juan, PR",
+   "st": "PR",
+   "lat": 18.4394,
+   "lon": -66.0018
   },
   "SLC": {
    "city": "Salt Lake City",
