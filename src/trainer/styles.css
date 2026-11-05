@@ -338,3 +338,50 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* 50 Busiest map: dashed box marking the zoomed-in Northeast; set badge */
 .map .zoombox{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-dasharray:5 4;opacity:.7}
 .tagb{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--bad);color:var(--paper);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}
+.map .pframe.inset{stroke:var(--ink);stroke-width:2}
+.map .ititle{fill:var(--ink);font-family:var(--f-mono);font-weight:600;font-size:10px;letter-spacing:.12em;opacity:.8}
+
+/* ================= Hardcore / Doomsday flavor ================= */
+:root{--hz-a:#E8B21A;--hz-b:#1B1B1B;--crt-doom:#FF5C4D}
+.map .lead{stroke:var(--ink);opacity:.55;stroke-width:1.2}
+/* hazard tape */
+.hz,.hardbar::before{background:repeating-linear-gradient(-45deg,var(--hz-a) 0 10px,var(--hz-b) 10px 20px)}
+.setrow.hard{position:relative;border:2px solid var(--bad);padding-left:20px;overflow:hidden;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--bad) 9%,var(--panel)),var(--panel) 70%)}
+.setrow.hard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:repeating-linear-gradient(-45deg,var(--hz-a) 0 8px,var(--hz-b) 8px 16px)}
+.setrow.hard b{font-family:var(--f-display);font-size:1.35rem;letter-spacing:.03em}
+.hardbar{position:relative;display:flex;gap:12px;align-items:center;padding:12px 14px 12px 22px;border-radius:8px;overflow:hidden;
+  background:var(--crt-bg);color:#FFE3DF;border:2px solid var(--crt-doom);box-shadow:0 0 0 3px color-mix(in srgb,var(--crt-doom) 22%,transparent)}
+.hardbar::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px}
+.hardbar .hz{display:none}
+.hardbar b{display:block;font-family:var(--f-display);font-weight:800;font-size:1.25rem;letter-spacing:.08em;color:var(--crt-doom);text-shadow:0 0 10px color-mix(in srgb,var(--crt-doom) 55%,transparent)}
+.hardbar span{font-family:var(--f-mono);font-size:.8rem;color:#E9B9B2}
+/* Doomsday home card */
+.feature.doom{border-color:var(--crt-doom);color:#FFD9D4;background:radial-gradient(120% 140% at 100% 0%,#3A0A08 0%,var(--crt-bg) 55%)}
+.feature.doom .t{color:var(--crt-doom);text-shadow:0 0 14px color-mix(in srgb,var(--crt-doom) 60%,transparent);animation:doomglow 2.4s ease-in-out infinite}
+.feature.doom .d{color:#E9A39A}
+.feature.doom .b{color:var(--crt-amber)}
+.feature.doom::before{content:"";position:absolute;right:-30px;bottom:-34px;width:120px;height:120px;opacity:.12;pointer-events:none;
+  background:conic-gradient(from -30deg,var(--crt-doom) 0 60deg,transparent 60deg 120deg,var(--crt-doom) 120deg 180deg,transparent 180deg 240deg,var(--crt-doom) 240deg 300deg,transparent 300deg);border-radius:50%;
+  -webkit-mask:radial-gradient(circle,transparent 0 13px,#000 14px 56px,transparent 57px);mask:radial-gradient(circle,transparent 0 13px,#000 14px 56px,transparent 57px)}
+@keyframes doomglow{50%{text-shadow:0 0 22px var(--crt-doom),0 0 2px #fff}}
+/* Air Defender in Doomsday */
+.choice.doom{grid-column:1/-1;border-color:color-mix(in srgb,var(--crt-doom) 55%,transparent);color:#E9A39A;
+  background:repeating-linear-gradient(-45deg,transparent 0 12px,color-mix(in srgb,var(--crt-doom) 8%,transparent) 12px 24px)}
+.choice.doom b{color:var(--crt-doom)}
+.choice.doom[aria-pressed="true"]{border-color:var(--crt-doom);color:#FFD9D4;box-shadow:inset 0 0 0 1px var(--crt-doom),0 0 18px color-mix(in srgb,var(--crt-doom) 30%,transparent)}
+.doomcrt{border-color:var(--crt-doom)}
+.doomcrt .ttl{color:var(--crt-doom);text-shadow:0 0 14px color-mix(in srgb,var(--crt-doom) 60%,transparent)}
+.doomcrt .doomrules li::marker{color:var(--crt-doom);font-weight:700}
+.hud .defcon{display:inline-block;margin-left:8px;padding:0 6px;border-radius:3px;font-weight:700;color:var(--crt-bg);background:var(--crt-mid)}
+.hud .defcon.d3{background:var(--crt-amber)}
+.hud .defcon.d2,.hud .defcon.d1{background:var(--crt-doom);animation:blinkd .7s steps(2,start) infinite}
+@keyframes blinkd{to{opacity:.35}}
+.crt.redalert{animation:redalert 1.6s ease-in-out infinite}
+@keyframes redalert{50%{box-shadow:0 0 0 3px var(--crt-doom),0 0 36px color-mix(in srgb,var(--crt-doom) 55%,transparent),inset 0 0 40px color-mix(in srgb,var(--crt-doom) 25%,transparent)}}
+.flashfx{position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0;mix-blend-mode:screen}
+.flashfx.go{animation:nukeflash .55s ease-out}
+@keyframes nukeflash{0%{opacity:.55}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.feature.doom .t,.crt.redalert,.hud .defcon.d2,.hud .defcon.d1{animation:none}.flashfx.go{animation:none}}
+.doomcrt .ovl .big{color:var(--crt-doom);text-shadow:0 0 18px color-mix(in srgb,var(--crt-doom) 65%,transparent)}
+.doomcrt .crt-btn.primary{background:var(--crt-doom);border-color:var(--crt-doom);color:#140303;box-shadow:0 0 16px color-mix(in srgb,var(--crt-doom) 45%,transparent)}

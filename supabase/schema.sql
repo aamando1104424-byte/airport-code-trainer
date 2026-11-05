@@ -101,7 +101,7 @@ returns json language plpgsql security definer set search_path = public, extensi
 declare pid uuid; pname text; prev_submit timestamptz; old_best int; my_rank int; r record;
 begin
   pid := _verify(p_name, p_code);
-  if not ((p_game = 'defender' and p_level in ('cadet','pilot','ace'))
+  if not ((p_game = 'defender' and p_level in ('cadet','pilot','ace','doomsday'))
        or (p_game = 'tower'    and p_level in ('trainee','controller','chief'))) then
     raise exception 'bad_board';
   end if;

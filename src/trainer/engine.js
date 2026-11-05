@@ -27,13 +27,13 @@ const DEFAULT_SET='wy';
 
 /* ================= state ================= */
 function blank(){return{v:2,items:{},sel:(DECKS.find(d=>d.id===DEFAULT_SET)||DECKS[0]).panels.flatMap(p=>p.codes),custom:[],xp:0,streak:{n:0,last:''},
-  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',t:0};}
+  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[],doomsday:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',t:0};}
 function merge(o){const b=blank();if(!o||typeof o!=='object')return b;
   if(o.items&&typeof o.items==='object')for(const c in o.items){const it=o.items[c];if(it&&typeof it==='object')b.items[c]={box:+it.box||0,due:+it.due||0,r:+it.r||0,w:+it.w||0,learned:!!it.learned};}
   if(Array.isArray(o.sel))b.sel=o.sel.filter(x=>typeof x==='string');
   if(Array.isArray(o.custom))b.custom=o.custom.filter(c=>c&&/^[A-Z]{3}$/.test(c.code)&&typeof c.city==='string').map(c=>({code:c.code,city:c.city.slice(0,40),tip:typeof c.tip==='string'?c.tip.slice(0,160):''}));
   b.xp=+o.xp||0;if(o.streak)Object.assign(b.streak,o.streak);if(o.best)Object.assign(b.best,o.best);
-  if(o.hs)for(const k of ['cadet','pilot','ace'])if(Array.isArray(o.hs[k]))b.hs[k]=o.hs[k].slice(0,10);
+  if(o.hs)for(const k of ['cadet','pilot','ace','doomsday'])if(Array.isArray(o.hs[k]))b.hs[k]=o.hs[k].slice(0,10);
   if(o.ths)for(const k of ['trainee','controller','chief'])if(Array.isArray(o.ths[k]))b.ths[k]=o.ths[k].slice(0,10);
   if(['trainee','controller','chief'].includes(o.tdiff))b.tdiff=o.tdiff;
   b.mute=!!o.mute;if(['cadet','pilot','ace'].includes(o.diff))b.diff=o.diff;b.t=+o.t||0;return b;}
@@ -94,6 +94,9 @@ const twins=a=>AP.filter(o=>o.code!==a.code&&o.code.slice(0,2)===a.code.slice(0,
 /* a code can be in more than one set (ATL is in Georgia and in the 50 Busiest).
    Its "home" is the set you have most of picked, so lessons and maps show the set you're studying. */
 function deckRank(){const s=selSet();return ALLDECKS.map((d,i)=>({d,i,f:d.airports.length?d.airports.filter(a=>s.has(a.code)).length/d.airports.length:0})).sort((a,b)=>b.f-a.f||a.i-b.i).map(x=>x.d);}
+/* sets worth offering as a game map: ones that are "home" to at least min of the picked codes */
+function homeDecks(min=3){const s=selSet(),cnt={};const R=deckRank();for(const c of s){const d=R.find(d=>d.airports.some(a=>a.code===c));if(d)cnt[d.id]=(cnt[d.id]||0)+1;}
+  return ALLDECKS.filter(d=>(cnt[d.id]||0)>=min);}
 function homeOf(code){for(const d of deckRank()){const a=d.airports.find(x=>x.code===code);if(a)return a;}return BY[code];}
 function placeHL(a){const h=hl(a);return a.place.startsWith(a.city)?h+esc(a.place.slice(a.city.length)):`${h} <span class="placest">${esc(a.place)}</span>`;}
 
@@ -108,13 +111,20 @@ function layout(d){
   if(d.custom){d.W=700;d.H=404;d.box={x0:30,y0:24,x1:670,y1:376};d.P=[{st:'',name:'',x0:30,y0:24,x1:670,y1:376,proj:null}];
     d.airports.forEach((a,i)=>{const cols=Math.max(1,Math.ceil(Math.sqrt(n*1.8))),rows=Math.ceil(n/cols),w=600/cols,h=280/rows,c=i%cols,r=Math.floor(i/cols);
       a.x=50+w*(c+.5)+(hash(a.code)-.5)*w*.3;a.y=80+h*(r+.5)+(hash(a.code+'y')-.5)*h*.3;a.pi=0;});return;}
-  const W0=700,pad=14,gap=12,np=d.panels.length,cols=np===1?1:2,head=np>1?22:0,cw=(W0-2*pad-gap*(cols-1))/cols;
+  const base=d.panels.filter(p=>!p.inset),W0=700,pad=14,gap=12,np=base.length,cols=np===1?1:2,head=np>1?22:0,cw=(W0-2*pad-gap*(cols-1))/cols;
   const info=d.panels.map((p,i)=>{p.idx=i;const f=frameFor(p,d),k=Math.cos((f[1]+f[3])/2*Math.PI/180),gw=(f[2]-f[0])*k,gh=f[3]-f[1];return{p,f,k,gw,gh,asp:gh/gw};});
   const lim=np===1?1.3:1.25,minA=np===1?.5:.62;
   // default: two panels per row. A set can give its own grid: rows of columns, each column stacks panels.
   const rows=d.grid?d.grid.map(r=>r.map(c=>({w:c.w,p:c.p.map(i=>info[i])})))
-    :Array.from({length:Math.ceil(np/cols)},(_,r)=>info.slice(r*cols,r*cols+cols).map(o=>({w:1,p:[o]})));
+    :Array.from({length:Math.ceil(np/cols)},(_,r)=>info.filter(o=>!o.p.inset).slice(r*cols,r*cols+cols).map(o=>({w:1,p:[o]})));
   let y=pad;d.P=[];
+  function mk(o,x0,y0,w,ch,head){const x1=x0+w,y1=y0+ch;
+    const s=Math.min(w/o.gw,ch/o.gh),cxg=(o.f[0]+o.f[2])/2,cyg=(o.f[1]+o.f[3])/2;
+    const L0=cxg-(w/s)/2/o.k,T=cyg+(ch/s)/2;
+    const P={st:o.p.st,name:o.p.name,zoom:o.p.zoom,dense:!!o.p.dense,inset:!!o.p.inset,x0,y0,x1,y1,k:o.k,s,L0,T,head};
+    P.proj=(lat,lon)=>({x:x0+(lon-L0)*o.k*s,y:y0+(T-lat)*s});
+    P.geo=[L0,T-ch/s,L0+w/(s*o.k),T];
+    d.P[o.p.idx]=P;}
   for(const row of rows){
     const ncol=d.grid?row.length:cols,sw=d.grid?row.reduce((t,c)=>t+c.w,0):cols,avail=W0-2*pad-gap*(ncol-1);
     row.forEach(c=>{c.cw=avail*c.w/sw;c.hs=c.p.map(o=>Math.max(c.cw*Math.min(o.asp,lim),c.cw*minA));c.nat=c.hs.reduce((t,h)=>t+h,0)+(c.p.length-1)*(head+gap);});
@@ -122,16 +132,14 @@ function layout(d){
     // a lone panel in the last row is centred
     let x=pad+(!d.grid&&row.length===1&&np>1?(cw+gap)/2:0);
     for(const c of row){const extra=(RH-c.nat)/c.p.length;let yy=y;
-      c.p.forEach((o,j)=>{const x0=x,y0=yy+head,w=c.cw,ch=c.hs[j]+extra,x1=x0+w,y1=y0+ch;
-        const s=Math.min(w/o.gw,ch/o.gh),cxg=(o.f[0]+o.f[2])/2,cyg=(o.f[1]+o.f[3])/2;
-        const L0=cxg-(w/s)/2/o.k,T=cyg+(ch/s)/2;
-        const P={st:o.p.st,name:o.p.name,zoom:o.p.zoom,dense:!!o.p.dense,x0,y0,x1,y1,k:o.k,s,L0,T,head:np>1};
-        P.proj=(lat,lon)=>({x:x0+(lon-L0)*o.k*s,y:y0+(T-lat)*s});
-        P.geo=[L0,T-ch/s,L0+w/(s*o.k),T];
-        d.P[o.p.idx]=P;yy+=head+ch+gap;});
+      c.p.forEach((o,j)=>{const ch=c.hs[j]+extra;mk(o,x,yy+head,c.cw,ch,np>1);yy+=head+ch+gap;});
       x+=c.cw+gap;}
     y+=head+RH+gap;
   }
+  // inset panels sit inside another panel, in an empty stretch of ocean (box is [lon0,lat0,lon1,lat1] on the host map)
+  d.blocks=[];
+  for(const o of info.filter(o=>o.p.inset)){const H0=d.P[o.p.inset.in||0],b=o.p.inset.box,a=H0.proj(b[3],b[0]),c=H0.proj(b[1],b[2]);
+    mk(o,a.x,a.y,c.x-a.x,c.y-a.y,false);d.blocks.push({x0:a.x-3,y0:a.y-3,x1:c.x+3,y1:c.y+3});}
   d.W=W0;d.H=Math.round(y-gap+pad+24);d.box={x0:pad,y0:pad,x1:W0-pad,y1:d.H-24};
   d.airports.forEach(a=>{const p=d.P[a.pi].proj(a.lat,a.lon);a.x=p.x;a.y=p.y;});
   const MIN=14;
@@ -142,7 +150,9 @@ function layout(d){
     for(const a of d.airports){const P=d.P[a.pi];a.x=clampv(a.x,P.x0+9,P.x1-9);a.y=clampv(a.y,P.y0+9,P.y1-9);}
     if(!moved)break;}
   // dashed box on a panel showing where a zoomed-in panel is
-  for(const P of d.P)P.zooms=(P.zoom||[]).map(j=>{const Z=d.P[j],a=P.proj(Z.geo[3],Z.geo[0]),b=P.proj(Z.geo[1],Z.geo[2]);return{x:a.x,y:a.y,w:b.x-a.x,h:b.y-a.y};});
+  for(const P of d.P)P.zooms=(P.zoom||[]).map(j=>{const Z=d.P[j],a=P.proj(Z.geo[3],Z.geo[0]),b=P.proj(Z.geo[1],Z.geo[2]);
+    // connector lines from the dashed box to the zoomed panel when it sits inside this one
+    const ln=Z.inset?[[a.x,b.y,Z.x0,Z.y0],[b.x,b.y,Z.x1,Z.y0]]:[];return{x:a.x,y:a.y,w:b.x-a.x,h:b.y-a.y,ln};});
 }
 const selSet=()=>new Set(S.sel);
 function SET(){const s=selSet();return AP.filter(a=>s.has(a.code));}
@@ -214,7 +224,7 @@ function placeLabels(items,pts){
         const y0=uy<0?it.y-dist*.75-it.h:uy>0?it.y+dist*.75:it.y-it.h/2;
         const R={x0,y0,x1:x0+it.w,y1:y0+it.h},F=it.fr;
         let sc=ring*45+(ux&&uy?5:0)+(Math.max(0,F.x0-R.x0)+Math.max(0,R.x1-F.x1)+Math.max(0,F.y0-R.y0)+Math.max(0,R.y1-F.y1))*80;
-        for(const q of placed)sc+=ov(R,q)*14;for(const q of obst)sc+=ov(R,q)*9;
+        for(const q of placed)sc+=ov(R,q)*14;for(const q of obst)sc+=ov(R,q)*9;for(const q of it.no||[])sc+=ov(R,q)*40;
         if(sc<bs){bs=sc;best={R,ux,uy,ring};}
       }
       if(bs<ring*45+6)break;
@@ -225,7 +235,7 @@ const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
 function canvasLabeler(ctx,deck,list,mono){const memo=new Map();
   return (c,fs,vis)=>{const V=vis||list,key=fs+'|'+V.map(q=>q.a.code).join(',');let cache=memo.get(key);
     if(!cache){if(memo.size>80)memo.clear();ctx.save();ctx.font=`600 ${fs}px ${mono}`;
-      const items=V.map(q=>{const P=deck.P[q.a.pi]||deck.P[0];return{key:q.a.code,x:q.x,y:q.y,w:ctx.measureText(lab(q.a)).width+8,h:fs*1.15,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
+      const items=V.map(q=>{const P=deck.P[q.a.pi]||deck.P[0];return{no:P.inset?null:deck.blocks,key:q.a.code,x:q.x,y:q.y,w:ctx.measureText(lab(q.a)).width+8,h:fs*1.15,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
       ctx.restore();const res=placeLabels(items,list.map(q=>({x:q.x,y:q.y})));cache={};memo.set(key,cache);
       for(const q of V){const r=res[q.a.code].R;cache[q.a.code]={x:r.x0,y:r.y0+fs*.85,bottom:r.y1,lead:res[q.a.code].ring>0,lx:clampv(q.x,r.x0,r.x1),ly:clampv(q.y,r.y0,r.y1)};}}
     return cache[c.a.code];};}
@@ -247,9 +257,10 @@ function drawGeoCanvas(ctx,d,COL,scale){
     ctx.globalAlpha=.28;ctx.strokeStyle=COL.mid;ctx.lineWidth=2.2;ctx.stroke(q.road);
     if(p.park){ctx.setLineDash([4,5]);ctx.globalAlpha=.45;ctx.lineWidth=1.2;ctx.stroke(q.park);ctx.setLineDash([]);}
     ctx.globalAlpha=.85;ctx.strokeStyle=COL.mid;ctx.lineWidth=1.6;ctx.stroke(q.state);
-    if(P.zooms.length){ctx.setLineDash([5,4]);ctx.globalAlpha=.8;ctx.lineWidth=1.4;for(const z of P.zooms)ctx.strokeRect(z.x,z.y,z.w,z.h);ctx.setLineDash([]);}
+    if(P.zooms.length){ctx.setLineDash([5,4]);ctx.globalAlpha=.8;ctx.lineWidth=1.4;for(const z of P.zooms){ctx.strokeRect(z.x,z.y,z.w,z.h);ctx.beginPath();for(const l of z.ln){ctx.moveTo(l[0],l[1]);ctx.lineTo(l[2],l[3]);}ctx.stroke();}ctx.setLineDash([]);}
     ctx.restore();
-    ctx.save();ctx.strokeStyle=COL.mid;ctx.globalAlpha=.7;ctx.lineWidth=1.5;ctx.strokeRect(P.x0,P.y0,w,h);
+    ctx.save();ctx.strokeStyle=COL.mid;ctx.globalAlpha=P.inset?.95:.7;ctx.lineWidth=P.inset?2:1.5;ctx.strokeRect(P.x0,P.y0,w,h);
+    if(P.inset){ctx.globalAlpha=.85;ctx.fillStyle=COL.mid;ctx.font=`600 ${Math.max(9,8.5/scale)}px ${mono}`;ctx.textAlign='left';ctx.fillText(P.name.toUpperCase(),P.x0+5,P.y0+Math.max(12,11/scale));}
     if(P.head){ctx.globalAlpha=.9;ctx.fillStyle=COL.mid;ctx.font=`600 ${Math.max(11,10/scale)}px ${mono}`;ctx.textAlign='left';ctx.fillText(P.name.toUpperCase(),P.x0+1,P.y0-6);}
     ctx.restore();
   }
@@ -267,10 +278,10 @@ function mapSVG(deck,o={}){
     if(p.park)s+=`<path class="gpark" d="${p.park}"/>`;
     s+=`<path class="gmtn" d="${p.mtn}"/><path class="gmtnh" d="${p.mtn}"/><path class="glake" d="${p.lake}"/><path class="griver" d="${p.river}"/>`;
     if(p.div)s+=`<path class="gdiv" d="${p.div}"/>`;
-    s+=`<path class="road" d="${p.road}"/><path class="stline" d="${p.state}"/>${extrasSVG(P)}${P.zooms.map(z=>`<rect class="zoombox" x="${f1(z.x)}" y="${f1(z.y)}" width="${f1(z.w)}" height="${f1(z.h)}"/>`).join('')}</g><rect class="pframe" x="${f1(P.x0)}" y="${f1(P.y0)}" width="${f1(w)}" height="${f1(h)}"/>`;
+    s+=`<path class="road" d="${p.road}"/><path class="stline" d="${p.state}"/>${extrasSVG(P)}${P.zooms.map(z=>`<rect class="zoombox" x="${f1(z.x)}" y="${f1(z.y)}" width="${f1(z.w)}" height="${f1(z.h)}"/>${z.ln.map(l=>`<line class="zoombox" x1="${f1(l[0])}" y1="${f1(l[1])}" x2="${f1(l[2])}" y2="${f1(l[3])}"/>`).join('')}`).join('')}</g><rect class="pframe${P.inset?' inset':''}" x="${f1(P.x0)}" y="${f1(P.y0)}" width="${f1(w)}" height="${f1(h)}"/>${P.inset?`<text class="ititle" x="${f1(P.x0+5)}" y="${f1(P.y0+13)}">${esc(P.name.toUpperCase())}</text>`:''}`;
   }
   const show=a=>o.all||(o.labeled&&o.labeled.has(a.code));
-  const items=list.filter(show).map(a=>{const P=deck.P[a.pi]||deck.P[0];return{key:a.code,x:a.x,y:a.y,w:Math.max(31,lab(a).length*6.9)+8,h:31,dense:P.dense,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
+  const items=list.filter(show).map(a=>{const P=deck.P[a.pi]||deck.P[0];return{key:a.code,x:a.x,y:a.y,w:Math.max(31,lab(a).length*6.9)+8,h:31,dense:P.dense,no:P.inset?null:deck.blocks,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
   const pts=list.map(a=>({x:a.x,y:a.y}));let L;
   for(let pass=0;pass<4;pass++){L=placeLabels(items,pts);let ch=false;
     for(const it of items)if(!it.short&&L[it.key].ring>=(it.dense?2:3)){it.short=true;it.w=39;it.h=17;ch=true;}
@@ -315,7 +326,7 @@ function home(){
   const mastered=set.filter(a=>S.items[a.code].box>=4).length;
   const lessons=lessonsFor(),nextL=lessons.find(l=>!lessonDone(l)),doneN=lessons.filter(lessonDone).length;
   const decksUsed=ALLDECKS.filter(d=>d.airports.length&&d.airports.every(a=>selSet().has(a.code))).map(d=>d.name);
-  const topHS=Math.max(0,...['cadet','pilot','ace'].map(k=>S.hs[k][0]?.s||0)),topTS=Math.max(0,...['trainee','controller','chief'].map(k=>S.ths[k][0]?.s||0));
+  const topHS=Math.max(0,...['cadet','pilot','ace','doomsday'].map(k=>S.hs[k][0]?.s||0)),topTS=Math.max(0,...['trainee','controller','chief'].map(k=>S.ths[k][0]?.s||0));
   let cta,ctaFn;
   if(set.length<3){cta='Choose at least 3 codes';ctaFn=()=>go(picker);}
   else if(nextL){cta=doneN?`Continue Flight School: ${nextL.title}`:'Start Flight School, lesson 1';ctaFn=()=>go(lesson,nextL);}
@@ -329,6 +340,7 @@ function home(){
   ${doneN===0?`<section class="panel welcome"><h2>Never studied these before?</h2>
     <p>Every airport has a three-letter code. It's on bag tags, tickets and departure boards. For your test you'll match each city to its code.</p>
     <p>You don't need to know anything yet. <b>Flight School</b> shows you each code with a trick for remembering it, has you type it once while you can see it, then checks you from memory. After that, the games keep it fresh.</p></section>`:''}
+  ${DECKMAP.top50&&DECKMAP.top50.airports.every(a=>selSet().has(a.code))?`<section class="hardbar" aria-label="Hardcore set"><span class="hz" aria-hidden="true"></span><div><b>HARDCORE · 50 BUSIEST AIRPORTS</b><span>The whole country on one map. Every code you need for the big hubs.</span></div></section>`:''}
   <div class="setbar"><span>Studying <b>${set.length}</b> ${set.length===1?'code':'codes'}${decksUsed.length===1?` · ${esc(decksUsed[0])}`:decksUsed.length>1?` · ${decksUsed.length} sets`:''}</span><button class="btn" id="toPick">Choose set</button></div>
   <button class="btn primary big" id="cta">${esc(cta)}</button>
   <section class="stats" aria-label="Your progress">
@@ -337,6 +349,7 @@ function home(){
     <div><span class="k">Mastered</span><span class="v">${mastered}/${set.length}</span><span class="s">4+ bars of 5</span></div>
   </section>
   <button class="feature" id="feat"><span class="t">AIR DEFENDER</span><span class="d">Bombs are falling on the map. Type a city's code to shoot them down.</span><span class="b">${topHS?`HIGH SCORE<br>${topHS}`:'NEW GAME'}</span></button>
+  ${set.length>=3?`<button class="feature doom" id="feat3"><span class="t">DOOMSDAY</span><span class="d">Real nukes. A city that gets hit is gone for good, and fewer cities means more warheads split. Hold out until the last city falls.</span><span class="b">${S.hs.doomsday[0]?`BEST<br>${S.hs.doomsday[0].s}`:'☢ ARMED'}</span></button>`:''}
   <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">You run the control tower. Pilots don't know the codes: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<br>${topTS}`:'NEW GAME'}</span></button>
   <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="k">${m.tag}</span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
   <section class="panel board">
@@ -354,7 +367,7 @@ function home(){
   </details>
   <div class="foot"><span id="sync">${syncText}</span><button class="link" id="reset">Reset progress</button></div>
   <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div>`;
-  $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);
+  $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);const f3=$('#feat3');if(f3)f3.onclick=()=>{S.diff='doomsday';save();go(VIEWS.defender);};
   main.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>go(VIEWS[b.dataset.mode]));
   main.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>go(cheat,b.dataset.card));
   $('#reset').onclick=()=>{$('#rc').hidden=false;$('#rc').scrollIntoView({block:'center'});};
@@ -368,7 +381,7 @@ function home(){
 function picker(){
   let err='';const open=new Set();
   function setRow(d,s){const on=d.airports.filter(a=>s.has(a.code)).length,n=d.airports.length,m=d.airports.filter(a=>S.items[a.code].box>=4).length;
-    return `<div class="setrow${on===n?' on':on?' part':''}">
+    return `<div class="setrow${on===n?' on':on?' part':''}${d.tag?' hard':''}">
       <label class="deck-h"><input type="checkbox" data-deck="${d.id}" ${on===n?'checked':''}><span class="sn"><b>${esc(d.name)}${d.tag?` <span class="tagb">${esc(d.tag)}</span>`:''}</b><span class="k">${n} codes · ${m} mastered</span></span></label>
       <button class="btn sm" data-only="${d.id}">Study only this</button>
       <details data-open="${d.id}" ${open.has(d.id)?'open':''}><summary>Pick single codes</summary>
@@ -589,7 +602,7 @@ function match(){
 }
 
 /* ================= map run ================= */
-function mapDecks(min=3){const s=selSet();return ALLDECKS.filter(d=>!d.custom&&d.airports.filter(a=>s.has(a.code)).length>=min);}
+function mapDecks(min=3){const h=homeDecks(min).filter(d=>!d.custom);if(h.length)return h;const s=selSet();return ALLDECKS.filter(d=>!d.custom&&d.airports.filter(a=>s.has(a.code)).length>=min);}
 function mapPick(){const ds=mapDecks();
   if(!ds.length){main.innerHTML=topbar('Map Run')+`<div class="panel"><p>Map Run needs at least 3 picked codes from a state with a map.</p><button class="btn primary" id="toPick">Choose codes</button></div>`;$('#toPick').onclick=()=>go(picker);return;}
   if(ds.length===1)return mapRun(ds[0]);
@@ -653,35 +666,44 @@ const DIFFS={
  cadet:{name:'Cadet',desc:'Slow bombs. Hints start early. Splitting warheads from wave 3.',sp:14,spInc:2.2,gap:3.8,gapMin:2.0,act:w=>Math.min(3,1+Math.floor(w/2)),hints:[.16,.3,.44,.58],split:w=>w>=3?Math.min(.35,.12+(w-3)*.05):0},
  pilot:{name:'Pilot',desc:'Faster. Hints arrive as bombs get close. Splits from wave 2.',sp:18,spInc:3.2,gap:3.4,gapMin:1.5,act:w=>Math.min(5,2+Math.floor((w-1)/2)),hints:[.35,.5,.65,.8],split:w=>w>=2?Math.min(.5,.18+(w-2)*.07):0},
  ace:{name:'Ace',desc:'Fast. Hints only in the last moments. Splits from wave 1.',sp:24,spInc:4.2,gap:2.7,gapMin:1.0,act:w=>Math.min(6,2+Math.floor((w-1)/1.5)),hints:[.6,.74,.86,.94],split:w=>Math.min(.65,.25+(w-1)*.08)},
+ doomsday:{name:'Doomsday',desc:'Real nukes. A city that gets hit is gone for good. The fewer cities left, the more warheads split. Lasts until the last city falls.',doom:true,
+   sp:16,spInc:2.6,gap:3.0,gapMin:.8,act:w=>Math.min(8,2+Math.floor(w/1.5)),hints:[.3,.46,.62,.78],split:w=>Math.min(.45,.1+(w-1)*.06)},
 };
 const HINT_PTS=[1.25,1,.75,.5,.3];
 let AC=null;
 function sfx(k){if(S.mute)return;try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
   const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);
-  const P={fire:['square',420,1500,.05,.13],boom:['sawtooth',200,40,.1,.4],hit:['triangle',130,28,.22,.8],bad:['square',150,110,.05,.16],wave:['square',520,1040,.05,.35],split:['sawtooth',900,300,.06,.25],tick:['square',1200,1100,.025,.05]}[k];if(!P)return;
+  const P={fire:['square',420,1500,.05,.13],boom:['sawtooth',200,40,.1,.4],hit:['triangle',130,28,.22,.8],bad:['square',150,110,.05,.16],wave:['square',520,1040,.05,.35],split:['sawtooth',900,300,.06,.25],tick:['square',1200,1100,.025,.05],nuke:['sawtooth',120,18,.3,1.5],siren:['square',560,980,.05,.7]}[k];if(!P)return;
   o.type=P[0];o.frequency.setValueAtTime(P[1],t);o.frequency.exponentialRampToValueAtTime(P[2],t+P[4]);g.gain.setValueAtTime(P[3],t);g.gain.exponentialRampToValueAtTime(.0001,t+P[4]+.02);o.start(t);o.stop(t+P[4]+.05);}catch(e){}}
 function hsTable(diff,hlIdx=-1){const L=S.hs[diff];if(!L.length)return `<p>No scores yet on ${DIFFS[diff].name}. Be the first.</p>`;
   return `<table class="hs"><thead><tr><th>#</th><th>NAME</th><th>MAP</th><th class="n">WAVE</th><th class="n">SCORE</th></tr></thead><tbody>${L.map((r,i)=>`<tr class="${i===hlIdx?'me':''}"><td>${i+1}</td><td>${esc(r.n)}</td><td>${esc(r.m||'')}</td><td class="n">${r.w}</td><td class="n">${r.s}</td></tr>`).join('')}</tbody></table>`;}
 function defender(){
-  const s=selSet();const decks=ALLDECKS.filter(d=>d.airports.filter(a=>s.has(a.code)).length>=3);
+  let decks=homeDecks();if(!decks.length){const s=selSet();decks=ALLDECKS.filter(d=>d.airports.filter(a=>s.has(a.code)).length>=3);}
   if(!decks.length){main.innerHTML=topbar('Air Defender')+`<div class="panel"><p>Air Defender needs at least 3 picked codes from one deck.</p><button class="btn primary" id="toPick">Choose codes</button></div>`;$('#toPick').onclick=()=>go(picker);return;}
-  let deckId=decks[0].id,diff=S.diff;
+  let deckId=decks[0].id,diff=DIFFS[S.diff]?S.diff:'cadet';
+  const hard=decks.find(d=>d.id==='top50');if(hard&&diff==='doomsday')deckId=hard.id;
   function render(){
-    main.innerHTML=topbar('Air Defender')+`<div class="defender"><div class="crt">
-      <div class="ttl">AIR DEFENDER</div>
-      <ol>
+    main.innerHTML=topbar('Air Defender')+`<div class="defender"><div class="crt${DIFFS[diff].doom?' doomcrt':''}">
+      <div class="ttl">${DIFFS[diff].doom?'☢ DOOMSDAY':'AIR DEFENDER'}</div>
+      ${DIFFS[diff].doom?`<ol class="doomrules">
+        <li>Nuclear warheads fall toward the cities on the map. The city under attack <b>blinks</b>.</li>
+        <li>Type that city's <b>3-letter code</b> to fire an interceptor. Hints still show up as a warhead gets close.</li>
+        <li>A warhead that lands <b>wipes the city off the map for good</b>. Its code shows in red so you learn it.</li>
+        <li>The fewer cities left, the more often warheads <b>split</b>, into as many as <b>four</b> at the end.</li>
+        <li>No shields. The game ends when the <b>last city falls</b>.</li>
+      </ol>`:`<ol>
         <li>Bombs fall toward cities on the map. The city under attack <b>blinks</b>.</li>
         <li>Type that city's <b>3-letter code</b> to fire an interceptor.</li>
         <li>The closer a bomb gets, the more help you get: <b>1</b> a clue, <b>2</b> the first letter, <b>3</b> two letters, <b>4</b> the whole code. Fewer hints, more points.</li>
         <li>A bomb that <b>flashes amber</b> is about to <b>split into two warheads</b>, each going for its own city.</li>
         <li>Every bomb that lands costs a shield. Lose all 5 and it's over. A wave with no hits gives one back.</li>
-      </ol>
+      </ol>`}
       ${decks.length>1?`<p class="k" style="color:var(--crt-mid)">MAP</p><div class="row">${decks.map(d=>`<button class="crt-btn ${d.id===deckId?'on':''}" data-deck="${d.id}">${esc(d.name.toUpperCase())}</button>`).join('')}</div>`:''}
-      <div class="choices">${Object.entries(DIFFS).map(([k,d])=>`<button class="choice" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div>
+      <div class="choices">${Object.entries(DIFFS).map(([k,d])=>`<button class="choice${d.doom?' doom':''}" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.doom?'☢ ':''}${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div>
       <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">LAUNCH</button><button class="crt-btn ${S.mute?'':'on'}" id="snd">SOUND ${S.mute?'OFF':'ON'}</button></div>
       ${bridge.online?`<button class="crt-btn" id="wlb">WORLD LEADERBOARD · ${DIFFS[diff].name.toUpperCase()}</button>`:''}
       <h2 style="font-size:1.2rem">THIS DEVICE · ${DIFFS[diff].name.toUpperCase()}</h2>${hsTable(diff)}
-      <p>New to the codes? Start on Cadet. Every city you lose shows its code, and you can practice those right after.</p>
+      <p>${DIFFS[diff].doom?'Doomsday works on any map. On the 50 Busiest it is the whole country, 50 cities, one shot.':'New to the codes? Start on Cadet. Every city you lose shows its code, and you can practice those right after.'}</p>
     </div></div>`;
     main.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>{deckId=b.dataset.deck;render();});
     main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;S.diff=diff;save();render();});
@@ -693,13 +715,18 @@ function defender(){
 }
 function defenderRun(deck,diffKey){
   $('#app').classList.add('wide');
-  const D=DIFFS[diffKey],s=selSet();
-  const cities=deck.airports.filter(a=>s.has(a.code)).map(a=>({a,x:a.x,y:a.y,dmg:0,flash:0,reveal:0}));
+  const D=DIFFS[diffKey],s=selSet(),DOOM=!!D.doom;
+  const cities=deck.airports.filter(a=>s.has(a.code)).map(a=>({a,x:a.x,y:a.y,dmg:0,flash:0,reveal:0,dead:false,deadAt:0}));
+  const NC=cities.length,alive=()=>cities.filter(c=>!c.dead),lost=()=>1-alive().length/NC;
+  // Doomsday scales with the map: 50 cities means about twice the warheads, more at once, shorter gaps
+  const DS=DOOM?Math.sqrt(Math.max(1,NC/12)):1,ACT=w=>D.act(w)+Math.round((DS-1)*3)+(DOOM?Math.floor(lost()*4):0);
+  // DEFCON 5 (all fine) down to 1 (almost nothing left)
+  const defconOf=()=>{const f=alive().length/NC;return f>.8?5:f>.6?4:f>.4?3:f>.2?2:1;};
   const BASES=[{x:W*.17,y:H-6},{x:W/2,y:H-6},{x:W*.83,y:H-6}];
   setWorld(deck);
-  main.innerHTML=topbar('Air Defender',DIFFS[diffKey].name)+`<div class="defender"><div class="crt">
+  main.innerHTML=topbar('Air Defender',DIFFS[diffKey].name)+`<div class="defender"><div class="crt${DOOM?' doomcrt':''}" id="crt">
     <div class="hud"><span>SCORE <b id="dScore">0</b></span><span>WAVE <b id="dWave">1</b></span><span>COMBO <b id="dCombo">×1</b></span><span class="sh" id="dSh" aria-label="Shields"></span></div>
-    <div class="crt-screen" id="scr"><canvas id="cv" aria-label="Air Defender map"></canvas><div class="ovl" id="ovl" hidden></div></div>
+    <div class="crt-screen" id="scr"><canvas id="cv" aria-label="Air Defender map"></canvas><div class="flashfx" id="flx" aria-hidden="true"></div><div class="ovl" id="ovl" hidden></div></div>
     <div class="crt-row"><div class="buf" id="buf" aria-label="Typed code"><span></span><span></span><span></span></div><div class="msg" id="msg" aria-live="polite">Type the code of the blinking city</div><button class="crt-btn" id="pz" aria-label="Pause">II</button></div>
     <div class="kb auto" id="kb">${['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].map((r,ri)=>`<div class="r">${[...r].map(ch=>`<button class="key" data-k="${ch}">${ch}</button>`).join('')}${ri===2?'<button class="key wide" data-k="DEL" aria-label="Delete">DEL</button>':''}</div>`).join('')}</div>
     <div id="endP" hidden></div>
@@ -711,13 +738,16 @@ function defenderRun(deck,diffKey){
   const COL={bg:V('--crt-bg'),hi:V('--crt-hi'),mid:V('--crt-mid'),lo:V('--crt-lo'),amb:V('--crt-amber'),red:V('--crt-red'),water:V('--crt-water'),sea:V('--crt-sea'),land:V('--crt-land')};
   const LBL=canvasLabeler(ctx,deck,cities,getFamily('mono'));
   const MONO=getFamily('mono');
-  let bombs=[],missiles=[],booms=[],pops=[],buf='',score=0,wave=0,shields=5,combo=0,toSpawn=0,spawnT=0,phase='intro',phaseT=0,paused=false,over=false,
+  let clouds=[],defcon=5,bombs=[],missiles=[],booms=[],pops=[],buf='',score=0,wave=0,shields=5,combo=0,toSpawn=0,spawnT=0,phase='intro',phaseT=0,paused=false,over=false,
       hitsThisWave=0,kills=0,shots=0,misfires=0,splits=0,clean=0,last=performance.now(),raf=0,clock=0,initials=null,initBuf='',endXP=0,lastX=350;
   const missedCodes=new Set(),ovl=$('#ovl'),lastHit={};
   let reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'defender',level:diffKey,levelName:DIFFS[diffKey].name,score,wave,map:deck.name});}
   function showOvl(big,sub,btns=''){ovl.innerHTML=`<div class="big">${big}</div>${sub?`<div class="sub">${sub}</div>`:''}${btns}`;ovl.hidden=false;}
   const mult=()=>1+Math.min(2,Math.floor(combo/4)*.5);
-  function hud(){$('#dScore').textContent=score;$('#dWave').textContent=wave;$('#dCombo').textContent='×'+String(mult());$('#dSh').innerHTML='SHIELDS '+[0,1,2,3,4].map(k=>`<i class="${k<shields?'on':''}"></i>`).join('');$('#dSh').setAttribute('aria-label',`Shields: ${Math.max(0,shields)} of 5`);}
+  function hud(){$('#dScore').textContent=score;$('#dWave').textContent=wave;$('#dCombo').textContent='×'+String(mult());
+    if(DOOM){const n=alive().length;$('#dSh').innerHTML=`CITIES <b>${n}/${NC}</b> <span class="defcon d${defcon}">DEFCON ${defcon}</span>`;$('#dSh').setAttribute('aria-label',`${n} of ${NC} cities left, DEFCON ${defcon}`);
+      $('#crt').classList.toggle('redalert',defcon<=2);return;}
+    $('#dSh').innerHTML='SHIELDS '+[0,1,2,3,4].map(k=>`<i class="${k<shields?'on':''}"></i>`).join('');$('#dSh').setAttribute('aria-label',`Shields: ${Math.max(0,shields)} of 5`);}
   let msgT;function msg(t,cls=''){const m=$('#msg');m.textContent=t;m.className='msg '+cls;clearTimeout(msgT);if(cls)msgT=setTimeout(()=>{if(!over){m.textContent='Type the code of the blinking city';m.className='msg';}},2600);}
   let bufT;function drawBuf(state){const b=$('#buf'),src=initials!==null?initBuf:buf;b.querySelectorAll('span').forEach((sp,k)=>sp.textContent=src[k]||'');b.className='buf'+(state?' '+state:'');
     clearTimeout(bufT);if(state)bufT=setTimeout(()=>{b.className='buf';if(!buf&&initials===null)b.querySelectorAll('span').forEach(sp=>sp.textContent='');},260);}
@@ -725,22 +755,36 @@ function defenderRun(deck,diffKey){
   function makeBomb(sx,sy,c,speed,child){const dx=c.x-sx,dy=c.y-sy,dist=Math.hypot(dx,dy);
     return{c,sx,sy,x:sx,y:sy,ux:dx/dist,uy:dy/dist,dist,trav:0,prog:progOf(sy,c),speed,locked:false,hl:0,child:!!child,splitAt:null,split:false};}
   function pickCity(pool){const ws=pool.map(c=>weight(c.a));let r=Math.random()*ws.reduce((x,y)=>x+y,0);for(let j=0;j<pool.length;j++){r-=ws[j];if(r<=0)return pool[j];}return pool[pool.length-1];}
-  function startWave(){wave++;toSpawn=4+2*wave;spawnT=.9;hitsThisWave=0;phase='intro';phaseT=2.2;sfx('wave');
-    const sp=D.split(wave),tip=wave===1?'Type the code of the city under attack':sp>0&&D.split(wave-1)===0?'Warning: warheads can split from this wave on':`${toSpawn} bombs incoming`;
+  function splitChance(){return DOOM?Math.min(.92,D.split(wave)+lost()*.75):D.split(wave);}
+  function startWave(){wave++;toSpawn=DOOM?Math.round((5+3*wave)*DS):4+2*wave;spawnT=.9;hitsThisWave=0;phase='intro';phaseT=2.2;sfx('wave');
+    const sp=D.split(wave),tip=DOOM?(wave===1?`${NC} cities. Every hit is permanent.`:`${toSpawn} warheads inbound · ${alive().length} cities left`):wave===1?'Type the code of the city under attack':sp>0&&D.split(wave-1)===0?'Warning: warheads can split from this wave on':`${toSpawn} bombs incoming`;
     showOvl(`WAVE ${wave}`,tip);hud();}
   function spawn(){
-    const targeted=new Set(bombs.map(b=>b.c));let pool=cities.filter(c=>!targeted.has(c));if(!pool.length)pool=cities;
+    const live=alive(),targeted=new Set(bombs.map(b=>b.c));let pool=live.filter(c=>!targeted.has(c));if(!pool.length)pool=live;
     const c=pickCity(pool);let sx;do{sx=BX.x0+12+Math.random()*(BX.x1-BX.x0-24);}while(Math.abs(sx-lastX)<90&&Math.random()<.85);lastX=sx;
     const b=makeBomb(sx,-6,c,(D.sp+D.spInc*(wave-1))*(.85+Math.random()*.3)*SPD);
-    if(Math.random()<D.split(wave))b.splitAt=.4+Math.random()*.15;bombs.push(b);}
-  function doSplit(b){b.split=true;const targeted=new Set(bombs.map(x=>x.c));
-    let pool=cities.filter(c=>c!==b.c&&c.y>b.y+45&&!targeted.has(c));if(!pool.length)pool=cities.filter(c=>c!==b.c&&c.y>b.y+45);if(!pool.length)return;
-    const c=pickCity(pool),k=makeBomb(b.x,b.y,c,b.speed*1.08,true);k.parent=b;bombs.push(k);splits++;
-    booms.push({x:b.x,y:b.y,t:0,R:14,col:COL.amb});sfx('split');msg(`Warhead split! ${c.a.place} is now a target too.`,'warn');}
-  function impact(b){lastHit[b.c.a.code]=clock;bombs=bombs.filter(x=>x!==b);shields--;hitsThisWave++;combo=0;b.c.dmg++;b.c.flash=1;b.c.reveal=3.2;
-    booms.push({x:b.c.x,y:b.c.y,t:0,R:42,col:COL.red});missedCodes.add(b.c.a.code);grade(b.c.a.code,false,'recog');sfx('hit');
+    if(Math.random()<splitChance())b.splitAt=.4+Math.random()*.15;bombs.push(b);}
+  // MIRV: in Doomsday the bus releases more warheads the fewer cities are left (1 extra, up to 3 extra)
+  function doSplit(b){b.split=true;const n=DOOM?1+Math.min(2,Math.floor(lost()*3.2+Math.random()*.6)):1,hit=[];
+    for(let i=0;i<n;i++){const targeted=new Set(bombs.map(x=>x.c));
+      let pool=alive().filter(c=>c!==b.c&&c.y>b.y+45&&!targeted.has(c));if(!pool.length)pool=alive().filter(c=>c!==b.c&&c.y>b.y+45&&!hit.includes(c));if(!pool.length)break;
+      const c=pickCity(pool),k=makeBomb(b.x,b.y,c,b.speed*(1.05+i*.06),true);k.parent=b;bombs.push(k);splits++;hit.push(c);}
+    if(!hit.length)return;
+    booms.push({x:b.x,y:b.y,t:0,R:14+hit.length*4,col:COL.amb});sfx('split');
+    msg(hit.length>1?`MIRV! ${hit.length+1} warheads: ${hit.map(c=>c.a.city).join(', ')} are targets too.`:`Warhead split! ${hit[0].a.place} is now a target too.`,'warn');}
+  function retarget(dead){for(const b of bombs){if(b.c!==dead)continue;const live=alive();if(!live.length)return;
+    const c=live.reduce((p,q)=>Math.hypot(q.x-b.x,q.y-b.y)<Math.hypot(p.x-b.x,p.y-b.y)&&q.y>b.y?q:p,live[0]);
+    const nb=makeBomb(b.x,b.y,c,b.speed,b.child);Object.assign(b,{c,sx:nb.sx,sy:nb.sy,ux:nb.ux,uy:nb.uy,dist:nb.dist,trav:0,hl:0,prog:progOf(b.y,c),splitAt:null});}}
+  function nukeFx(c,big){clouds.push({x:c.x,y:c.y,t:0,big});const f=$('#flx');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');}
+  function impact(b){lastHit[b.c.a.code]=clock;bombs=bombs.filter(x=>x!==b);hitsThisWave++;combo=0;b.c.dmg++;b.c.flash=1;b.c.reveal=3.2;
+    missedCodes.add(b.c.a.code);grade(b.c.a.code,false,'recog');sfx('nuke');nukeFx(b.c,DOOM);
     const scr=$('#scr');scr.classList.remove('jolt');void scr.offsetWidth;scr.classList.add('jolt');
-    msg(`${b.c.a.place} was hit. Its code is ${b.c.a.code}.`,'bad');hud();if(shields<=0)gameOver();}
+    if(DOOM){const c=b.c;if(!c.dead){c.dead=true;c.deadAt=clock;c.reveal=4.5;}retarget(c);
+      const n=alive().length,dc=defconOf();
+      msg(n?`${c.a.place} is gone. Its code was ${c.a.code}. ${n} ${n===1?'city':'cities'} left.`:`${c.a.place} was the last city.`,'bad');
+      if(dc<defcon){defcon=dc;setTimeout(()=>{if(!over){sfx('siren');pops.push({x:W/2,y:H*.42,t:0,text:`DEFCON ${dc}`,big:true});}},350);}
+      hud();if(!n)gameOver();return;}
+    shields--;msg(`${b.c.a.place} was hit. Its code is ${b.c.a.code}.`,'bad');hud();if(shields<=0)gameOver();}
   function kill(b){bombs=bombs.filter(x=>x!==b);
     const pts=Math.round((50+120*(1-b.prog))*wave*mult()*HINT_PTS[b.hl]);score+=pts;combo++;kills++;if(b.hl===0)clean++;
     booms.push({x:b.x,y:b.y,t:0,R:26,col:COL.hi});pops.push({x:b.x,y:b.y-10,t:0,text:'+'+pts+(b.hl===0?' CLEAN':'')});
@@ -751,6 +795,7 @@ function defenderRun(deck,diffKey){
     if(cand.length){const b=cand[0];b.locked=true;const base=BASES.reduce((p,q)=>Math.abs(q.x-b.x)<Math.abs(p.x-b.x)?q:p);
       missiles.push({x:base.x,y:base.y,sx:base.x,sy:base.y,b});sfx('fire');drawBuf('ok');return;}
     const c=cities.find(c=>c.a.code===code);
+    if(c&&c.dead){shots--;drawBuf('bad');msg(`${code} was ${c.a.place}. It's already gone.`,'warn');return;}
     if(c&&clock-(lastHit[code]??-9)<2){shots--;drawBuf('bad');msg(`Right code, just too late: ${c.a.place} was already hit.`,'warn');return;}
     misfires++;combo=0;score=Math.max(0,score-25);sfx('bad');drawBuf('bad');hud();
     if(c)msg(`${code} is ${c.a.place}, but nothing is falling there. −25`,'warn');
@@ -774,14 +819,17 @@ function defenderRun(deck,diffKey){
     else{ovl.hidden=true;if(phase==='intro')showOvl(`WAVE ${wave}`,'');last=performance.now();}}
   $('#pz').onclick=togglePause;
   const onVis=()=>{if(document.hidden&&!paused&&!over)togglePause();};document.addEventListener('visibilitychange',onVis);
-  function waveClear(){phase='clear';phaseT=2.8;buf='';drawBuf();const bonus=shields*20*wave;score+=bonus;let extra='';
+  function waveClear(){phase='clear';phaseT=2.8;buf='';drawBuf();
+    if(DOOM){const n=alive().length,bonus=n*15*wave+(hitsThisWave===0?250*wave:0);score+=bonus;sfx('wave');
+      showOvl(`WAVE ${wave} SURVIVED`,`${n} of ${NC} cities standing · bonus +${bonus}${hitsThisWave===0?' (no city lost)':''}`);hud();return;}
+    const bonus=shields*20*wave;score+=bonus;let extra='';
     if(hitsThisWave===0&&shields<5){shields++;extra=' · Perfect wave: shield restored';}else if(hitsThisWave===0)extra=' · Perfect wave';
     sfx('wave');showOvl(`WAVE ${wave} CLEARED`,`Shield bonus +${bonus}${extra}`);hud();}
   function update(dt){
     clock+=dt;
     if(phase==='intro'){phaseT-=dt;if(phaseT<=0){phase='play';ovl.hidden=true;}}
     else if(phase==='play'){spawnT-=dt;
-      if(toSpawn>0&&spawnT<=0&&bombs.length<D.act(wave)){spawn();toSpawn--;spawnT=Math.max(D.gapMin,D.gap-(wave-1)*.25)*(.8+Math.random()*.4);}
+      if(toSpawn>0&&spawnT<=0&&bombs.length<ACT(wave)){spawn();toSpawn--;spawnT=Math.max(D.gapMin,D.gap-(wave-1)*.25)/Math.sqrt(DS)*(.8+Math.random()*.4);}
       if(toSpawn===0&&!bombs.length&&!missiles.length)waveClear();}
     else if(phase==='clear'){phaseT-=dt;if(phaseT<=0)startWave();}
     for(const b of bombs.slice()){if(b.locked)continue;b.trav+=b.speed*dt;b.x=b.sx+b.ux*b.trav;b.y=b.sy+b.uy*b.trav;b.prog=progOf(b.y,b.c);
@@ -792,7 +840,7 @@ function defenderRun(deck,diffKey){
       if(d<=step||d<6){missiles=missiles.filter(x=>x!==m);kill(m.b);}else{m.x+=dx/d*step;m.y+=dy/d*step;}}
     tickFx(dt);
   }
-  function tickFx(dt){booms=booms.filter(b=>(b.t+=dt)<.7);pops=pops.filter(p=>(p.t+=dt)<1.1);cities.forEach(c=>{c.flash=Math.max(0,c.flash-dt*1.2);c.reveal=Math.max(0,c.reveal-dt);});}
+  function tickFx(dt){booms=booms.filter(b=>(b.t+=dt)<.7);pops=pops.filter(p=>(p.t+=dt)<(p.big?1.8:1.1));clouds=clouds.filter(e=>(e.t+=dt)<3.4);cities.forEach(c=>{c.flash=Math.max(0,c.flash-dt*1.2);c.reveal=Math.max(0,c.reveal-dt);});}
   function boxes(code,n,x,y,al,fs,col){const bw=fs*1.15,bh=fs*1.35,gap=3,tot=bw*3+gap*2;
     let sx=al==='left'?x:al==='right'?x-tot:x-tot/2;sx=Math.min(Math.max(sx,4),(W-4)-tot);
     ctx.font=`600 ${fs}px ${MONO}`;ctx.textAlign='center';
@@ -805,8 +853,13 @@ function defenderRun(deck,diffKey){
     drawGeoCanvas(ctx,deck,COL,scale);
     ctx.fillStyle=COL.mid;for(const b of BASES){ctx.beginPath();ctx.moveTo(b.x-12,H);ctx.lineTo(b.x,H-14);ctx.lineTo(b.x+12,H);ctx.fill();}
     const blinkOn=Math.floor(clock*4)%2===0;
-    const vis=cities.filter(c=>!deck.P[c.a.pi]?.dense||c.reveal>0||c.flash>0||bombs.some(b=>b.c===c&&!b.locked)),visS=new Set(vis);
+    const vis=cities.filter(c=>c.dead?c.reveal>0||!deck.P[c.a.pi]?.dense:(!deck.P[c.a.pi]?.dense||c.reveal>0||c.flash>0||bombs.some(b=>b.c===c&&!b.locked))),visS=new Set(vis);
     for(const c of cities){const threats=bombs.filter(b=>b.c===c&&!b.locked),threat=threats.length>0;
+      if(c.dead){drawRuins(c);if(!visS.has(c))continue;
+        ctx.font=`600 ${fs}px ${MONO}`;const P=LBL(c,fs,vis);ctx.textAlign='left';ctx.globalAlpha=c.reveal>0?1:.45;ctx.fillStyle=COL.red;ctx.fillText(lab(c.a),P.x,P.y);
+        const tw=ctx.measureText(lab(c.a)).width;ctx.strokeStyle=COL.red;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(P.x-1,P.y-fs*.32);ctx.lineTo(P.x+tw+1,P.y-fs*.32);ctx.stroke();ctx.globalAlpha=1;
+        if(c.reveal>0){ctx.globalAlpha=Math.min(1,c.reveal);boxes(c.a.code,3,P.x,P.y+fs*.45,'left',fs*.95,COL.red);ctx.globalAlpha=1;}
+        continue;}
       const col=c.flash>0?COL.red:threat?(blinkOn?COL.amb:COL.hi):(c.dmg?COL.mid:COL.hi);
       ctx.fillStyle=col;ctx.fillRect(c.x-9,c.y-5,5,9);ctx.fillRect(c.x-3,c.y-10,6,14);ctx.fillRect(c.x+4,c.y-3,5,7);
       if(c.dmg){ctx.fillStyle=COL.red;for(let k=0;k<Math.min(3,c.dmg);k++)ctx.fillRect(c.x-8+k*6,c.y+7,4,2);}
@@ -826,20 +879,50 @@ function defenderRun(deck,diffKey){
       else if(hl>=2)boxes(c.a.code,hl-1,tx,hy,P.al,fs*.95,COL.amb);
     }
     for(const b of bombs){
-      ctx.strokeStyle=COL.red;ctx.globalAlpha=.75;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(b.sx,b.sy);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.globalAlpha=1;
+      const tg=ctx.createLinearGradient(b.sx,b.sy,b.x,b.y);tg.addColorStop(0,'rgba(0,0,0,0)');tg.addColorStop(1,COL.red);
+      ctx.strokeStyle=tg;ctx.globalAlpha=.25;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(b.sx,b.sy);ctx.lineTo(b.x,b.y);ctx.stroke();
+      ctx.globalAlpha=.85;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;
       if(!b.locked){ctx.setLineDash([3,6]);ctx.strokeStyle=COL.amb;ctx.globalAlpha=.35;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.c.x,b.c.y);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
       const warn=b.splitAt&&!b.split&&b.prog>b.splitAt-.12;
       if(warn&&blinkOn){ctx.strokeStyle=COL.amb;ctx.lineWidth=2;ctx.beginPath();ctx.arc(b.x,b.y,9,0,7);ctx.stroke();}
-      ctx.fillStyle=warn&&blinkOn?COL.amb:'#ffffff';ctx.shadowColor=COL.red;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(b.x,b.y,b.child?3:3.8,0,7);ctx.fill();ctx.shadowBlur=0;}
+      drawNuke(b,warn&&blinkOn);}
     for(const m of missiles){ctx.strokeStyle=COL.hi;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m.sx,m.sy);ctx.lineTo(m.x,m.y);ctx.stroke();ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(m.x,m.y,2.5,0,7);ctx.fill();}
+    for(const e of clouds)drawCloud(e);
     for(const e of booms){const k=e.t/.7,r=e.R*Math.min(1,e.t/.22);ctx.globalAlpha=1-k;ctx.fillStyle=e.col;ctx.beginPath();ctx.arc(e.x,e.y,r,0,7);ctx.fill();ctx.globalAlpha=Math.max(0,.8-k);ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.x,e.y,r*.7,0,7);ctx.stroke();ctx.globalAlpha=1;}
     ctx.font=`600 ${fs}px ${MONO}`;ctx.textAlign='center';
-    for(const p of pops){ctx.globalAlpha=Math.max(0,1-p.t/1.1);ctx.fillStyle=COL.hi;ctx.fillText(p.text,Math.min(Math.max(p.x,60),W-60),p.y-p.t*34);}ctx.globalAlpha=1;
+    for(const p of pops){if(p.big)continue;ctx.globalAlpha=Math.max(0,1-p.t/1.1);ctx.fillStyle=COL.hi;ctx.fillText(p.text,Math.min(Math.max(p.x,60),W-60),p.y-p.t*34);}
+    for(const p of pops){if(!p.big)continue;ctx.globalAlpha=Math.max(0,Math.min(1,(1.8-p.t)*2));ctx.font=`800 ${fs*2.6}px ${MONO}`;ctx.fillStyle=COL.bg;ctx.fillRect(W/2-fs*7,p.y-fs*2.3,fs*14,fs*3);ctx.fillStyle=COL.red;ctx.fillText(p.text,W/2,p.y);}
+    ctx.globalAlpha=1;
   }
+  /* a warhead: body pointing where it's going, red fins, a flickering exhaust */
+  function drawNuke(b,warn){const L=b.child?12:15,R=b.child?2.6:3.3;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.uy,b.ux));
+    ctx.globalAlpha=.9;ctx.fillStyle=COL.amb;ctx.shadowColor=COL.red;ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(-L*.5,-R*.75);ctx.lineTo(-L*.5-5-Math.random()*5,0);ctx.lineTo(-L*.5,R*.75);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;
+    ctx.fillStyle=warn?COL.amb:'#E9F4EC';ctx.beginPath();ctx.moveTo(L*.5,0);ctx.quadraticCurveTo(L*.22,-R,-L*.05,-R);ctx.lineTo(-L*.5,-R);ctx.lineTo(-L*.5,R);ctx.lineTo(-L*.05,R);ctx.quadraticCurveTo(L*.22,R,L*.5,0);ctx.fill();
+    ctx.fillStyle=COL.red;ctx.fillRect(L*.05,-R,2.2,R*2);
+    ctx.beginPath();ctx.moveTo(-L*.25,-R);ctx.lineTo(-L*.55,-R*2.1);ctx.lineTo(-L*.5,-R);ctx.closePath();ctx.moveTo(-L*.25,R);ctx.lineTo(-L*.55,R*2.1);ctx.lineTo(-L*.5,R);ctx.closePath();ctx.fill();
+    ctx.restore();}
+  /* mushroom cloud: flash, shock ring, rising stem and cap, then it drifts and fades */
+  function drawCloud(e){const t=e.t,K=e.big?1.15:.8,fade=t<2.2?1:Math.max(0,1-(t-2.2)/1.2),rise=Math.min(1,t/.9),ease=1-Math.pow(1-rise,3);
+    ctx.save();
+    if(t<.3){ctx.globalAlpha=(1-t/.3)*.85;ctx.fillStyle='#FFFFFF';ctx.beginPath();ctx.arc(e.x,e.y,(30+90*t)*K,0,7);ctx.fill();}
+    if(t<1.5){const r=(8+t*120)*K;ctx.globalAlpha=Math.max(0,1-t/1.5)*.9;ctx.strokeStyle=COL.amb;ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(e.x,e.y,r,r*.42,0,0,7);ctx.stroke();}
+    const h=(12+34*ease)*K,cy=e.y-h-(t>1.2?(t-1.2)*6:0),rx=(8+13*ease)*K,ry=(5+6*ease)*K;
+    ctx.globalAlpha=.8*fade;const sg=ctx.createLinearGradient(0,e.y,0,cy);sg.addColorStop(0,COL.amb);sg.addColorStop(1,COL.red);ctx.fillStyle=sg;
+    ctx.beginPath();ctx.moveTo(e.x-5*K,e.y);ctx.lineTo(e.x-2.6*K,cy+ry*.4);ctx.lineTo(e.x+2.6*K,cy+ry*.4);ctx.lineTo(e.x+5*K,e.y);ctx.fill();
+    ctx.globalAlpha=.9*fade;ctx.fillStyle=COL.red;for(const [dx,dy,r] of [[-.62,.15,.8],[.62,.15,.8],[0,-.3,.95],[-.3,-.05,.85],[.3,-.05,.85]]){ctx.beginPath();ctx.arc(e.x+dx*rx,cy+dy*ry*1.6,ry*r*1.05,0,7);ctx.fill();}
+    ctx.fillStyle=COL.amb;ctx.globalAlpha=.85*fade;ctx.beginPath();ctx.ellipse(e.x,cy+ry*.35,rx*.75,ry*.55,0,0,7);ctx.fill();
+    ctx.strokeStyle=COL.amb;ctx.lineWidth=1.3;ctx.globalAlpha=.6*fade;ctx.beginPath();ctx.ellipse(e.x,cy+ry*1.4,rx*1.1,ry*.45,0,0,7);ctx.stroke();
+    ctx.globalAlpha=.9*fade;ctx.fillStyle=COL.amb;ctx.beginPath();ctx.ellipse(e.x,e.y,(6+12*ease)*K,(3+3*ease)*K,0,0,7);ctx.fill();
+    ctx.restore();}
+  /* what's left of a city: a crater, rubble and a little smoke */
+  function drawRuins(c){const t=clock-c.deadAt;ctx.save();ctx.strokeStyle=COL.red;ctx.globalAlpha=.85;ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(c.x,c.y+2,10,4.5,0,0,7);ctx.stroke();
+    ctx.fillStyle=COL.red;ctx.globalAlpha=.7;ctx.fillRect(c.x-7,c.y-1,3,3);ctx.fillRect(c.x-1,c.y-4,3,6);ctx.fillRect(c.x+4,c.y,3,2);
+    for(let k=0;k<2;k++){const ph=((t*.35+k*.5)%1);ctx.globalAlpha=(1-ph)*.35;ctx.fillStyle=COL.mid;ctx.beginPath();ctx.arc(c.x+(k?3:-2)+ph*4,c.y-6-ph*16,2+ph*4,0,7);ctx.fill();}
+    ctx.restore();}
   function frame(t){const dt=Math.min(.05,(t-last)/1000);last=t;if(!paused&&!over)update(dt);else if(over){clock+=dt;tickFx(dt);}draw();raf=requestAnimationFrame(frame);}
   function gameOver(){over=true;phase='over';bombs=[];missiles=[];endXP=Math.round(score/40);addXP(endXP);
     const L=S.hs[diffKey];const qualifies=score>0&&(L.length<10||score>L[L.length-1].s);
-    showOvl('DEFENSES DOWN',`Score ${score} · reached wave ${wave}`);const u=bridge.user&&bridge.user();if(qualifies&&u){initBuf=u.slice(0,16);saveInitials();}else renderEnd(qualifies,-1);}
+    showOvl(DOOM?'THE LAST CITY HAS FALLEN':'DEFENSES DOWN',`Score ${score} · ${DOOM?'survived to':'reached'} wave ${wave}`);const u=bridge.user&&bridge.user();if(qualifies&&u){initBuf=u.slice(0,16);saveInitials();}else renderEnd(qualifies,-1);}
   function renderEnd(entering,hlIdx){
     const e=$('#endP');e.hidden=false;
     if(entering){initials='';initBuf='';drawBuf();$('#kb').hidden=false;
@@ -848,7 +931,7 @@ function defenderRun(deck,diffKey){
     initials=null;$('#kb').hidden=true;$('.crt-row').hidden=true;
     const acc=shots?Math.round((shots-misfires)/shots*100)+'%':'—';
     const miss=[...missedCodes].map(c=>`<span class="chip">${c} · ${esc(BY[c].place)}</span>`).join('');
-    e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>WAVE <b>${wave}</b></span><span>STOPPED <b>${kills}</b></span><span>NO-HINT KILLS <b>${clean}</b></span><span>ACCURACY <b>${acc}</b></span><span>SPLITS <b>${splits}</b></span><span>XP <b>+${endXP}</b></span></div>
+    e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>WAVE <b>${wave}</b></span><span>STOPPED <b>${kills}</b></span><span>NO-HINT KILLS <b>${clean}</b></span><span>ACCURACY <b>${acc}</b></span><span>SPLITS <b>${splits}</b></span>${DOOM?`<span>CITIES LOST <b>${NC-alive().length}/${NC}</b></span>`:''}<span>XP <b>+${endXP}</b></span></div>
       ${miss?`<p>Cities you lost, with their codes. Lock these in:</p><div class="chips">${miss}</div>`:'<p>You never lost a city. Try a harder level.</p>'}
       <h2 style="font-size:1.2rem">HIGH SCORES · ${DIFFS[diffKey].name.toUpperCase()}</h2>${hsTable(diffKey,hlIdx)}
       <div class="row"><button class="crt-btn primary" id="again" style="flex:2">PLAY AGAIN</button><button class="crt-btn" id="setup">SETTINGS</button></div>
@@ -860,7 +943,7 @@ function defenderRun(deck,diffKey){
     e.scrollIntoView({block:'nearest'});report();}
   function saveInitials(){const n=initBuf;initials=null;const L=S.hs[diffKey];const entry={n,s:score,w:wave,m:deck.name,d:today()};
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.hs[diffKey]=L.slice(0,10);save();renderEnd(false,S.hs[diffKey].indexOf(entry));}
-  if(bridge.debug)window.__AD={bombs:()=>bombs.map(b=>({code:b.c.a.code,prog:+b.prog.toFixed(2),hl:b.hl,locked:b.locked,child:b.child})),st:()=>({wave,shields,score,phase,over,splits,kills,clean,toSpawn}),initials:()=>initials};
+  if(bridge.debug)window.__AD={bombs:()=>bombs.map(b=>({code:b.c.a.code,prog:+b.prog.toFixed(2),hl:b.hl,locked:b.locked,child:b.child})),st:()=>({wave,shields,score,phase,over,splits,kills,clean,toSpawn,alive:alive().length,defcon}),initials:()=>initials};
   cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(msgT);clearTimeout(bufT);};
   hud();startWave();raf=requestAnimationFrame(t=>{last=t;frame(t);});
 }
@@ -876,7 +959,7 @@ function hsTableFor(L,label,hlIdx=-1){if(!L.length)return `<p>No scores yet on $
   return `<table class="hs"><thead><tr><th>#</th><th>NAME</th><th>MAP</th><th class="n">SHIFT</th><th class="n">SCORE</th></tr></thead><tbody>${L.map((r,i)=>`<tr class="${i===hlIdx?'me':''}"><td>${i+1}</td><td>${esc(r.n)}</td><td>${esc(r.m||'')}</td><td class="n">${r.w}</td><td class="n">${r.s}</td></tr>`).join('')}</tbody></table>`;}
 function kbHTML(){return `<div class="kb auto" id="kb">${['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].map((r,ri)=>`<div class="r">${[...r].map(ch=>`<button class="key" data-k="${ch}">${ch}</button>`).join('')}${ri===2?'<button class="key wide" data-k="DEL" aria-label="Delete">DEL</button>':''}</div>`).join('')}</div>`;}
 function tower(){
-  const s=selSet();const decks=ALLDECKS.filter(d=>d.airports.filter(a=>s.has(a.code)).length>=3);
+  let decks=homeDecks();if(!decks.length){const s=selSet();decks=ALLDECKS.filter(d=>d.airports.filter(a=>s.has(a.code)).length>=3);}
   if(!decks.length){main.innerHTML=topbar('Tower Control')+`<div class="panel"><p>Tower Control needs at least 3 picked codes from one deck.</p><button class="btn primary" id="toPick">Choose codes</button></div>`;$('#toPick').onclick=()=>go(picker);return;}
   let deckId=decks[0].id,diff=S.tdiff;
   function render(){

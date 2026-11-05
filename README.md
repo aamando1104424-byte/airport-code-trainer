@@ -1,6 +1,6 @@
 # Airport Code Trainer
 
-Study app for airport codes (all 29 course sets, 483 airports): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** and **Tower Control**, with a **world leaderboard** on Supabase.
+Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** on one map of the whole USA): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** (with **Doomsday** mode) and **Tower Control**, with a **world leaderboard** on Supabase.
 
 - No email, no password. Players pick a name like `cortes` or `mango`.
 - You can play as a guest. When a run ends with a score, you're offered a spot on the world board.
@@ -29,6 +29,8 @@ Everything except the world leaderboard works right away.
 
    Both are under **Project Settings → API**, or the **Connect** button.
 4. Stop the dev server (Ctrl+C) and run `npm run dev` again.
+
+**Already ran `schema.sql` before?** Run it again after updating. It's safe to re-run: it keeps every player and score and only updates the functions (for example, to accept Doomsday scores).
 
 The account bar at the top will show **Leaderboard** and **Sign in** buttons.
 
@@ -89,6 +91,11 @@ The app runs off this one file. Nothing about the airports is hard-coded.
 
 The map dot, the lessons, the games and the pattern (Easy Three / Hidden Letters / Story Codes) all update automatically. Without a `tip`, a memory trick is generated for you.
 
+Optional panel settings, used by the 50 Busiest map:
+- `"inset": {"box": [lon0, lat0, lon1, lat1]}` draws the panel inside the first panel, over that stretch of ocean (Alaska, Hawaii, the Northeast zoom).
+- `"zoom": [3]` draws a dashed box on a panel showing where panel 3 zooms in.
+- `"dense": true` marks a crowded panel. Labels shrink to just the code, and the games name only the cities in play.
+
 The same code can appear in more than one set (CVG, DCA, IAD, TRI, HTS, PKB, TTN), and progress on it is shared.
 
 `src/data/geo.json` holds the map shapes (state outlines, lakes, rivers, interstates, mountains). It comes from public-domain US Census, Natural Earth and OurAirports data.
@@ -103,3 +110,16 @@ The same code can appear in more than one set (CVG, DCA, IAD, TRI, HTS, PKB, TTN
 4. Click **Deploy**.
 
 After that, every push to GitHub updates the site on its own.
+
+**Turning the leaderboard on for a site that's already live:** in Netlify open **Project configuration → Environment variables**, add the two `VITE_SUPABASE_…` values, then go to **Deploys → Trigger deploy → Deploy site**. The keys are read when the site is built, so the redeploy is needed. The bar at the top then shows **Leaderboard** and **Sign in** instead of "Leaderboard is off".
+
+## Put it on another website
+
+Paste this where the trainer should appear (use your own Netlify address):
+
+```html
+<iframe src="https://YOUR-SITE.netlify.app/" title="Airport Code Trainer"
+        style="width:100%;height:900px;border:0" allow="autoplay"></iframe>
+```
+
+Or just link to it. Progress is saved in each student's own browser.

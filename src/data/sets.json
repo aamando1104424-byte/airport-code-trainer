@@ -16,8 +16,8 @@
    "tag": "Hardcore",
    "panels": [
     {
-     "st": "US48",
-     "name": "Lower 48",
+     "st": "US",
+     "name": "United States",
      "codes": [
       "ATL",
       "LAX",
@@ -59,16 +59,45 @@
       "IND",
       "RSW",
       "CVG",
-      "CMH"
+      "CMH",
+      "SJU"
      ],
+     "dense": true,
      "zoom": [
-      1
+      3
+     ]
+    },
+    {
+     "st": "AK",
+     "name": "Alaska",
+     "codes": [],
+     "inset": {
+      "box": [
+       -127.2,
+       17.6,
+       -113.4,
+       27.4
+      ]
+     }
+    },
+    {
+     "st": "HI",
+     "name": "Hawaii",
+     "codes": [
+      "HNL"
      ],
-     "dense": true
+     "inset": {
+      "box": [
+       -112.8,
+       17.6,
+       -100.8,
+       24.8
+      ]
+     }
     },
     {
      "st": "USNE",
-     "name": "Northeast (zoomed in)",
+     "name": "Northeast zoom",
      "codes": [
       "JFK",
       "LGA",
@@ -77,47 +106,17 @@
       "BWI",
       "IAD",
       "DCA"
-     ]
-    },
-    {
-     "st": "HI",
-     "name": "Hawaii",
-     "codes": [
-      "HNL"
-     ]
-    },
-    {
-     "st": "PR",
-     "name": "Puerto Rico",
-     "codes": [
-      "SJU"
-     ]
+     ],
+     "dense": true,
+     "inset": {
+      "box": [
+       -74.3,
+       22.4,
+       -56.4,
+       37.5
+      ]
+     }
     }
-   ],
-   "grid": [
-    [
-     {
-      "w": 1,
-      "p": [
-       0
-      ]
-     }
-    ],
-    [
-     {
-      "w": 1.7,
-      "p": [
-       1
-      ]
-     },
-     {
-      "w": 1,
-      "p": [
-       2,
-       3
-      ]
-     }
-    ]
    ]
   },
   {
