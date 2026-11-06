@@ -385,3 +385,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.feature.doom .t,.crt.redalert,.hud .defcon.d2,.hud .defcon.d1{animation:none}.flashfx.go{animation:none}}
 .doomcrt .ovl .big{color:var(--crt-doom);text-shadow:0 0 18px color-mix(in srgb,var(--crt-doom) 65%,transparent)}
 .doomcrt .crt-btn.primary{background:var(--crt-doom);border-color:var(--crt-doom);color:#140303;box-shadow:0 0 16px color-mix(in srgb,var(--crt-doom) 45%,transparent)}
+/* region mini-map in the wave banner */
+.ovl .locator{display:block;width:min(240px,62%);margin:10px auto 6px;overflow:visible}
+.ovl .locator .lc-land{fill:var(--crt-lo);stroke:var(--crt-mid);stroke-width:.5;opacity:.9}
+.ovl .locator .lc-reg{fill:none;stroke:var(--crt-mid);stroke-width:.8;stroke-dasharray:2 2;opacity:.6}
+.ovl .locator .lc-hit{fill:color-mix(in srgb,var(--crt-red) 30%,transparent);stroke:var(--crt-red);stroke-width:2;animation:lchit .5s steps(2,start) infinite}
+@keyframes lchit{to{stroke-opacity:.35}}
+.regnote{font-size:.85rem;color:var(--crt-mid);margin:.2rem 0 .6rem}
+@media (prefers-reduced-motion:reduce){.ovl .locator .lc-hit{animation:none}}

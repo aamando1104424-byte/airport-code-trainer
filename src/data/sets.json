@@ -16,69 +16,88 @@
    "tag": "Hardcore",
    "panels": [
     {
-     "st": "US",
-     "name": "United States",
+     "st": "R_NW",
+     "name": "Northwest & Rockies",
      "codes": [
-      "ATL",
-      "LAX",
-      "ORD",
-      "DFW",
-      "DEN",
-      "SFO",
       "SEA",
-      "LAS",
-      "MCO",
-      "CLT",
-      "PHX",
-      "IAH",
-      "MIA",
-      "BOS",
-      "MSP",
-      "FLL",
-      "DTW",
-      "SLC",
-      "SAN",
-      "MDW",
-      "TPA",
       "PDX",
-      "BNA",
-      "AUS",
-      "DAL",
-      "STL",
-      "HOU",
-      "SJC",
-      "OAK",
-      "MSY",
-      "RDU",
-      "SMF",
-      "MCI",
-      "SNA",
-      "SAT",
-      "CLE",
-      "PIT",
-      "IND",
-      "RSW",
-      "CVG",
-      "CMH",
-      "SJU"
-     ],
-     "dense": true,
-     "zoom": [
-      3
+      "SLC",
+      "DEN"
      ]
     },
     {
-     "st": "AK",
-     "name": "Alaska",
-     "codes": [],
-     "inset": {
-      "box": [
-       -127.2,
-       17.6,
-       -113.4,
-       27.4
-      ]
-     }
+     "st": "R_CA",
+     "name": "California & Nevada",
+     "codes": [
+      "SFO",
+      "OAK",
+      "SJC",
+      "SMF",
+      "LAX",
+      "SNA",
+      "SAN",
+      "LAS"
+     ]
+    },
+    {
+     "st": "R_SW",
+     "name": "Southwest & Texas",
+     "codes": [
+      "PHX",
+      "DFW",
+      "DAL",
+      "IAH",
+      "HOU",
+      "AUS",
+      "SAT"
+     ]
+    },
+    {
+     "st": "R_MW",
+     "name": "Midwest",
+     "codes": [
+      "ORD",
+      "MDW",
+      "MSP",
+      "DTW",
+      "STL",
+      "MCI",
+      "CLE",
+      "CMH",
+      "CVG",
+      "IND"
+     ]
+    },
+    {
+     "st": "R_SE",
+     "name": "Southeast",
+     "codes": [
+      "ATL",
+      "CLT",
+      "BNA",
+      "RDU",
+      "MCO",
+      "TPA",
+      "MIA",
+      "FLL",
+      "RSW",
+      "MSY"
+     ]
+    },
+    {
+     "st": "R_NE",
+     "name": "Northeast",
+     "codes": [
+      "BOS",
+      "JFK",
+      "LGA",
+      "EWR",
+      "PHL",
+      "BWI",
+      "IAD",
+      "DCA",
+      "PIT"
+     ]
     },
     {
      "st": "HI",
@@ -87,36 +106,76 @@
       "HNL"
      ],
      "inset": {
+      "in": 0,
       "box": [
-       -112.8,
-       17.6,
-       -100.8,
-       24.8
+       -131.3,
+       38.7,
+       -125.3,
+       43.4
       ]
      }
     },
     {
-     "st": "USNE",
-     "name": "Northeast zoom",
+     "st": "PR",
+     "name": "Puerto Rico",
      "codes": [
-      "JFK",
-      "LGA",
-      "EWR",
-      "PHL",
-      "BWI",
-      "IAD",
-      "DCA"
+      "SJU"
      ],
-     "dense": true,
      "inset": {
+      "in": 4,
       "box": [
-       -74.3,
-       22.4,
-       -56.4,
-       37.5
+       -78.4,
+       24.5,
+       -73.6,
+       28.8
       ]
      }
     }
+   ],
+   "sectors": true,
+   "grid": [
+    [
+     {
+      "w": 1,
+      "p": [
+       0
+      ]
+     },
+     {
+      "w": 1,
+      "p": [
+       1
+      ]
+     }
+    ],
+    [
+     {
+      "w": 1,
+      "p": [
+       2
+      ]
+     },
+     {
+      "w": 1,
+      "p": [
+       3
+      ]
+     }
+    ],
+    [
+     {
+      "w": 1,
+      "p": [
+       4
+      ]
+     },
+     {
+      "w": 1,
+      "p": [
+       5
+      ]
+     }
+    ]
    ]
   },
   {

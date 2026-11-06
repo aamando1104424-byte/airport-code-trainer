@@ -1,6 +1,6 @@
 # Airport Code Trainer
 
-Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** on one map of the whole USA): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** (with **Doomsday** mode) and **Tower Control**, with a **world leaderboard** on Supabase.
+Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** split into six regional maps): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** (with **Doomsday** mode) and **Tower Control**, with a **world leaderboard** on Supabase.
 
 - No email, no password. Players pick a name like `cortes` or `mango`.
 - You can play as a guest. When a run ends with a score, you're offered a spot on the world board.
@@ -91,10 +91,11 @@ The app runs off this one file. Nothing about the airports is hard-coded.
 
 The map dot, the lessons, the games and the pattern (Easy Three / Hidden Letters / Story Codes) all update automatically. Without a `tip`, a memory trick is generated for you.
 
-Optional panel settings, used by the 50 Busiest map:
-- `"inset": {"box": [lon0, lat0, lon1, lat1]}` draws the panel inside the first panel, over that stretch of ocean (Alaska, Hawaii, the Northeast zoom).
-- `"zoom": [3]` draws a dashed box on a panel showing where panel 3 zooms in.
-- `"dense": true` marks a crowded panel. Labels shrink to just the code, and the games name only the cities in play.
+Optional settings, used by the 50 Busiest set:
+- `"sectors": true` on a set: the study map shows every panel in a grid, and the games fly one region at a time (Air Defender rotates region each wave; Tower Control lets you pick a region).
+- `"grid"` on a set: custom rows of columns for the panels.
+- `"inset": {"in": 0, "box": [lon0, lat0, lon1, lat1]}` on a panel: draws it inside panel 0, over that stretch of ocean (Hawaii, Puerto Rico).
+- `"dense": true` on a panel: labels shrink to just the code, and the games name only the cities in play.
 
 The same code can appear in more than one set (CVG, DCA, IAD, TRI, HTS, PKB, TTN), and progress on it is shared.
 
