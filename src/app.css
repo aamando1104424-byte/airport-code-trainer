@@ -1,6 +1,10 @@
 /* React shell: account bar, notices, dialogs. Uses the trainer's color tokens. */
 .acctbar,.notices{max-width:560px;margin:0 auto}
 body:has(#app.wide) .acctbar,body:has(#app.wide) .notices{max-width:940px}
+/* keep the account bar lined up with the page as it widens (see the trainer's flexible layout rules) */
+@media (min-width:900px){ body:has(#app.wide) .acctbar,body:has(#app.wide) .notices{max-width:1040px} }
+@media (min-width:1000px){ body:has(#app.homewide) .acctbar,body:has(#app.homewide) .notices{max-width:1120px} }
+@media (min-width:1500px){ body:has(#app.homewide) .acctbar,body:has(#app.homewide) .notices{max-width:1280px} body:has(#app.wide) .acctbar,body:has(#app.wide) .notices{max-width:1180px} }
 .acctbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-block:10px;border-bottom:1px solid var(--line)}
 .acct-l{display:flex;align-items:center;gap:10px;min-width:0;font-size:.92rem}
 .acct-l b{overflow-wrap:anywhere}

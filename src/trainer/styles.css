@@ -431,3 +431,47 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* wave banner fits short region maps (Texas) */
 .ovl .locator{width:auto;height:clamp(44px,26%,128px);max-width:62%}
 .ovl .big{font-size:clamp(1.2rem,5.5vw,2.2rem)}
+
+/* ================= flexible layout: any screen, either way up ================= */
+/* phones: use the dynamic viewport so browser bars don't hide the bottom of a game */
+@supports (height:100dvh){ .modal{max-height:calc(100dvh - 8px)} }
+/* laptops and up: home in two columns, study on the left, games + live board on the right */
+@media (min-width:1000px){
+  .app.homewide{max-width:1120px}
+  .hgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,440px);column-gap:28px;align-items:start}
+  .hmain{grid-column:1;grid-row:1}
+  .hmain2{grid-column:1;grid-row:2}
+  .hside{grid-column:2;grid-row:1 / span 2;position:sticky;top:12px;display:flex;flex-direction:column;gap:14px}
+  .hside .feature{margin:0}
+  .hmain2 .modes{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (min-width:1500px){ .app.homewide{max-width:1280px} .app.wide{max-width:1180px} }
+/* tablets and laptops: games get more room */
+@media (min-width:900px){ .app.wide{max-width:1040px} }
+/* phone or small tablet turned sideways while playing: map on the left, keyboard and controls on the right */
+@media (orientation:landscape) and (max-height:560px){
+  body:has(#app.playing) .acctbar,body:has(#app.playing) .notices{display:none}
+  #app.playing{padding-block:4px 8px}
+  #app.playing .topbar{display:none}
+  #app.playing .defender{margin-inline:0}
+  #app.playing .crt{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,42%);column-gap:10px;row-gap:6px;align-items:start;padding:6px;border-radius:8px}
+  #app.playing .crt>*{grid-column:2;min-width:0}
+  #app.playing .crt>.hud,#app.playing .crt>.race,#app.playing .crt>#endP{grid-column:1 / -1}
+  #app.playing .crt>.crt-screen{grid-column:1;grid-row:span 8;align-self:start}
+  #app.playing .hud{font-size:.72rem;gap:8px}
+  #app.playing .kb{gap:4px}
+  #app.playing .kb .r{gap:3px}
+  #app.playing .key{min-height:34px;font-size:.82rem}
+  #app.playing .radio{font-size:.78rem;min-height:2.4em;padding:4px 8px}
+  #app.playing .strips{max-height:34vh;overflow:auto}
+  #app.playing .msg{font-size:.74rem}
+}
+/* very small phones (iPhone SE): tighter game chrome */
+@media (max-width:360px){
+  #app.playing .hud{font-size:.68rem;gap:6px}
+  #app.playing .key{min-height:40px}
+}
+/* the home wrappers keep the page's normal 18px rhythm */
+.hgrid{display:flex;flex-direction:column;gap:18px}
+.hgrid>div{display:flex;flex-direction:column;gap:18px;min-width:0}
+@media (min-width:1000px){ .hgrid{display:grid;row-gap:18px} }

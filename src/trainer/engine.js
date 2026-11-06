@@ -192,7 +192,23 @@ const lessonDone=L=>L.codes.every(c=>S.items[c].learned);
 /* ================= maps ================= */
 let W=700,H=404,BX={x0:30,y0:24,x1:670,y1:376},SPD=1;
 function setWorld(d){W=d.W;H=d.H;BX=d.box;SPD=Math.sqrt(W*H/(700*404));}
-function fitCanvas(cv){cv.style.aspectRatio=`${W} / ${H}`;cv.style.width=`min(100%, ${(62*W/H).toFixed(1)}vh)`;cv.style.marginInline='auto';}
+/* The game map takes whatever room is left once the score bar, typing row and keyboard are on screen,
+   so a game never needs scrolling, on any phone, tablet or monitor, either way up. Re-fits on rotate/resize. */
+function fitCanvas(cv){cv.style.aspectRatio=`${W} / ${H}`;cv.style.marginInline='auto';cv._ar=W/H;fitNow(cv);}
+function fitNow(cv){const crt=cv.closest('.crt'),scr=cv.closest('.crt-screen');if(!crt||!scr||!cv._ar)return;
+  const vh=Math.min(window.innerHeight,window.visualViewport?.height||1e9);
+  cv.style.width='100%';const sr=scr.getBoundingClientRect(),cs=getComputedStyle(crt);let need=0,n=0;
+  for(const el of crt.children){if(el===scr||el.hidden||el.id==='endP'||el.classList.contains('strips'))continue;
+    const r=el.getBoundingClientRect();if(!r.height||r.right<=sr.left+1||r.left>=sr.right-1)continue;need+=r.height;n++;}
+  need+=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom)+parseFloat(cs.borderTopWidth)*2+(parseFloat(cs.rowGap)||0)*n+6;
+  const maxH=Math.max(150,vh-need),w=Math.min(sr.width||crt.clientWidth,maxH*cv._ar);cv.style.width=Math.floor(w)+'px';}
+function fitAll(){const cv=document.getElementById('cv');if(cv&&cv._ar){fitNow(cv);keepGameInView();}}
+/* if the page header pushes the game off the bottom, scroll so the whole game is on screen */
+// scroll so the play area (HUD down to the keyboard; flight strips may sit below) is fully on screen
+function keepGameInView(){const crt=document.querySelector('#app.playing .crt');if(!crt)return;const vh=window.visualViewport?.height||innerHeight;
+  const rs=[...crt.children].filter(e=>!e.hidden&&e.id!=='endP'&&!e.classList.contains('strips')).map(e=>e.getBoundingClientRect()).filter(r=>r.height);if(!rs.length)return;
+  const top=Math.min(...rs.map(r=>r.top))-6,bot=Math.max(...rs.map(r=>r.bottom))+6;
+  if(bot>vh+1&&bot-top<=vh+1)window.scrollBy({top:bot-vh});}
 const f1=n=>n.toFixed(1);
 function ringsPath(rings,P,latlon){let s='';for(const r of rings){for(let i=0;i<r.length;i++){const q=latlon?P.proj(r[i][0],r[i][1]):P.proj(r[i][1],r[i][0]);s+=(i?'L':'M')+f1(q.x)+' '+f1(q.y);}s+='Z';}return s;}
 function linesPath(lines,P,latlon){let s='';for(const r of lines){for(let i=0;i<r.length;i++){const q=latlon?P.proj(r[i][0],r[i][1]):P.proj(r[i][1],r[i][0]);s+=(i?'L':'M')+f1(q.x)+' '+f1(q.y);}}return s;}
@@ -233,9 +249,11 @@ function placeLabels(items,pts){
   for(const it of order){let best=null,bs=1e18;
     for(const [ring,dist] of [[0,12],[1,30],[2,54],[3,82]]){
       for(const [ux,uy] of dirs){
-        const x0=ux>0?it.x+dist:ux<0?it.x-dist-it.w:it.x-it.w/2;
+        const F=it.fr;let x0=ux>0?it.x+dist:ux<0?it.x-dist-it.w:it.x-it.w/2;
+        // a label above or below its dot may slide sideways to stay inside a narrow panel (small insets)
+        if(!ux)x0=it.w<=F.x1-F.x0?clampv(x0,F.x0,F.x1-it.w):(F.x0+F.x1-it.w)/2;
         const y0=uy<0?it.y-dist*.75-it.h:uy>0?it.y+dist*.75:it.y-it.h/2;
-        const R={x0,y0,x1:x0+it.w,y1:y0+it.h},F=it.fr;
+        const R={x0,y0,x1:x0+it.w,y1:y0+it.h};
         let sc=ring*45+(ux&&uy?5:0)+(Math.max(0,F.x0-R.x0)+Math.max(0,R.x1-F.x1)+Math.max(0,F.y0-R.y0)+Math.max(0,R.y1-F.y1))*80;
         for(const q of placed)sc+=ov(R,q)*14;for(const q of obst)sc+=ov(R,q)*9;for(const q of it.no||[])sc+=ov(R,q)*40;
         // never let a label sit closer to another city's dot than to its own (it would teach the wrong spot)
@@ -251,7 +269,11 @@ const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
 function canvasLabeler(ctx,deck,list,mono){const memo=new Map();
   return (c,fs,vis)=>{const V=vis||list,key=fs+'|'+V.map(q=>q.a.code).join(',');let cache=memo.get(key);
     if(!cache){if(memo.size>80)memo.clear();ctx.save();ctx.font=`600 ${fs}px ${mono}`;
-      const items=V.map(q=>{const P=deck.P[q.a.pi]||deck.P[0];return{no:P.inset?null:deck.blocks,key:q.a.code,x:q.x,y:q.y,w:ctx.measureText(lab(q.a)).width+8,h:fs*1.15,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
+      // labels in an inset keep off its title (HAWAII, PUERTO RICO) in the top-left corner
+      const ttl=P=>[{x0:P.x0,y0:P.y0,x1:P.x0+8+P.name.length*fs*.56,y1:P.y0+fs*1.2+4}];
+      // ...and labels on a region map keep off the region badge
+      const badge=P=>deck.isSub?[{x0:P.x0,y0:P.y0,x1:P.x0+16+P.name.length*fs*.74,y1:P.y0+fs*1.95}]:[];
+      const items=V.map(q=>{const P=deck.P[q.a.pi]||deck.P[0];return{no:P.inset?ttl(P):deck.blocks.concat(badge(P)),key:q.a.code,x:q.x,y:q.y,w:ctx.measureText(lab(q.a)).width+8,h:fs*1.15,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
       ctx.restore();const res=placeLabels(items,list.map(q=>({x:q.x,y:q.y})));cache={};memo.set(key,cache);
       for(const q of V){const r=res[q.a.code].R;cache[q.a.code]={x:r.x0,y:r.y0+fs*.85,bottom:r.y1,lead:res[q.a.code].ring>0,lx:clampv(q.x,r.x0,r.x1),ly:clampv(q.y,r.y0,r.y1)};}}
     return cache[c.a.code];};}
@@ -318,7 +340,12 @@ function mapSVG(deck,o={}){
 
 /* ================= router ================= */
 const main=$('#main');let cleanup=null,onHome=false;
-function go(fn,...args){if(cleanup){cleanup();cleanup=null;}onHome=fn===home;$('#app').classList.remove('wide');window.scrollTo(0,0);fn(...args);}
+function go(fn,...args){if(cleanup){cleanup();cleanup=null;}onHome=fn===home;const ap=$('#app');ap.classList.remove('wide','playing');ap.classList.toggle('homewide',fn===home);window.scrollTo(0,0);fn(...args);}
+let fitT=0;const onFit=()=>{clearTimeout(fitT);fitT=setTimeout(fitAll,80);};
+window.addEventListener('resize',onFit);window.addEventListener('orientationchange',onFit);window.visualViewport?.addEventListener('resize',onFit);
+// the page itself can change width without the window changing (layout switch, side panel, zoom): re-fit then too
+const fitRO=typeof ResizeObserver==='function'?new ResizeObserver(()=>requestAnimationFrame(fitAll)):null;
+if(fitRO)fitRO.observe($('#app'));
 /* ================= live world top 5 =================
    Any element with class "livetop" fills itself from the world board. A new best
    anywhere pings every open app (Supabase Realtime), and boards re-check every 20 s. */
@@ -393,7 +420,7 @@ function home(){
   if(set.length<3){cta='Choose at least 3 codes';ctaFn=()=>go(picker);}
   else if(nextL){cta=doneN?`Continue Flight School: ${nextL.title}`:'Start Flight School, lesson 1';ctaFn=()=>go(lesson,nextL);}
   else{cta=`Practice now · ${due} ready to review`;ctaFn=()=>go(VIEWS.recall);}
-  main.innerHTML=`
+  main.innerHTML=`<div class="hgrid"><div class="hmain">
   <header class="hero">
     <span class="k">Airport code study deck</span>
     <h1>Airport Code Trainer</h1>
@@ -410,11 +437,13 @@ function home(){
     <div><span class="k">Streak</span><span class="v">${st}</span><span class="s">${st===1?'day':'days'}</span></div>
     <div><span class="k">Mastered</span><span class="v">${mastered}/${set.length}</span><span class="s">4+ bars of 5</span></div>
   </section>
+  </div><div class="hside">
   <button class="feature" id="feat"><span class="t">AIR DEFENDER</span><span class="d">Bombs are falling on the map. Type a city's code to shoot them down.</span><span class="b">${topHS?`HIGH SCORE<br>${topHS}`:'NEW GAME'}</span></button>
   ${set.length>=3?`<button class="feature doom" id="feat3"><span class="t">DOOMSDAY</span><span class="d">Real nukes. A city that gets hit is gone for good, and fewer cities means more warheads split. Hold out until the last city falls.</span><span class="b">${S.hs.doomsday[0]?`BEST<br>${S.hs.doomsday[0].s}`:'☢ ARMED'}</span></button>`:''}
   ${LIVE?`<section class="livehome"><div class="lt-tabs" role="tablist">${[['defender','doomsday','Doomsday'],['defender',DIFFS[S.diff]&&!DIFFS[S.diff].doom?S.diff:'cadet','Air Defender'],['tower',S.tdiff||'trainee','Tower']].map(([g,l,t],i)=>`<button role="tab" class="lt-tab${i===(S.ltab||0)?' on':''}" data-ltab="${i}" data-g="${g}" data-l="${l}">${t}</button>`).join('')}</div>
     ${(()=>{const T=[['defender','doomsday'],['defender',DIFFS[S.diff]&&!DIFFS[S.diff].doom?S.diff:'cadet'],['tower',S.tdiff||'trainee']][S.ltab||0];return liveTopHTML(T[0],T[1]);})()}</section>`:''}
   <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">You run the control tower. Pilots don't know the codes: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<br>${topTS}`:'NEW GAME'}</span></button>
+  </div><div class="hmain2">
   <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="k">${m.tag}</span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
   <section class="panel board">
     <h2>Departures Board</h2>
@@ -431,7 +460,7 @@ function home(){
     </ul>
   </details>
   <div class="foot"><span id="sync">${syncText}</span><button class="link" id="reset">Reset progress</button></div>
-  <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div>`;
+  <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div></div></div>`;
   $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);
   main.querySelectorAll('[data-ltab]').forEach(b=>b.onclick=()=>{S.ltab=+b.dataset.ltab;save();main.querySelectorAll('[data-ltab]').forEach(x=>x.classList.toggle('on',x===b));
     const el=main.querySelector('.livehome .livetop');el.outerHTML=liveTopHTML(b.dataset.g,b.dataset.l);liveRefresh(false);});const f3=$('#feat3');if(f3)f3.onclick=()=>{S.diff='doomsday';save();go(VIEWS.defender);};
@@ -797,7 +826,7 @@ function defender(){
   render();
 }
 function defenderRun(root,diffKey){
-  $('#app').classList.add('wide');
+  $('#app').classList.add('wide','playing');
   const D=DIFFS[diffKey],s=selSet(),DOOM=!!D.doom;
   // a set split into regions plays one region per wave; every city keeps its state (alive/dead) across regions
   const SECS=root.sub?root.sub.filter(sd=>sd.airports.some(a=>s.has(a.code))):null;
@@ -1045,7 +1074,7 @@ function defenderRun(root,diffKey){
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.hs[diffKey]=L.slice(0,10);save();renderEnd(false,S.hs[diffKey].indexOf(entry));}
   if(bridge.debug)window.__AD={bombs:()=>bombs.map(b=>({code:b.c.a.code,prog:+b.prog.toFixed(2),hl:b.hl,locked:b.locked,child:b.child})),st:()=>({wave,shields,score,phase,over,splits,kills,clean,toSpawn,alive:alive().length,defcon,sector:deck.name,secAlive:secAlive().length}),initials:()=>initials};
   cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(msgT);clearTimeout(bufT);};
-  hud();startWave();raf=requestAnimationFrame(t=>{last=t;frame(t);});if(LIVE)liveFetch('defender/'+diffKey,true).then(()=>{if(!over)hud();});
+  hud();startWave();raf=requestAnimationFrame(t=>{last=t;frame(t);fitAll();});if(LIVE)liveFetch('defender/'+diffKey,true).then(()=>{if(!over)hud();});
 }
 /* ================= TOWER CONTROL ================= */
 /* hints: seconds a pilot has been waiting before clue / 1 letter / 2 letters / full code appear */
@@ -1091,7 +1120,7 @@ function tower(){
   render();
 }
 function towerRun(R0,dk){
-  $('#app').classList.add('wide');
+  $('#app').classList.add('wide','playing');
   const D=TDIFFS[dk],s=selSet();
   // a set split into regions moves to a new region each shift (the sky is empty between shifts)
   const SECS=R0.sub?R0.sub.filter(sd=>sd.airports.filter(a=>s.has(a.code)).length>=3):null;
@@ -1102,8 +1131,8 @@ function towerRun(R0,dk){
     <div class="crt-screen"><canvas id="cv" aria-label="Radar map"></canvas><div class="ovl" id="ovl" hidden></div></div>
     <div class="radio" id="radio" aria-live="polite">Radio is quiet. Traffic incoming.</div>
     <div class="crt-row"><div class="buf" id="buf" aria-label="Typed code"><span></span><span></span><span></span></div><div class="msg" id="who">No plane selected</div><button class="crt-btn" id="pz" aria-label="Pause">II</button></div>
-    <div class="strips" id="strips"></div>
     ${kbHTML()}
+    <div class="strips" id="strips"></div>
     <div id="endP" hidden></div>
   </div></div>`;
   const root=$('#tc'),cv=$('#cv'),ctx=cv.getContext('2d');let scale=1,dpr=1;
@@ -1313,12 +1342,12 @@ function towerRun(R0,dk){
   if(bridge.debug)window.__TC={planes:()=>planes.map(p=>({id:p.id,call:p.call,need:p.need.a.code,leg:p.leg,state:p.state,fuel:Math.round(p.fuel),hl:p.hl,target:p.target?.a.code||null,sel:p===sel})),
     st:()=>({shift,safety,score,phase,over,landed,legs,wrongs,emerg,toSpawn,sector:deck.name,ports:ports.length}),select:id=>{const p=planes.find(x=>x.id===id);if(p){sel=p;who();}},initials:()=>initials};
   cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(bufT);};
-  hud();startShift();strips();raf=requestAnimationFrame(t=>{last=t;frame(t);});if(LIVE)liveFetch('tower/'+dk,true).then(()=>{if(!over)hud();});
+  hud();startShift();strips();raf=requestAnimationFrame(t=>{last=t;frame(t);fitAll();});if(LIVE)liveFetch('tower/'+dk,true).then(()=>{if(!over)hud();});
 }
 
 function getFamily(k){return k==='display'?'"Big Shoulders Display", Impact, sans-serif':'"IBM Plex Mono", ui-monospace, monospace';}
 
 rebuild();
 go(home);
-return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);clearInterval(liveTimer);if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
+return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);window.removeEventListener('resize',onFit);window.removeEventListener('orientationchange',onFit);window.visualViewport?.removeEventListener('resize',onFit);if(fitRO)fitRO.disconnect();clearInterval(liveTimer);if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
 }
