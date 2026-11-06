@@ -4,6 +4,7 @@
    result = { game: 'defender'|'tower', level, levelName, score, wave, map } */
 import DATA_SETS from '../data/sets.json';
 import DATA_GEO from '../data/geo.json';
+import { cityArt, drawCityArt, drawBombArt, drawRocketArt, drawLauncherArt, drawPlaneArt, drawLandmark, drawMotif, knownFor } from './art.js';
 
 export function mountTrainer(root, bridge = {}) {
 root.innerHTML = '<div class="app" id="app"><main id="main" class="stack"></main></div><div id="toast" role="status" hidden></div>';
@@ -27,7 +28,7 @@ const DEFAULT_SET='wy';
 
 /* ================= state ================= */
 function blank(){return{v:2,items:{},sel:(DECKS.find(d=>d.id===DEFAULT_SET)||DECKS[0]).panels.flatMap(p=>p.codes),custom:[],xp:0,streak:{n:0,last:''},
-  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',ltab:'defender',area:'all',t:0};}
+  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',hlv:{defender:'cadet',tower:'trainee'},area:'all',t:0};}
 function merge(o){const b=blank();if(!o||typeof o!=='object')return b;
   if(o.items&&typeof o.items==='object')for(const c in o.items){const it=o.items[c];if(it&&typeof it==='object')b.items[c]={box:+it.box||0,due:+it.due||0,r:+it.r||0,w:+it.w||0,learned:!!it.learned};}
   if(Array.isArray(o.sel))b.sel=o.sel.filter(x=>typeof x==='string');
@@ -36,7 +37,10 @@ function merge(o){const b=blank();if(!o||typeof o!=='object')return b;
   if(o.hs)for(const k of ['cadet','pilot','ace'])if(Array.isArray(o.hs[k]))b.hs[k]=o.hs[k].slice(0,10);
   if(o.ths)for(const k of ['trainee','controller','chief'])if(Array.isArray(o.ths[k]))b.ths[k]=o.ths[k].slice(0,10);
   if(['trainee','controller','chief'].includes(o.tdiff))b.tdiff=o.tdiff;
-  b.mute=!!o.mute;if(['cadet','pilot','ace'].includes(o.diff))b.diff=o.diff;b.ltab=o.ltab==='tower'||o.ltab===2?'tower':'defender';b.area=/^(all|\d)$/.test(String(o.area))?String(o.area):'all';b.t=+o.t||0;return b;}
+  b.mute=!!o.mute;if(['cadet','pilot','ace'].includes(o.diff))b.diff=o.diff;
+  // the home top-3 boards start on the level you last played
+  b.hlv={defender:b.diff,tower:b.tdiff};if(o.hlv){if(['cadet','pilot','ace'].includes(o.hlv.defender))b.hlv.defender=o.hlv.defender;if(['trainee','controller','chief'].includes(o.hlv.tower))b.hlv.tower=o.hlv.tower;}
+  b.area=/^(all|\d)$/.test(String(o.area))?String(o.area):'all';b.t=+o.t||0;return b;}
 let S=(()=>{try{const r=localStorage.getItem(KEY)||localStorage.getItem(OLDKEY);if(r)return merge(JSON.parse(r));}catch(e){}return blank();})();
 let remote=null,syncText='Progress saves in this browser',saveTimer=null;
 function save(){S.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}clearTimeout(saveTimer);saveTimer=setTimeout(remoteSave,1200);}
@@ -97,6 +101,11 @@ function buildSubs(d){
       airports:d.airports.filter(a=>idxs.includes(a.pi)).map(a=>({...a,pi:idxs.indexOf(a.pi)}))};
     layout(sd);return sd;});}
 const lab=a=>a.label||a.city;
+// some codes go by two names on the course list (SUN is Sun Valley and Hailey): practice asks with either one
+const namesOf=a=>[a.place,...(a.alts||[])];
+const anyName=a=>{const n=namesOf(a);return n[Math.floor(Math.random()*n.length)];};
+const clueFor=(a,name)=>name&&name!==a.place?`Same airport as ${a.place}`:a.clue;
+const alsoHTML=a=>a.alts&&a.alts.length?`<span class="aka">Also on your list as <b>${a.alts.map(esc).join('</b>, <b>')}</b></span>`:'';
 const studied=a=>{const it=S.items[a.code];return it&&(it.learned||it.r+it.w>0);};
 /* look-alikes in the same set, closest first: same first two letters, then cities that start the same, then same first letter and state */
 const twinScore=(a,o)=>o.code.slice(0,2)===a.code.slice(0,2)?3:letters(o.city).slice(0,2)===letters(a.city).slice(0,2)?2:o.st===a.st?1:0;
@@ -255,7 +264,7 @@ function placeLabels(items,pts,o={}){
         const y0=uy<0?it.y-dist*.75-it.h:uy>0?it.y+dist*.75:it.y-it.h/2;
         const R={x0,y0,x1:x0+it.w,y1:y0+it.h};
         let sc=ring*45+(ux&&uy?5:0)+(Math.max(0,F.x0-R.x0)+Math.max(0,R.x1-F.x1)+Math.max(0,F.y0-R.y0)+Math.max(0,R.y1-F.y1))*80;
-        for(const q of placed)sc+=ov(R,q)*14;for(const q of obst)sc+=ov(R,q)*9;for(const q of it.no||[])sc+=ov(R,q)*40;
+        for(const q of placed)sc+=ov(R,q)*14;for(const q of obst)sc+=ov(R,q)*(o.ow||9);for(const q of it.no||[])sc+=ov(R,q)*40;
         // never let a label sit closer to another city's dot than to its own (it would teach the wrong spot)
         {const dr=p=>Math.hypot(Math.max(R.x0-p.x,0,p.x-R.x1),Math.max(R.y0-p.y,0,p.y-R.y1)),own=dr(it);
           for(const q of pts){if(q.x===it.x&&q.y===it.y)continue;const d=dr(q);if(d<own+4)sc+=900+(own+4-d)*40;}}
@@ -358,6 +367,18 @@ function clockHTML(zones,{short=false,cls=''}={}){if(!zones.length)return '';
 function tickClocks(){document.querySelectorAll('[data-tz]').forEach(el=>{const t=tzTime(el.dataset.tz);if(el.textContent!==t)el.textContent=t;});}
 const clockTimer=setInterval(tickClocks,5000);
 
+/* ================= easter eggs =================
+   ↑ ↑ ↓ ↓ ← → ← → B A anywhere outside a game: a plane flies across the top of the page.
+   In Air Defender, type UFO. On some maps a local legend peeks out now and then (jackalope, Bigfoot, Champ...).
+   In Tower Control, keep an eye on the call signs. On the home page, tap the Now Boarding sign a few times. */
+const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];let konamiAt=0;
+const onKonami=e=>{const key=e.key||'';if(!key||document.querySelector('#app.playing')||(e.target&&e.target.tagName==='INPUT'))return;const k=key.length===1?key.toLowerCase():key;
+  konamiAt=k===KONAMI[konamiAt]?konamiAt+1:(k===KONAMI[0]?1:0);if(konamiAt<KONAMI.length)return;konamiAt=0;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){toast('Cleared for takeoff ✈');return;}
+  const el=document.createElement('div');el.className='flyby';el.setAttribute('aria-hidden','true');
+  el.innerHTML=`<svg viewBox="-12 -10 24 20" width="54" height="44"><path fill="currentColor" d="M10 0C10-.9 9.2-1.3 8-1.3H-7.4L-10-.5V.5L-7.4 1.3H8C9.2 1.3 10 .9 10 0ZM1.8-1.2L-5.2-9.4H-6.6L-3.4-1.2ZM1.8 1.2L-5.2 9.4H-6.6L-3.4 1.2ZM-7.2-1L-9.6-4.4H-10.4L-9.2-.8ZM-7.2 1L-9.6 4.4H-10.4L-9.2.8Z"/></svg><span>CLEARED FOR TAKEOFF</span>`;
+  root.appendChild(el);setTimeout(()=>el.remove(),5200);};
+document.addEventListener('keydown',onKonami);
 /* ================= router ================= */
 const main=$('#main');let cleanup=null,onHome=false;
 function go(fn,...args){if(cleanup){cleanup();cleanup=null;}onHome=fn===home;const ap=$('#app');ap.classList.remove('wide','playing');ap.classList.toggle('homewide',fn===home);window.scrollTo(0,0);fn(...args);}
@@ -370,25 +391,31 @@ if(fitRO)fitRO.observe($('#app'));
    Any element with class "livetop" fills itself from the world board. A new best
    anywhere pings every open app (Supabase Realtime), and boards re-check every 20 s. */
 const LIVE=bridge.online&&bridge.topScores?{cache:{},prev:{},busy:{}}:null;
+const LEVELS={defender:{cadet:'Cadet',pilot:'Pilot',ace:'Ace'},tower:{trainee:'Trainee',controller:'Controller',chief:'Chief'}};
+const GAME_NAMES={defender:'Air Defender',tower:'Tower Control'};
 const BOARD_NAMES={defender:{cadet:'Air Defender · Cadet',pilot:'Air Defender · Pilot',ace:'Air Defender · Ace'},tower:{trainee:'Tower · Trainee',controller:'Tower · Controller',chief:'Tower · Chief'}};
-function liveTopHTML(game,level,opts={}){if(!LIVE)return '';
-  return `<section class="livetop${opts.crt?' crtlt':''}" data-lt-game="${game}" data-lt-level="${level}" aria-live="polite">
-    <div class="lt-h"><span class="lt-dot" aria-hidden="true"></span><b>WORLD TOP 5</b><span class="lt-b">${esc(BOARD_NAMES[game]?.[level]||level)}</span><button class="lt-all" data-lt-open type="button">See all</button></div>
-    <ol class="lt-list"><li class="lt-msg">Loading the world board…</li></ol></section>`;}
+// opts: crt (game-screen look), n (rows to show, 5 by default), title/sub (header text), chips (extra markup under the header)
+function liveTopHTML(game,level,opts={}){if(!LIVE)return '';const n=opts.n||5;
+  return `<section class="livetop${opts.crt?' crtlt':''}${opts.cls?' '+opts.cls:''}" data-lt-game="${game}" data-lt-level="${level}" data-lt-n="${n}" aria-live="polite">
+    <div class="lt-h"><span class="lt-dot" aria-hidden="true"></span><b>${esc(opts.title||`WORLD TOP ${n}`)}</b>${opts.sub===''?'':`<span class="lt-b">${esc(opts.sub||BOARD_NAMES[game]?.[level]||level)}</span>`}<button class="lt-all" data-lt-open type="button">See all</button></div>
+    ${opts.chips||''}<ol class="lt-list"><li class="lt-msg">Loading the world board…</li></ol></section>`;}
 async function liveFetch(k,force){if(!LIVE)return null;const [g,l]=k.split('/'),c=LIVE.cache[k];
   if(!force&&c&&Date.now()-c.t<15000)return c;if(LIVE.busy[k])return LIVE.busy[k];
   LIVE.busy[k]=(async()=>{try{const d=await bridge.topScores(g,l,5);LIVE.cache[k]={t:Date.now(),d:d||[]};}catch(e){LIVE.cache[k]={t:Date.now(),d:LIVE.cache[k]?.d||null,err:true};}delete LIVE.busy[k];return LIVE.cache[k];})();
   return LIVE.busy[k];}
-function liveRender(el,c,k){const ol=el.querySelector('.lt-list');if(!ol)return;if(c)el.dataset.ltDone='1';const me=(bridge.user&&bridge.user()||'').toLowerCase();
+// before = the scores this board showed last time, so rows that changed can flash
+function liveRender(el,c,before){const ol=el.querySelector('.lt-list');if(!ol)return;if(c)el.dataset.ltDone='1';const me=(bridge.user&&bridge.user()||'').toLowerCase(),n=+el.dataset.ltN||5;
   if(!c||!c.d){ol.innerHTML=`<li class="lt-msg">${c&&c.err?'Can\'t reach the world board right now.':'Loading the world board…'}</li>`;return;}
-  if(!c.d.length){ol.innerHTML='<li class="lt-msg">No scores yet. Be the first on the board.</li>';return;}
-  const before=LIVE.prev[k]||{};const now={};
-  ol.innerHTML=c.d.map(r=>{const id=r.name.toLowerCase();now[id]=r.score;const fresh=before[id]!==undefined&&before[id]!==r.score||(Object.keys(before).length&&before[id]===undefined);
-    return `<li class="${id===me?'me ':''}${fresh?'fresh':''}"><span class="rk">#${r.rank}</span><span class="nm">${esc(r.name)}${id===me?' <i>YOU</i>':''}</span><span class="mp">${esc(r.map||'')}</span><span class="sc">${Number(r.score).toLocaleString('en-US')}</span></li>`;}).join('');
-  LIVE.prev[k]=now;}
+  if(!c.d.length){ol.innerHTML='<li class="lt-msg">No scores yet. The top spot is wide open.</li>';return;}
+  const seen=Object.keys(before).length>0;
+  ol.innerHTML=c.d.slice(0,n).map(r=>{const id=r.name.toLowerCase(),fresh=seen&&before[id]!==r.score;
+    return `<li class="${id===me?'me ':''}${fresh?'fresh ':''}${r.rank<=3?'m'+r.rank:''}"><span class="rk">#${r.rank}</span><span class="nm">${esc(r.name)}${id===me?' <i>YOU</i>':''}</span><span class="mp">${esc(r.map||'')}</span><span class="sc">${Number(r.score).toLocaleString('en-US')}</span></li>`;}).join('');}
 async function liveRefresh(force,only){if(!LIVE)return;const els=[...root.querySelectorAll('.livetop')];
   const keys=[...new Set(els.map(el=>el.dataset.ltGame+'/'+el.dataset.ltLevel))].filter(k=>!only||k===only);
-  for(const k of keys){const c=await liveFetch(k,force);for(const el of root.querySelectorAll('.livetop')){if(el.dataset.ltGame+'/'+el.dataset.ltLevel===k)liveRender(el,c,k);}}}
+  for(const k of keys){const c=await liveFetch(k,force),before=LIVE.prev[k]||{};
+    const sig=c&&c.d?JSON.stringify(c.d.map(r=>[r.name,r.score,r.map])):(c&&c.err?'err':'');
+    for(const el of root.querySelectorAll('.livetop')){if(el.dataset.ltGame+'/'+el.dataset.ltLevel!==k||(sig&&el.dataset.ltSig===sig))continue;el.dataset.ltSig=sig;liveRender(el,c,before);}
+    if(c&&c.d)LIVE.prev[k]=Object.fromEntries(c.d.map(r=>[r.name.toLowerCase(),r.score]));}}
 let liveTimer=0,liveUnsub=null,liveMO=null;
 if(LIVE){
   root.addEventListener('click',e=>{const b=e.target.closest('[data-lt-open]');if(!b)return;const el=b.closest('.livetop');bridge.openLeaderboard(el.dataset.ltGame,el.dataset.ltLevel);});
@@ -396,7 +423,8 @@ if(LIVE){
   let moQ=0;liveMO=new MutationObserver(()=>{if(moQ)return;moQ=requestAnimationFrame(()=>{moQ=0;if(root.querySelector('.livetop:not([data-lt-done])'))liveRefresh(false);});});
   liveMO.observe(root,{childList:true,subtree:true});
   liveTimer=setInterval(()=>{if(document.visibilityState==='visible'&&root.querySelector('.livetop'))liveRefresh(true);},20000);
-  if(bridge.onBoardChange)liveUnsub=bridge.onBoardChange(p=>{const k=(p.game||'')+'/'+(p.level||'');delete LIVE.cache[k];liveRefresh(true,k);});
+  // a ping from another player: wait a random moment first, so a whole classroom doesn't hit the board in the same instant
+  if(bridge.onBoardChange)liveUnsub=bridge.onBoardChange(p=>{const k=(p.game||'')+'/'+(p.level||'');delete LIVE.cache[k];setTimeout(()=>liveRefresh(true,k),p.local?0:200+Math.random()*1800);});
 }
 /* in-game: who you're chasing on the world board */
 function raceLine(game,level,score){if(!LIVE)return '';const c=LIVE.cache[game+'/'+level];if(!c||!c.d)return '';const d=c.d;
@@ -405,9 +433,16 @@ function raceLine(game,level,score){if(!LIVE)return '';const c=LIVE.cache[game+'
   const ahead=others.filter(r=>r.score>score),pos=ahead.length+1,fmt=n=>Number(n).toLocaleString('en-US');
   if(pos===1)return `WORLD #1 PACE · ${others[0]?`AHEAD OF ${esc(others[0].name)} (${fmt(others[0].score)})`:'NOBODY CLOSE'}`;
   const tgt=ahead[ahead.length-1];return pos<=5?`WORLD #${pos} PACE · NEXT: ${esc(tgt.name)} ${fmt(tgt.score)} (+${fmt(tgt.score-score)})`:`TOP 5 NEEDS ${fmt(d[Math.min(4,d.length-1)].score)} · #1 ${esc(d[0].name)} ${fmt(d[0].score)}`;}
+/* home: one top-3 board per game, with chips to flip between its three levels */
+function homeBoard(g){const L=LEVELS[g],lv=L[S.hlv[g]]?S.hlv[g]:Object.keys(L)[0];
+  const chips=`<div class="lt-lv" role="group" aria-label="${GAME_NAMES[g]} level">${Object.entries(L).map(([k,n])=>`<button type="button" class="lt-lvb${k===lv?' on':''}" data-hlv="${g}" data-l="${k}" aria-pressed="${k===lv}">${n}</button>`).join('')}</div>`;
+  return liveTopHTML(g,lv,{n:3,title:GAME_NAMES[g].toUpperCase(),sub:'',chips,cls:'lt-home lt-'+g+(g==='tower'?' radar':'')});}
 function topbar(t,r='',zones=null){const z=zones||zonesOf(SET());
   return `<div class="bar"><button class="back" data-home>‹ Home</button><span class="bar-t">${t}</span>${z.length?`<span class="bar-c" aria-label="Local time">${clockHTML(z,{short:z.length>2})}</span>`:''}<span class="bar-r" id="barR">${r}</span></div>`;}
-main.addEventListener('click',e=>{if(e.target.closest('[data-home]'))go(home);const m=e.target.closest('.mapbox');if(!m||e.target.closest('button,a,input'))return;
+main.addEventListener('click',e=>{if(e.target.closest('[data-home]'))go(home);
+  // level chips on each home board swap just that board
+  const hb=e.target.closest('[data-hlv]');if(hb){const g=hb.dataset.hlv;S.hlv[g]=hb.dataset.l;save();const el=main.querySelector(`.livehome .livetop[data-lt-game="${g}"]`);if(el){el.outerHTML=homeBoard(g);liveRefresh(false);}return;}
+  const m=e.target.closest('.mapbox');if(!m||e.target.closest('button,a,input'))return;
   const svg=m.querySelector('svg'),r=(svg||m).getBoundingClientRect(),fx=(e.clientX-r.left)/r.width,fy=(e.clientY-r.top)/r.height;
   // zoom in around the spot that was tapped, so the right-hand maps don't slide off screen
   if(m.classList.toggle('zoomed')&&svg)requestAnimationFrame(()=>{const R=svg.getBoundingClientRect();m.scrollLeft=Math.max(0,fx*R.width-m.clientWidth/2);
@@ -418,22 +453,30 @@ function wireInput(onThree){const inp=$('#ans');inp.focus({preventScroll:true});
   inp.oninput=()=>{inp.value=inp.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);if(inp.value.length===3)onThree(inp.value);};
   $('#f').onsubmit=e=>{e.preventDefault();if(inp.value.length===3)onThree(inp.value);};return inp;}
 const ANSWER=(btn='Check')=>`<form class="answer" id="f" autocomplete="off"><input id="ans" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="3" placeholder="···" aria-label="Airport code"><button class="btn primary" type="submit">${btn}</button></form>`;
+/* a city's landmark drawn into a little canvas: <canvas data-lmk="CYS" data-bg="--panel"> (page colors) or data-crt (game-screen colors) */
+const lmkHTML=(code,bg='--panel',crt=false)=>knownFor(code)?`<canvas class="lmk" aria-hidden="true" data-lmk="${code}" data-bg="${bg}"${crt?' data-crt="1"':''}></canvas>`:'';
+function paintLandmarks(scope=root){
+  scope.querySelectorAll('canvas[data-lmk]').forEach(cv=>{const crt=!!cv.dataset.crt,cs=getComputedStyle(crt&&cv.closest('.crt')||document.documentElement),G=n=>cs.getPropertyValue(n).trim();
+    const col=crt?G('--crt-hi'):G('--ink'),bg=crt?G('--crt-bg'):G(cv.dataset.bg||'--panel'),acc=crt?G('--crt-amber'):G('--ochre');
+    const w=cv.clientWidth||48,h=cv.clientHeight||44,d=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(w*d);cv.height=Math.round(h*d);
+    const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);drawLandmark(x,cv.dataset.lmk,w/2,h-1,Math.min(w,h*24/23),col,bg,acc,0);});}
+const onThemeAll=()=>requestAnimationFrame(()=>paintLandmarks());window.addEventListener('act-theme',onThemeAll);
 function shakeEl(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
 
 /* ================= home ================= */
 const MODES=[
  {id:'school',name:'Flight School',tag:'Start here',desc:'Step-by-step lessons. A few codes at a time.'},
- {id:'recall',name:'Recall',tag:'Type it',desc:'See the city, type the code. The strongest practice.'},
- {id:'quick',name:'Quick Fire',tag:'60 seconds',desc:'Rapid multiple choice. Chain answers for combos.',best:()=>S.best.quick?`Best ${S.best.quick} pts`:''},
- {id:'match',name:'Match',tag:'Tap pairs',desc:'Pair cities with their codes against the clock.',best:()=>S.best.match?`Best ${fmtTime(S.best.match)}`:''},
+ {id:'recall',name:'Recall',tag:'Type it',desc:'See the city, type the code. Best way to make it stick.'},
+ {id:'quick',name:'Quick Fire',tag:'60 seconds',desc:'A minute of multiple choice. Keep a streak going for bonus points.',best:()=>S.best.quick?`Best ${S.best.quick} pts`:''},
+ {id:'match',name:'Match',tag:'Tap pairs',desc:'Pair each city with its code, fast.',best:()=>S.best.match?`Best ${fmtTime(S.best.match)}`:''},
  {id:'map',name:'Map Run',tag:'Locate',desc:'An airport lights up on the map. Name its code.'},
- {id:'mock',name:'Mock Test',tag:'Test mode',desc:'No hints, results at the end.',best:()=>S.best.mock?`Best ${S.best.mock}%`:''},
+ {id:'mock',name:'Mock Test',tag:'Test mode',desc:'No hints. You see your score at the end.',best:()=>S.best.mock?`Best ${S.best.mock}%`:''},
 ];
 const VIEWS={school:()=>school(),recall:needSet(()=>recall()),quick:needSet(()=>quick()),match:needSet(()=>match()),map:needSet(()=>mapPick()),mock:needSet(()=>mock()),defender:needSet(()=>defender()),tower:needSet(()=>tower())};
 function challengeHTML(){const d=DECKMAP.top50;if(!d||!d.sub)return '';
   const areas=[['all',`All ${d.airports.length}`,d.airports],...d.sub.map((sd,i)=>[String(i),sd.name,sd.airports])],cur=areas.some(x=>x[0]===S.area)?S.area:'all';
   return `<section class="feature chal" aria-label="50 Busiest Challenge"><span class="t">50 BUSIEST CHALLENGE</span>
-    <span class="d">The busiest airports in the U.S. on six regional maps. Pick an area to cover, or take on all of them. Works whatever set you're studying.</span>
+    <span class="d">The 50 busiest airports in the U.S., split into six regions. Pick one region or play all 50. It doesn't matter which set you're studying.</span>
     <div class="areas" role="radiogroup" aria-label="Area to cover">${areas.map(([k,n,ap])=>`<button type="button" class="area${k==='all'?' all':''}${k===cur?' on':''}" role="radio" aria-checked="${k===cur}" data-area="${k}"><b>${esc(n.toUpperCase())}</b><span class="ac">${k==='all'?`${zonesOf(ap).length} time zones · coast to coast`:`${ap.length} airports`}</span>${k==='all'?'':clockHTML(zonesOf(ap),{short:true})}</button>`).join('')}</div>
     <div class="chgo"><button type="button" class="cbtn" id="chAD">AIR DEFENDER</button><button type="button" class="cbtn" id="chTC">TOWER CONTROL</button></div></section>`;}
 function home(){
@@ -452,7 +495,7 @@ function home(){
     <span class="k">Airport code study deck</span>
     <h1>Airport Code Trainer</h1>
     ${(()=>{const z=zonesOf(set);return z.length?`<div class="clockrow" aria-label="Local time"><span class="k">Local time</span>${clockHTML(z)}</div>`:'';})()}
-    <div class="boarding" aria-hidden="true"><span class="k">Now boarding</span><span id="bf">${flaps(set.find(studied)?set.find(studied).code:'???')}</span><span class="city" id="bc">${esc((set.find(studied)||set[0]||AP[0]).place)}</span></div>
+    <div class="boarding" aria-hidden="true" style="cursor:default"><span class="k">Now boarding</span><span id="bf">${flaps(set.find(studied)?set.find(studied).code:'???')}</span><span class="city" id="bc">${esc((set.find(studied)||set[0]||AP[0]).place)}</span></div>
   </header>
   ${doneN===0?`<section class="panel welcome"><h2>Never studied these before?</h2>
     <p>Every airport has a three-letter code. It's on bag tags, tickets and departure boards. For your test you'll match each city to its code.</p>
@@ -469,29 +512,26 @@ function home(){
   <button class="feature" id="feat"><span class="t">AIR DEFENDER</span><span class="d">Bombs are falling on the map. Type a city's code to shoot them down.</span><span class="b">${topHS?`HIGH SCORE<br>${topHS}`:'NEW GAME'}</span></button>
   <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">You run the control tower. Pilots don't know the codes: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<br>${topTS}`:'NEW GAME'}</span></button>
   ${challengeHTML()}
-  ${LIVE?`<section class="livehome"><div class="lt-tabs" role="tablist">${[['defender',DIFFS[S.diff]?S.diff:'cadet','Air Defender'],['tower',S.tdiff||'trainee','Tower']].map(([g,l,t])=>`<button role="tab" class="lt-tab${g===S.ltab?' on':''}" data-ltab="${g}" data-g="${g}" data-l="${l}">${t}</button>`).join('')}</div>
-    ${S.ltab==='tower'?liveTopHTML('tower',S.tdiff||'trainee'):liveTopHTML('defender',DIFFS[S.diff]?S.diff:'cadet')}</section>`:''}
+  ${LIVE?`<section class="livehome" aria-label="World top 3 for both games"><h2 class="lh-t">World Top 3</h2>${homeBoard('defender')}${homeBoard('tower')}</section>`:''}
   </div><div class="hmain2">
   <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="k">${m.tag}</span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
   <section class="panel board">
     <h2>Departures Board</h2>
-    <p class="note">Each code has 5 bars. Flight School and picking from choices fill the first 2. Bars 3 to 5 fill when you type the code from memory <b>on later days</b>, so a perfect first day still shows 2 bars. That's spaced review working. Tap a row to review it.</p>
+    <p class="note">Each code has 5 bars. Lessons and multiple choice fill the first 2. The last 3 only fill when you type the code from memory <b>on a later day</b>, so even a perfect first day stops at 2. Tap a row to see its trick.</p>
     <p class="legend"><span class="g0"><i></i>Easy Three</span><span class="g1"><i></i>Hidden Letters</span><span class="g2"><i></i>Story Codes</span></p>
     ${set.map(a=>{const b=S.items[a.code].box;return `<button class="brow g${a.g}" data-card="${a.code}">${studied(a)?flaps(a.code):flaps('???')}<span class="city">${esc(a.place)}</span><span class="pips" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?'on':''}"></i>`).join('')}</span></button>`;}).join('')||'<p class="note">No codes picked yet.</p>'}
   </section>
   <details class="why"><summary>Why the games work this way</summary>
     <ul>
-      <li><b>Recall beats rereading.</b> Pulling an answer out of your head builds memory far better than staring at a list. That's why most games make you type the code.</li>
-      <li><b>Short spaced sessions beat cramming.</b> Coming back after you've forgotten a little is what makes it stick. Missed codes come back sooner; known codes wait longer.</li>
-      <li><b>Memory tricks speed up learning,</b> but they fade unless you keep reviewing. Flight School gives you the trick, the games keep it fresh.</li>
-      <li><b>Mixing it up helps.</b> Wrong choices are look-alike codes${(()=>{const s=selSet();for(const a of AP){if(!s.has(a.code))continue;const t=twins(a).find(o=>s.has(o.code));if(t)return ` (${a.code} vs ${t.code})`;}return '';})()} so you learn to tell them apart.</li>
+      <li>Typing a code from memory works better than rereading a list, so most of the games make you type it.</li>
+      <li>A few minutes a day beats one long cram session. Codes you miss come back sooner, and codes you know wait longer.</li>
+      <li>The memory tricks get you started fast, but they fade if you stop practicing. That's what the games are for.</li>
+      <li>The wrong answers are look-alike codes${(()=>{const s=selSet();for(const a of AP){if(!s.has(a.code))continue;const t=twins(a).find(o=>s.has(o.code));if(t)return ` (${a.code} vs ${t.code})`;}return '';})()} so you learn to tell them apart.</li>
     </ul>
   </details>
   <div class="foot"><span id="sync">${syncText}</span><button class="link" id="reset">Reset progress</button></div>
   <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div></div></div>`;
   $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);
-  main.querySelectorAll('[data-ltab]').forEach(b=>b.onclick=()=>{S.ltab=b.dataset.ltab;save();main.querySelectorAll('[data-ltab]').forEach(x=>x.classList.toggle('on',x===b));
-    const el=main.querySelector('.livehome .livetop');el.outerHTML=liveTopHTML(b.dataset.g,b.dataset.l);liveRefresh(false);});
   // 50 Busiest Challenge: pick an area (or all 50), then a game. Plays the 50 Busiest whatever set is being studied.
   main.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>{S.area=b.dataset.area;save();main.querySelectorAll('[data-area]').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',on);});});
   {const a=$('#chAD'),t=$('#chTC');if(a)a.onclick=()=>go(defender,{ch:true,sec:S.area});if(t)t.onclick=()=>go(tower,{ch:true,sec:S.area});}
@@ -501,7 +541,10 @@ function home(){
   $('#rcNo').onclick=()=>$('#rc').hidden=true;
   $('#rcYes').onclick=()=>{S=blank();rebuild();save();go(home);toast('Progress erased');};
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches,cyc=(set.filter(studied).length?set.filter(studied):set.length?set:AP);
-  if(!reduce){let k=0;const iv=setInterval(()=>{k=(k+1)%cyc.length;const a=cyc[k];$('#bf').innerHTML=flaps(studied(a)?a.code:'???',true);$('#bc').textContent=a.place;},2600);cleanup=()=>clearInterval(iv);}
+  let taps=0,tapT=0,held=0;
+  $('.boarding').addEventListener('click',()=>{clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1200);if(++taps<5)return;taps=0;held=Date.now()+4200;
+    $('#bf').innerHTML=flaps('YAY',true);$('#bc').textContent=['Gate 42 · Flight to anywhere','Now boarding: you, first class','Gate B4 · Snacks are free today'][Math.floor(Math.random()*3)];});
+  if(!reduce){let k=0;const iv=setInterval(()=>{if(Date.now()<held)return;k=(k+1)%cyc.length;const a=cyc[k];$('#bf').innerHTML=flaps(studied(a)?a.code:'???',true);$('#bc').textContent=a.place;},2600);cleanup=()=>{clearInterval(iv);clearTimeout(tapT);};}
 }
 
 /* ================= picker ================= */
@@ -509,10 +552,10 @@ function picker(){
   let err='';const open=new Set();
   function setRow(d,s){const on=d.airports.filter(a=>s.has(a.code)).length,n=d.airports.length,m=d.airports.filter(a=>S.items[a.code].box>=4).length;
     return `<div class="setrow${on===n?' on':on?' part':''}${d.tag?' hard':''}">
-      <label class="deck-h"><input type="checkbox" data-deck="${d.id}" ${on===n?'checked':''}><span class="sn"><b>${esc(d.name)}${d.tag?` <span class="tagb">${esc(d.tag)}</span>`:''}</b><span class="k">${n} codes · ${m} mastered</span>${(()=>{const z=zonesOf(d.airports);return z.length?`<span class="tzline">${z.length>1?`${z.length} time zones: `:''}${clockHTML(z,{short:z.length>3})}</span>`:'';})()}</span></label>
+      <label class="deck-h"><input type="checkbox" data-deck="${d.id}" ${on===n?'checked':''}><span class="sn"><b>${esc(d.name)}${d.tag?` <span class="tagb">${esc(d.tag)}</span>`:''}</b><span class="k">${n} codes${(()=>{const t=d.airports.reduce((k,a)=>k+namesOf(a).length,0);return t>n?` · ${t} names`:'';})()} · ${m} mastered</span>${(()=>{const z=zonesOf(d.airports);return z.length?`<span class="tzline">${z.length>1?`${z.length} time zones: `:''}${clockHTML(z,{short:z.length>3})}</span>`:'';})()}</span></label>
       <button class="btn sm" data-only="${d.id}">Study only this</button>
       <details data-open="${d.id}" ${open.has(d.id)?'open':''}><summary>Pick single codes</summary>
-      ${d.airports.map(a=>`<div class="pickrow"><label class="pick"><input type="checkbox" data-code="${a.code}" ${s.has(a.code)?'checked':''}>${flaps(a.code)}<span class="c">${esc(a.place)}</span></label>${d.custom?`<button class="link" data-rm="${a.code}">Remove</button>`:''}</div>`).join('')}
+      ${d.airports.map(a=>`<div class="pickrow"><label class="pick"><input type="checkbox" data-code="${a.code}" ${s.has(a.code)?'checked':''}>${flaps(a.code)}<span class="c">${esc(namesOf(a).join(' · '))}</span></label>${d.custom?`<button class="link" data-rm="${a.code}">Remove</button>`:''}</div>`).join('')}
       </details></div>`;}
   function render(){const s=selSet();
     const groups=[...REGIONS,'My Codes'].map(r=>[r,ALLDECKS.filter(d=>d.region===r)]).filter(g=>g[1].length);
@@ -573,22 +616,23 @@ function lesson(L){
     if(s.t==='meet'){
       h+=`<span class="k">New code ${s.n} of ${L.codes.length}</span>
       ${s.n===1?`<div class="pattern g${L.g}"><b>This lesson's pattern: ${GROUPS[L.g].name}.</b> ${GROUPS[L.g].sub}</div>`:''}
-      <div class="prompt">${esc(a.place)}</div>
+      <div class="prompt">${esc(a.place)}</div>${alsoHTML(a)}
       <div>${flaps(a.code,true,'huge')}</div>
       ${a.g<2?`<p><span class="k">See it in the name</span><br><span style="font-size:1.4rem;font-weight:700">${hl(a)}</span></p>`:'<p><span class="k">The trick</span></p>'}
       ${(()=>{const sel=selSet(),T=twins(a).filter(o=>sel.has(o.code)).slice(0,3);return T.length?`<p class="careful">Careful, look-alike: ${T.map(o=>`<b>${o.code}</b> is ${esc(o.place)}`).join(' · ')}</p>`:'';})()}
       <p class="lead">${esc(a.tip)}</p>
+      ${knownFor(a.code)?`<p class="kf">${lmkHTML(a.code,'--paper')}<span><b>Known for</b> ${esc(knownFor(a.code))}</span></p>`:''}
       <button class="btn primary big" id="nx">Got it</button>
       ${deck.region?`<div class="mapbox">${mapSVG(regionOf(deck,a.code),{target:a.code,codes:new Set([a.code]),all:true})}</div>`:''}`;
     }else if(s.t==='copy'){
       h+=`<span class="k">Your turn · copy it</span><div class="prompt">${esc(a.place)}</div>
       <p class="lead">Type <b class="ghost" style="font-size:1.3rem">${a.code}</b> to lock it in.</p>${ANSWER('Enter')}<div class="fb" id="fb"></div>`;
     }else{
-      h+=`<span class="k">${s.review?'From an earlier lesson · no peeking':'Memory check · no peeking'}</span><div class="prompt">${esc(a.place)}</div>${ANSWER()}
+      h+=`<span class="k">${s.review?'From an earlier lesson · no peeking':'Memory check · no peeking'}</span><div class="prompt">${esc(s.nm||(s.nm=anyName(a)))}</div>${ANSWER()}
       <div class="fb" id="fb" aria-live="polite"></div><div class="row"><button class="btn" type="button" id="idk">I don't remember</button></div>`;
     }
     main.innerHTML=h+`</div>`;
-    if(s.t==='meet'){$('#nx').onclick=next;$('#nx').focus({preventScroll:true});return;}
+    if(s.t==='meet'){paintLandmarks(main);$('#nx').onclick=next;$('#nx').focus({preventScroll:true});return;}
     let mode='ask';
     const inp=wireInput(v=>{
       if(mode==='lock')return;
@@ -597,12 +641,12 @@ function lesson(L){
         else{inp.value='';shakeEl(inp);$('#fb').innerHTML=`<span class="tipline">Copy it exactly: <b>${a.code}</b></span>`;}
         return;}
       if(v===a.code){mode='lock';inp.disabled=true;if(!missed.has(a.code))grade(a.code,true,'recall');
-        $('#fb').innerHTML=`<span class="ok">Right! ${a.code} · ${esc(a.place)}</span>`;timer=setTimeout(next,900);}
+        $('#fb').innerHTML=`<span class="ok">Right! ${a.code} · ${esc(s.nm||a.place)}</span>`;timer=setTimeout(next,900);}
       else miss(v);});
     const miss=v=>{mode='fix';missed.add(a.code);grade(a.code,false,'recall');
       extra[a.code]=(extra[a.code]||0)+1;if(extra[a.code]<=3)steps.push({t:'quiz',c:a.code});
       $('#barR').textContent=`${i+1}/${steps.length}`;
-      $('#fb').innerHTML=`<span class="no">${v?`${esc(v)} isn't it. `:''}${esc(a.place)} is</span>${flaps(a.code,true)}<span class="tipline">${esc(a.tip)}</span><span class="tipline">Type <b>${a.code}</b> now. It'll come back once more before the lesson ends.</span>`;
+      $('#fb').innerHTML=`<span class="no">${v?`${esc(v)} isn't it. `:''}${esc(s.nm||a.place)} is</span>${flaps(a.code,true)}<span class="tipline">${esc(a.tip)}</span><span class="tipline">Type <b>${a.code}</b> now. It'll come back once more before the lesson ends.</span>`;
       inp.value='';inp.focus();const b=$('#idk');if(b)b.disabled=true;};
     const idk=$('#idk');if(idk)idk.onclick=()=>{if(mode==='ask')miss('');};
   }
@@ -630,11 +674,11 @@ function cheat(focus){
     <p class="note">Tap a map to zoom in. Tap again to zoom out.</p>
     <label class="toggle"><input type="checkbox" id="hide" ${hide?'checked':''}> Hide codes and test myself</label>
     ${GROUPS.map((g,gi)=>{const list=SET().filter(a=>a.g===gi);if(!list.length)return '';return `<section class="group g${gi}"><header><span class="k">Pattern ${gi+1} of 3</span><h2>${g.name}</h2><p>${g.sub}</p></header>
-      ${list.map(a=>`<article class="card g${gi}" id="card-${a.code}"><div class="card-top">${hide?`<span class="flaps covered" data-rev="${a.code}" role="button" tabindex="0" aria-label="Reveal code">${[0,1,2].map(()=>'<span class="flap">?</span>').join('')}</span>`:flaps(a.code)}<h3>${hl(a)}</h3></div><p>${esc(a.tip)}</p></article>`).join('')}</section>`;}).join('')}
+      ${list.map(a=>`<article class="card g${gi}" id="card-${a.code}"><div class="card-top">${hide?`<span class="flaps covered" data-rev="${a.code}" role="button" tabindex="0" aria-label="Reveal code">${[0,1,2].map(()=>'<span class="flap">?</span>').join('')}</span>`:flaps(a.code)}<h3>${hl(a)}</h3></div>${alsoHTML(a)}<p>${esc(a.tip)}</p>${knownFor(a.code)?`<p class="kf">${lmkHTML(a.code)}<span><b>Known for</b> ${esc(knownFor(a.code))}</span></p>`:''}</article>`).join('')}</section>`;}).join('')}
     <button class="btn primary big" id="toRecall">Practice with Recall</button>`;
     $('#hide').onchange=e=>{hide=e.target.checked;const y=window.scrollY;render();window.scrollTo(0,y);};
     main.querySelectorAll('[data-rev]').forEach(el=>{const f=()=>{el.outerHTML=flaps(el.dataset.rev,true);};el.onclick=f;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}};});
-    $('#toRecall').onclick=()=>go(VIEWS.recall);
+    $('#toRecall').onclick=()=>go(VIEWS.recall);paintLandmarks(main);
   }
   render();
   if(focus){const el=document.getElementById('card-'+focus);if(el){el.scrollIntoView({block:'center'});el.style.borderColor='var(--gc)';}}
@@ -643,22 +687,22 @@ function cheat(focus){
 /* ================= recall ================= */
 function recall(opts={}){
   const queue=opts.list?opts.list.slice():pickQueue(Math.min(10,Math.max(6,SET().length*2)));
-  let i=0,firstTry=0,xp=0,hints=0,mode='ask',timer=null;const missed=new Set(),reins=new Set(),hinted=new Set();
+  let i=0,firstTry=0,xp=0,hints=0,mode='ask',timer=null,asked='';const missed=new Set(),reins=new Set(),hinted=new Set();
   const title=opts.title||(opts.list?'Your Misses':'Recall');
   function render(){
-    const a=homeOf(queue[i]),deck=DECKMAP[a.deck];mode='ask';hints=0;
+    const a=homeOf(queue[i]),deck=DECKMAP[a.deck];mode='ask';hints=0;asked=anyName(a);
     main.innerHTML=topbar(title,`${i+1}/${queue.length}`)+`
     <div class="progress"><i style="width:${i/queue.length*100}%"></i></div>
     <div class="stage">
       <span class="k">Type the code for</span>
-      <div class="prompt">${esc(a.place)}</div>${ANSWER()}
+      <div class="prompt">${esc(asked)}</div>${ANSWER()}
       <div class="fb" id="fb" aria-live="polite"></div>
       <div class="row"><button class="btn" type="button" id="hint">Hint</button><button class="btn" type="button" id="skip">I don't know</button></div>
       ${deck.region?`<div class="mapbox">${mapSVG(regionOf(deck,a.code),{target:a.code,dim:true})}</div>`:''}
     </div>`;
     const inp=wireInput(v=>check(v));
     $('#hint').onclick=()=>{if(mode!=='ask')return;hints++;const g=GROUPS[a.g];
-      $('#fb').innerHTML=hints===1?`<span class="tipline">Clue: <b>${esc(a.clue)}</b>. It starts with <b>${a.code[0]}</b>.</span>`:`<span class="tipline">${esc(a.tip)}</span>`;
+      $('#fb').innerHTML=hints===1?`<span class="tipline">Clue: <b>${esc(clueFor(a,asked))}</b>. It starts with <b>${a.code[0]}</b>.</span>`:`<span class="tipline">${esc(a.tip)}</span>`;
       if(hints>=2)$('#hint').disabled=true;inp.focus();};
     $('#skip').onclick=()=>{if(mode==='ask')miss(a,'');};
   }
@@ -666,7 +710,7 @@ function recall(opts={}){
     grade(a.code,false,'recall');missed.add(a.code);
     if(!reins.has(a.code)){queue.splice(Math.min(queue.length,i+3),0,a.code);reins.add(a.code);$('#barR').textContent=`${i+1}/${queue.length}`;}
     mode='fix';
-    $('#fb').innerHTML=`<span class="no">${typed?`${esc(typed)} isn't it. `:''}${esc(a.place)} is</span>${flaps(a.code,true)}<span class="tipline">${esc(a.tip)}</span><span class="tipline">Type <b>${a.code}</b> once to lock it in.</span>`;
+    $('#fb').innerHTML=`<span class="no">${typed?`${esc(typed)} isn't it. `:''}${esc(asked||a.place)} is</span>${flaps(a.code,true)}<span class="tipline">${esc(a.tip)}</span><span class="tipline">Type <b>${a.code}</b> once to lock it in.</span>`;
     $('#hint').disabled=true;$('#skip').disabled=true;const inp=$('#ans');inp.value='';inp.focus();
   }
   function check(v){
@@ -674,7 +718,7 @@ function recall(opts={}){
     if(mode==='ask'){
       if(v===a.code){grade(a.code,true,hints?'hint':'recall');if(hints)hinted.add(a.code);if(!missed.has(a.code)&&!hints)firstTry++;
         const g=hints?5:15;xp+=g;addXP(g);mode='lock';inp.disabled=true;
-        $('#fb').innerHTML=`<span class="ok">Right! ${a.code} · ${esc(a.place)} · +${g} XP</span>`;timer=setTimeout(next,900);}
+        $('#fb').innerHTML=`<span class="ok">Right! ${a.code} · ${esc(asked||a.place)} · +${g} XP</span>`;timer=setTimeout(next,900);}
       else miss(a,v);
     }else if(mode==='fix'){
       if(v===a.code){mode='lock';inp.disabled=true;$('#fb').insertAdjacentHTML('beforeend','<span class="ok">Locked in.</span>');timer=setTimeout(next,600);}
@@ -695,7 +739,7 @@ function quick(){
   function newQ(){if(over)return;busy=false;
     const a=BY[pickQueue(1,prev)[0]];prev=a.code;cur=a;const dir=Math.random()<.5?'c2k':'k2c';
     $('#qa').innerHTML=`<span class="k">${dir==='c2k'?'Pick the code for':'Which city is'}</span>
-      <div class="prompt">${dir==='c2k'?esc(a.place):flaps(a.code,true,'huge')}</div>
+      <div class="prompt">${dir==='c2k'?esc(anyName(a)):flaps(a.code,true,'huge')}</div>
       <div class="opts">${options(a).map(o=>`<button class="opt" data-c="${o.code}">${dir==='c2k'?flaps(o.code):esc(o.place)}</button>`).join('')}</div>`;
     $('#qa').querySelectorAll('.opt').forEach(b=>b.onclick=()=>pick(b));}
   function pick(b){if(busy||over)return;busy=true;answered++;const ok=b.dataset.c===cur.code;
@@ -767,11 +811,11 @@ function mapRun(deck){
 function mock(){
   const pool=SET();
   // every typed question comes first, then the multiple choice, so no code is shown before you have to type it
-  let qs=[...shuffle(pool.map(a=>({t:'type',c:a.code}))),...shuffle(pickDistinct(Math.min(10,pool.length),pool).map(a=>({t:'mc',c:a.code})))];
+  let qs=[...shuffle(pool.flatMap(a=>namesOf(a).map(n=>({t:'type',c:a.code,n})))),...shuffle(pickDistinct(Math.min(10,pool.length),pool).map(a=>({t:'mc',c:a.code})))];
   let i=0;const ans=[],T=qs.length;
   function render(){const q=qs[i],a=BY[q.c];
     main.innerHTML=topbar('Mock Test',`${i+1}/${T}`)+`<div class="progress"><i style="width:${i/T*100}%"></i></div><div class="stage">`+
-    (q.t==='type'?`<span class="k">Write the code for</span><div class="prompt">${esc(a.place)}</div>${ANSWER('Next')}`
+    (q.t==='type'?`<span class="k">Write the code for</span><div class="prompt">${esc(q.n||a.place)}</div>${ANSWER('Next')}`
      :`<span class="k">Which city has this code?</span><div class="prompt">${flaps(a.code,false,'huge')}</div>
       <div class="opts">${options(a).map(o=>`<button class="opt" data-c="${o.code}">${esc(o.place)}</button>`).join('')}</div>`)+`</div>`;
     if(q.t==='type'){const inp=$('#ans');inp.focus({preventScroll:true});inp.oninput=()=>{inp.value=inp.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);};
@@ -782,9 +826,9 @@ function mock(){
     let n=0;ans.forEach(x=>{grade(x.c,x.ok,x.t==='type'?'recall':'recog');if(x.ok)n++;});
     const pct=Math.round(n/T*100),xp=n*4;addXP(xp);const isBest=pct>S.best.mock;if(isBest){S.best.mock=pct;save();}
     const wrong=ans.filter(x=>!x.ok);
-    summary({title:'Mock Test',big:pct+'%',sub:`${n}/${T} correct · ${pct>=90?`Test ready: you typed every one of the ${pool.length} codes from memory. The bars on the home board fill as you keep reviewing on later days.`:pct>=70?'Close. Drill the misses below, then retake.':'Go back to Flight School for the patterns, then Recall.'} · +${xp} XP${isBest?' · new best!':''}`,
+    summary({title:'Mock Test',big:pct+'%',sub:`${n}/${T} correct · ${pct>=90?'You\'re ready for the test. Keep reviewing on other days and the bars on the home board will fill up.':pct>=70?'Close. Practice the misses below, then take it again.':'Go back to Flight School for the patterns, then try Recall.'} · +${xp} XP${isBest?' · new best!':''}`,
       missed:[...new Set(wrong.map(x=>x.c))],again:()=>go(mock),
-      extra:wrong.length?`<span class="k">Your answers vs. correct</span>${wrong.map(x=>{const a=BY[x.c];return `<div class="mrow g${a.g}">${flaps(a.code)}<div><div class="c">${esc(a.place)}</div><div class="t">${x.t==='type'?`You wrote ${esc(x.v)}`:`You picked ${esc(BY[x.v]?.place||x.v)}`}</div></div></div>`;}).join('')}`:''});}
+      extra:wrong.length?`<span class="k">Your answers vs. correct</span>${wrong.map(x=>{const a=BY[x.c];return `<div class="mrow g${a.g}">${flaps(a.code)}<div><div class="c">${esc(x.n||a.place)}</div><div class="t">${x.t==='type'?`You wrote ${esc(x.v)}`:`You picked ${esc(BY[x.v]?.place||x.v)}`}</div></div></div>`;}).join('')}`:''});}
   render();
 }
 
@@ -798,87 +842,7 @@ function summary({title,big,sub,missed,again,extra='',noMissNote=''}){
   const dm=$('#drillMiss');if(dm)dm.onclick=()=>go(recall,{list:groupQueue(missed)});
 }
 
-/* ================= Air Defender art =================
-   Every city gets its own little skyline, built from its code, so it looks the same every game.
-   Famous cities get a landmark; small towns get a silo, water tower, church or barn.
-   All drawing is in map units around the city's dot; k scales it up on small screens. */
-const LANDMARKS={SEA:'needle',STL:'arch',DCA:'dome',IAD:'obelisk',BWI:'dome',MSY:'dome',ORD:'twin',MDW:'twin',ATL:'twin',DFW:'twin',DAL:'twin',CLT:'twin',MSP:'twin',DTW:'twin',
-  JFK:'spire',LGA:'spire',EWR:'spire',BOS:'spire',PHL:'spire',LAS:'tower',HNL:'palm',OGG:'palm',KOA:'palm',LIH:'palm',ITO:'palm',MIA:'palm',FLL:'palm',TPA:'palm',RSW:'palm',SAN:'palm',LAX:'palm',
-  PHX:'cactus',TUS:'cactus',ELP:'cactus',ABQ:'cactus',SFO:'bridge',OAK:'bridge',SJC:'bridge',PIT:'bridge',DEN:'peaks',SLC:'peaks',JAC:'peaks',COD:'peaks',BZN:'peaks',BOI:'peaks',ANC:'peaks',PDX:'peaks',
-  IAH:'rocket',HOU:'rocket',MCO:'rocket',MLB:'rocket',HSV:'rocket'};
-const TOWN_EXTRAS=['silo','water','steeple','barn','silo','water'];
-function hashStr(t){let h=2166136261;for(let i=0;i<t.length;i++)h=Math.imul(h^t.charCodeAt(i),16777619);return h>>>0;}
-function seeded(seed){let s=seed||1;return ()=>{s=Math.imul(s^(s>>>15),1|s);s^=s+Math.imul(s^(s>>>7),61|s);return ((s^(s>>>14))>>>0)/4294967296;};}
-const ARTC={};
-function cityArt(code,big){const key=code+(big?'*':'');if(ARTC[key])return ARTC[key];const r=seeded(hashStr(key));
-  const land=LANDMARKS[code]||null,extra=land||(big?null:TOWN_EXTRAS[Math.floor(r()*TOWN_EXTRAS.length)]);
-  const n=big?4+Math.floor(r()*3):2+Math.floor(r()*2),span=big?20:13,ws=[];for(let i=0;i<n;i++)ws.push(.7+r());
-  const sum=ws.reduce((a,b)=>a+b,0),gap=.8,unit=(span-gap*(n-1))/sum,b=[];let x=-span/2-(extra&&!big?3:0);
-  const tall=Math.floor(r()*n);
-  for(let i=0;i<n;i++){const w=ws[i]*unit,h=big?(i===tall?13+r()*4:5+r()*8):2.5+r()*3.5;
-    b.push({x,w,h,roof:big?['flat','flat','step','antenna','crown','slant'][Math.floor(r()*6)]:['flat','peak','peak','flat'][Math.floor(r()*4)],lit:Math.floor(r()*997)});x+=w+gap;}
-  return ARTC[key]={b,extra,big};}
-function drawCityArt(ctx,A,x,y,k,col,bg){ctx.save();ctx.translate(x,y+6*k);ctx.scale(k,k);ctx.fillStyle=col;ctx.strokeStyle=col;ctx.lineCap='round';
-  const E=A.extra;
-  // landmarks that stand behind the skyline
-  if(E==='peaks'){ctx.globalAlpha=.42;ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(-6,-13);ctx.lineTo(-2,-8);ctx.lineTo(3,-16);ctx.lineTo(11,0);ctx.fill();
-    ctx.globalAlpha=.9;ctx.fillStyle=bg;ctx.beginPath();ctx.moveTo(1,-12.8);ctx.lineTo(3,-16);ctx.lineTo(5,-12.8);ctx.lineTo(3,-13.8);ctx.fill();ctx.fillStyle=col;ctx.globalAlpha=1;}
-  if(E==='bridge'){ctx.lineWidth=.8;ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(-15,-4);ctx.lineTo(15,-4);ctx.stroke();
-    ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(-15,-6);ctx.quadraticCurveTo(-11,-14,-7,-16);ctx.quadraticCurveTo(0,-5,7,-16);ctx.quadraticCurveTo(11,-14,15,-6);ctx.stroke();
-    ctx.globalAlpha=1;ctx.fillRect(-7.8,-17,1.6,17);ctx.fillRect(6.2,-17,1.6,17);}
-  // the buildings, with a few windows punched out
-  for(const B of A.b){ctx.fillRect(B.x,-B.h,B.w,B.h);
-    if(B.roof==='step'&&B.w>2.2)ctx.fillRect(B.x+B.w*.22,-B.h-2,B.w*.56,2);
-    else if(B.roof==='antenna'){ctx.fillRect(B.x+B.w/2-.35,-B.h-4.5,.7,4.5);}
-    else if(B.roof==='crown'){ctx.beginPath();ctx.moveTo(B.x,-B.h);ctx.lineTo(B.x+B.w/2,-B.h-3);ctx.lineTo(B.x+B.w,-B.h);ctx.fill();}
-    else if(B.roof==='slant'){ctx.beginPath();ctx.moveTo(B.x,-B.h);ctx.lineTo(B.x+B.w,-B.h-2.5);ctx.lineTo(B.x+B.w,-B.h);ctx.fill();}
-    else if(B.roof==='peak'){ctx.beginPath();ctx.moveTo(B.x-.3,-B.h);ctx.lineTo(B.x+B.w/2,-B.h-2.2);ctx.lineTo(B.x+B.w+.3,-B.h);ctx.fill();}
-    if(B.w>=2.4&&B.h>=4){ctx.fillStyle=bg;let n=B.lit;for(let wy=-B.h+1.6;wy<-1.2;wy+=2.3)for(let wx=B.x+.7;wx<B.x+B.w-1;wx+=1.6){n=(n*31+7)%97;if(n%3)ctx.fillRect(wx,wy,.8,1);}ctx.fillStyle=col;}}
-  // landmarks in front
-  if(E==='needle'){const X=10;ctx.fillRect(X-.4,-17,.8,17);ctx.fillRect(X-2.2,-1,4.4,1);ctx.beginPath();ctx.ellipse(X,-15,4,1.3,0,0,7);ctx.fill();ctx.fillRect(X-1.6,-17,3.2,1.4);ctx.fillRect(X-.2,-21,.4,4);}
-  else if(E==='arch'){ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-9,0);ctx.bezierCurveTo(-8,-22,8,-22,9,0);ctx.stroke();}
-  else if(E==='dome'){const X=9;ctx.fillRect(X-5,-4,10,4);ctx.beginPath();ctx.arc(X,-4,3.8,Math.PI,0);ctx.fill();ctx.fillRect(X-.6,-10,1.2,2.4);ctx.fillRect(X-.25,-11.4,.5,1.4);}
-  else if(E==='obelisk'){const X=9;ctx.beginPath();ctx.moveTo(X-1.4,0);ctx.lineTo(X-.9,-16);ctx.lineTo(X,-18);ctx.lineTo(X+.9,-16);ctx.lineTo(X+1.4,0);ctx.fill();}
-  else if(E==='spire'){const X=8;ctx.fillRect(X-3,-11,6,11);ctx.fillRect(X-2,-14,4,3);ctx.fillRect(X-1.2,-16.5,2.4,2.5);ctx.fillRect(X-.3,-21,.6,4.5);}
-  else if(E==='twin'){for(const X of [6.5,10.5]){ctx.fillRect(X-1.6,-17,3.2,17);ctx.fillRect(X-.3,-20.5,.6,3.5);}}
-  else if(E==='tower'){const X=10;ctx.fillRect(X-.8,-16,1.6,16);ctx.fillRect(X-2.6,-17.5,5.2,2.6);ctx.fillRect(X-.25,-22,.5,4.5);ctx.fillRect(X-3,-1.2,6,1.2);}
-  else if(E==='palm'){const X=10;ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(X,0);ctx.quadraticCurveTo(X+2.2,-6,X+.8,-12);ctx.stroke();ctx.lineWidth=.9;
-    for(const [dx,dy] of [[-5,-9.5],[-3.5,-13.5],[4.6,-13],[5.4,-9.5],[.8,-15.5]]){ctx.beginPath();ctx.moveTo(X+.8,-12);ctx.quadraticCurveTo(X+.8+dx*.5,-12+(dy+12)*1.4-1.5,X+.8+dx,-12+(dy+12)*1.2+2);ctx.stroke();}}
-  else if(E==='cactus'){const X=10;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X,0);ctx.lineTo(X,-12);ctx.moveTo(X,-5);ctx.lineTo(X-3,-5);ctx.lineTo(X-3,-9);ctx.moveTo(X,-7);ctx.lineTo(X+3,-7);ctx.lineTo(X+3,-10.5);ctx.stroke();}
-  else if(E==='rocket'){const X=10;ctx.fillRect(X-1.3,-14,2.6,14);ctx.beginPath();ctx.moveTo(X-1.3,-14);ctx.lineTo(X,-18.5);ctx.lineTo(X+1.3,-14);ctx.fill();
-    ctx.beginPath();ctx.moveTo(X-1.3,-3.5);ctx.lineTo(X-3.2,0);ctx.lineTo(X-1.3,0);ctx.moveTo(X+1.3,-3.5);ctx.lineTo(X+3.2,0);ctx.lineTo(X+1.3,0);ctx.fill();ctx.fillStyle=bg;ctx.fillRect(X-1.3,-10,2.6,.8);ctx.fillStyle=col;}
-  else if(E==='silo'){const X=7;ctx.fillRect(X-1.8,-8,3.6,8);ctx.beginPath();ctx.arc(X,-8,1.8,Math.PI,0);ctx.fill();ctx.fillRect(X+2.2,-4,4.4,4);ctx.beginPath();ctx.moveTo(X+1.8,-4);ctx.lineTo(X+4.4,-6.2);ctx.lineTo(X+7,-4);ctx.fill();}
-  else if(E==='water'){const X=8;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(X-2.4,0);ctx.lineTo(X-1.5,-8);ctx.moveTo(X+2.4,0);ctx.lineTo(X+1.5,-8);ctx.moveTo(X-2,-3.5);ctx.lineTo(X+2,-3.5);ctx.stroke();
-    ctx.beginPath();ctx.ellipse(X,-9.6,3.2,2.2,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(X-1.6,-11.4);ctx.lineTo(X,-13);ctx.lineTo(X+1.6,-11.4);ctx.fill();}
-  else if(E==='steeple'){const X=7.5;ctx.fillRect(X-2.6,-5,5.2,5);ctx.beginPath();ctx.moveTo(X-3,-5);ctx.lineTo(X,-7.4);ctx.lineTo(X+3,-5);ctx.fill();ctx.fillRect(X-.9,-10,1.8,4);ctx.beginPath();ctx.moveTo(X-1.1,-10);ctx.lineTo(X,-14);ctx.lineTo(X+1.1,-10);ctx.fill();
-    ctx.fillStyle=bg;ctx.fillRect(X-.6,-2.4,1.2,2.4);ctx.fillStyle=col;}
-  else if(E==='barn'){const X=7.5;ctx.beginPath();ctx.moveTo(X-3.6,0);ctx.lineTo(X-3.6,-4.4);ctx.lineTo(X-2,-6.6);ctx.lineTo(X,-7.4);ctx.lineTo(X+2,-6.6);ctx.lineTo(X+3.6,-4.4);ctx.lineTo(X+3.6,0);ctx.fill();
-    ctx.strokeStyle=bg;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(X-1.4,0);ctx.lineTo(X-1.4,-3.2);ctx.lineTo(X+1.4,-3.2);ctx.lineTo(X+1.4,0);ctx.moveTo(X-1.4,-3.2);ctx.lineTo(X+1.4,0);ctx.moveTo(X+1.4,-3.2);ctx.lineTo(X-1.4,0);ctx.stroke();}
-  // ground
-  ctx.globalAlpha=.55;ctx.fillRect(-12,0,24,.9);ctx.restore();}
-/* incoming bombs come in three looks (finned, spiky mine, striped capsule); a split half is a small dart */
-function drawBombArt(ctx,b,k,clock,col,warn){const a=Math.atan2(b.uy,b.ux),s=k*(b.child?.75:1);ctx.save();ctx.translate(b.x,b.y);ctx.scale(s,s);
-  ctx.shadowColor=col.red;ctx.shadowBlur=8;const body=warn?col.amb:'#EEF3F1',band=warn?'#FFFFFF':col.red;
-  if(b.child||b.kind===2){ctx.rotate(a);ctx.fillStyle=body;ctx.beginPath();ctx.moveTo(6,0);ctx.quadraticCurveTo(3,-2.2,-3,-2.2);ctx.lineTo(-5,-1.2);ctx.lineTo(-5,1.2);ctx.lineTo(-3,2.2);ctx.quadraticCurveTo(3,2.2,6,0);ctx.fill();
-    ctx.shadowBlur=0;ctx.fillStyle=band;ctx.fillRect(-1.5,-2.2,1.3,4.4);ctx.fillRect(1.5,-2,1,4);
-    ctx.beginPath();ctx.moveTo(-3.2,-2);ctx.lineTo(-6.2,-3.8);ctx.lineTo(-5,-1);ctx.moveTo(-3.2,2);ctx.lineTo(-6.2,3.8);ctx.lineTo(-5,1);ctx.fill();}
-  else if(b.kind===1){ctx.rotate(clock*2.2+b.spin);ctx.fillStyle=body;ctx.beginPath();ctx.arc(0,0,3.4,0,7);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=band;
-    for(let i=0;i<6;i++){const t=i*Math.PI/3;ctx.save();ctx.rotate(t);ctx.fillRect(2.8,-.65,2.4,1.3);ctx.restore();}
-    ctx.beginPath();ctx.arc(0,0,1.3,0,7);ctx.fill();}
-  else{ctx.rotate(a);ctx.fillStyle=body;ctx.beginPath();ctx.ellipse(.8,0,4.6,2.8,0,0,7);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=band;
-    ctx.fillRect(1.6,-2.7,1.2,5.4);ctx.beginPath();ctx.moveTo(-2.6,-1.6);ctx.lineTo(-6.6,-4);ctx.lineTo(-6.6,4);ctx.lineTo(-2.6,1.6);ctx.fill();ctx.fillStyle=body;ctx.fillRect(-6.8,-.5,3,1);}
-  ctx.restore();}
-/* an interceptor: a little white rocket with a flickering flame */
-function drawRocketArt(ctx,m,k,col){const a=Math.atan2(m.b.y-m.y,m.b.x-m.x);ctx.save();ctx.translate(m.x,m.y);ctx.rotate(a);ctx.scale(k,k);
-  ctx.fillStyle=col.amb;ctx.globalAlpha=.9;ctx.beginPath();ctx.moveTo(-3,-1.1);ctx.lineTo(-5.5-Math.random()*3.5,0);ctx.lineTo(-3,1.1);ctx.fill();ctx.globalAlpha=1;
-  ctx.fillStyle='#FFFFFF';ctx.beginPath();ctx.moveTo(4.5,0);ctx.lineTo(2.2,-1.2);ctx.lineTo(-3,-1.2);ctx.lineTo(-3,1.2);ctx.lineTo(2.2,1.2);ctx.fill();
-  ctx.fillStyle=col.hi;ctx.beginPath();ctx.moveTo(-1.5,-1.2);ctx.lineTo(-3.6,-2.8);ctx.lineTo(-3,-1.2);ctx.moveTo(-1.5,1.2);ctx.lineTo(-3.6,2.8);ctx.lineTo(-3,1.2);ctx.fill();ctx.restore();}
-/* a launcher at the bottom of the map: a dome with a barrel that swings toward its last shot */
-function drawLauncherArt(ctx,L,k,col,H){ctx.save();ctx.translate(L.x,H);ctx.scale(k,k);ctx.fillStyle=col.mid;
-  ctx.save();ctx.rotate(L.ang+Math.PI/2);ctx.fillRect(-1.6,-15+(L.kick||0)*3,3.2,9);ctx.restore();
-  ctx.beginPath();ctx.arc(0,0,8.5,Math.PI,0);ctx.fill();ctx.fillStyle=col.lo;ctx.fillRect(-11,-1.2,22,1.2);
-  if(L.kick>0){ctx.globalAlpha=L.kick;ctx.fillStyle=col.amb;ctx.beginPath();ctx.arc(Math.cos(L.ang)*16,Math.sin(L.ang)*16,3.2,0,7);ctx.fill();ctx.globalAlpha=1;}
-  ctx.restore();}
+/* ================= game art lives in art.js (landmarks, bombs, launchers, airliners) ================= */
 /* ================= AIR DEFENDER ================= */
 /* hints: progress points (0 top → 1 city) where hint 1 (pattern), 2 (first letter), 3 (two letters), 4 (full code) unlock */
 const DIFFS={
@@ -892,7 +856,10 @@ function sfx(k){if(S.mute)return;try{if(!AC)AC=new (window.AudioContext||window.
   const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);
   const P={fire:['square',420,1500,.05,.13],boom:['sawtooth',200,40,.1,.4],hit:['triangle',130,28,.22,.8],bad:['square',150,110,.05,.16],wave:['square',520,1040,.05,.35],split:['sawtooth',900,300,.06,.25],tick:['square',1200,1100,.025,.05]}[k];if(!P)return;
   o.type=P[0];o.frequency.setValueAtTime(P[1],t);o.frequency.exponentialRampToValueAtTime(P[2],t+P[4]);g.gain.setValueAtTime(P[3],t);g.gain.exponentialRampToValueAtTime(.0001,t+P[4]+.02);o.start(t);o.stop(t+P[4]+.05);}catch(e){}}
-function hsTable(diff,hlIdx=-1){const L=S.hs[diff];if(!L.length)return `<p>No scores yet on ${DIFFS[diff].name}. Be the first.</p>`;
+// end-of-game card: one city's landmark, code and what it's known for
+function spotlightHTML(code,counts,word='save'){const a=BY[code];if(!a||!knownFor(code))return '';const n=counts&&counts[code]||0;
+  return `<div class="spot">${lmkHTML(code,'',true)}<div><span class="k">CITY SPOTLIGHT${n?` · ${n} ${word}${n===1?'':'s'}`:''}</span><b>${code} · ${esc(a.place)}</b><span>${esc(knownFor(code))}</span></div></div>`;}
+function hsTable(diff,hlIdx=-1){const L=S.hs[diff];if(!L.length)return `<p>No scores yet on ${DIFFS[diff].name}.</p>`;
   return `<table class="hs"><thead><tr><th>#</th><th>NAME</th><th>MAP</th><th class="n">WAVE</th><th class="n">SCORE</th></tr></thead><tbody>${L.map((r,i)=>`<tr class="${i===hlIdx?'me':''}"><td>${i+1}</td><td>${esc(r.n)}</td><td>${esc(r.m||'')}</td><td class="n">${r.w}</td><td class="n">${r.s}</td></tr>`).join('')}</tbody></table>`;}
 // opts.ch: the 50 Busiest Challenge (all 50 codes, whatever set is being studied); opts.sec: 'all' or a region index
 function defender(opts={}){
@@ -909,7 +876,7 @@ function defender(opts={}){
         <li>Type that city's <b>3-letter code</b> to fire an interceptor.</li>
         <li>The closer a bomb gets, the more help you get: <b>1</b> a clue, <b>2</b> the first letter, <b>3</b> two letters, <b>4</b> the whole code. Fewer hints, more points.</li>
         <li>A bomb that <b>flashes amber</b> is about to <b>split in two</b>, each half going for its own city.</li>
-        <li>Every bomb that lands costs a shield. Lose all 5 and it's over. A wave with no hits gives one back.</li>
+        <li>Every bomb that lands costs a shield. Lose all 5 and the game's over. Get through a wave with no hits and you get one back.</li>
       </ol>
       ${decks.length>1?`<p class="k" style="color:var(--crt-mid)">MAP</p><div class="row">${decks.map(d=>`<button class="crt-btn ${d.id===deckId?'on':''}" data-deck="${d.id}">${esc(d.name.toUpperCase())}</button>`).join('')}</div>`:''}
       ${cur.sub?`<p class="k" style="color:var(--crt-mid)">REGION</p><div class="row">${[['all',CHD?`ALL ${cur.airports.length} · NEW REGION EACH WAVE`:'ALL REGIONS · ROTATES EACH WAVE'],...cur.sub.map((sd,i)=>[String(i),sd.name.toUpperCase()])].map(([k,t])=>`<button class="crt-btn ${k===sec?'on':''}" data-sec="${k}">${esc(t)}</button>`).join('')}</div>
@@ -919,11 +886,11 @@ function defender(opts={}){
       ${liveTopHTML('defender',diff,{crt:true})}
       ${bridge.online?`<button class="crt-btn" id="wlb">WORLD LEADERBOARD · ${DIFFS[diff].name.toUpperCase()}</button>`:''}
       <h2 style="font-size:1.2rem">THIS DEVICE · ${DIFFS[diff].name.toUpperCase()}</h2>${hsTable(diff)}
-      <p>New to the codes? Start on Cadet. Every city you lose shows its code, and you can practice those right after.</p>
+      <p>New to the codes? Start on Cadet. When a city gets hit you'll see its code, and you can practice those cities right after.</p>
     </div></div>`;
     main.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>{deckId=b.dataset.deck;sec='all';render();});
     main.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>{sec=b.dataset.sec;if(CHD){S.area=sec;save();}render();});
-    main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;S.diff=diff;save();render();});
+    main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;S.diff=diff;S.hlv.defender=diff;save();render();});
     $('#snd').onclick=()=>{S.mute=!S.mute;save();render();};
     $('#launch').onclick=()=>{sfx('wave');go(defenderRun,cur.sub&&sec!=='all'?cur.sub[+sec]:cur,diff,{codes,back:CHD?{ch:true,sec}:undefined});};
     const wl=$('#wlb');if(wl)wl.onclick=()=>bridge.openLeaderboard('defender',diff);
@@ -940,7 +907,7 @@ function defenderRun(root,diffKey,opt={}){
   let deck=SECS?SECS[Math.floor(Math.random()*SECS.length)]:root,cities=[],LBL=null,BASES=[],secQ=[],secAt=-9,parts=[],artK=1;
   // big cities (the 50 busiest) get a full skyline; the rest get small-town art
   const BIG=new Set((DECKMAP.top50?DECKMAP.top50.airports:[]).map(a=>a.code)),REDUCE=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const LABEL_OPT=fs=>({sc:Math.min(2,fs/14),ob:{l:11,r:11,t:15,b:6}});
+  const LABEL_OPT=fs=>({sc:Math.min(2,fs/14),ob:{l:16,r:16,t:20,b:8},ow:18});
   const ACT=w=>D.act(w);
   const idleMsg=()=>SECS?`${deck.name}: type the code of the blinking city`:'Type the code of the blinking city';
   setWorld(deck);
@@ -961,7 +928,10 @@ function defenderRun(root,diffKey,opt={}){
   const MONO=getFamily('mono');
   let bombs=[],missiles=[],booms=[],pops=[],buf='',score=0,wave=0,shields=5,combo=0,toSpawn=0,spawnT=0,phase='intro',phaseT=0,paused=false,over=false,
       hitsThisWave=0,kills=0,shots=0,misfires=0,splits=0,clean=0,last=performance.now(),raf=0,clock=0,initials=null,initBuf='',endXP=0,lastX=350;
-  const missedCodes=new Set(),ovl=$('#ovl'),lastHit={},lateT={};
+  const missedCodes=new Set(),ovl=$('#ovl'),lastHit={},lateT={},saves={};
+  // easter eggs: a saucer when you type UFO, and local legends that sometimes peek out on their home state's map
+  const LEGENDS={WY:['jackalope','Was that a jackalope?'],WA:['bigfoot','Hold on. Was that Bigfoot?'],OR:['bigfoot','Something big just walked into the trees.'],VT:['champ','Something just came up in Lake Champlain...'],NY:['champ','Something just came up in Lake Champlain...'],WV:['mothman','A tall shape with red eyes is watching from the hills.'],WI:['hodag','A Hodag! Rhinelander was right.'],NM:['saucer','Unidentified flying object over New Mexico.']};
+  let ufo=null,ufoUsed=false,cameo=null;
   function enterSector(sd){deck=sd;secAt=typeof clock==='number'?clock:0;setWorld(deck);BASES=[{x:W*.17,y:H-6,ang:-Math.PI/2,kick:0},{x:W/2,y:H-6,ang:-Math.PI/2,kick:0},{x:W*.83,y:H-6,ang:-Math.PI/2,kick:0}];fitCanvas(cv);size();
     cities=deck.airports.filter(a=>STATE[a.code]).map(a=>{const c=STATE[a.code];c.a=a;c.x=a.x;c.y=a.y;return c;});
     // each city's art, and how close its nearest neighbor is (clustered cities draw smaller so they don't merge)
@@ -972,7 +942,9 @@ function defenderRun(root,diffKey,opt={}){
   function nextSector(){const ok=SECS;if(ok.length===1)return ok[0];
     secQ=secQ.filter(x=>ok.includes(x)&&x!==deck);if(!secQ.length)secQ=ok.filter(x=>x!==deck).sort(()=>Math.random()-.5);return secQ.shift();}
   enterSector(deck);
-  let initAt=0,reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'defender',level:diffKey,levelName:DIFFS[diffKey].name,score,wave,map:root.name});}
+  // a round id from the world board, so the score can be posted when the game ends
+  let runId=null;if(bridge.startRun)bridge.startRun('defender',diffKey).then(id=>{runId=id;}).catch(()=>{});
+  let initAt=0,reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'defender',level:diffKey,levelName:DIFFS[diffKey].name,score,wave,map:root.name,run:runId});}
   function showOvl(big,sub,btns=''){ovl.innerHTML=`<div class="big">${big}</div>${sub?`<div class="sub">${sub}</div>`:''}${btns}`;ovl.hidden=false;}
   const mult=()=>1+Math.min(2,Math.floor(combo/4)*.5);
   function hud(){$('#dScore').textContent=score;$('#dWave').textContent=wave;$('#dCombo').textContent='×'+String(mult());{const r=$('#race');if(r)r.innerHTML=raceLine('defender',diffKey,score);}
@@ -988,7 +960,10 @@ function defenderRun(root,diffKey,opt={}){
     parts.push({x,y,vx:Math.cos(t)*v,vy:Math.sin(t)*v-up,t:0,life:life*(.6+Math.random()*.6),r:(.9+Math.random()*1.3)*artK,col:cols[i%cols.length],g,drag:2.2,kind:'s'});}}
   function puff(x,y,col,r=2.2,life=.7){if(REDUCE||parts.length>420)return;parts.push({x,y,vx:(Math.random()-.5)*8,vy:-6-Math.random()*6,t:0,life,r:r*artK,col,g:0,drag:1,kind:'p'});}
   function pickCity(pool){const ws=pool.map(c=>weight(c.a));let r=Math.random()*ws.reduce((x,y)=>x+y,0);for(let j=0;j<pool.length;j++){r-=ws[j];if(r<=0)return pool[j];}return pool[pool.length-1];}
-  function startWave(){wave++;if(SECS&&wave>1)enterSector(nextSector());
+  function maybeCameo(){if(REDUCE||Math.random()>.3)return;const P=deck.P.filter(P=>LEGENDS[P.st]&&!P.inset);if(!P.length)return;const Q=P[Math.floor(Math.random()*P.length)];
+    const [key,text]=LEGENDS[Q.st];let x=0,y=0;for(let i=0;i<20;i++){x=Q.x0+30+Math.random()*(Q.x1-Q.x0-60);y=Q.y0+50+Math.random()*(Q.y1-Q.y0-70);if(cities.every(c=>Math.hypot(c.x-x,c.y-y)>60))break;}
+    cameo={key,text,x,y,t:0,at:2+Math.random()*8,said:false};}
+  function startWave(){wave++;if(SECS&&wave>1)enterSector(nextSector());cameo=null;maybeCameo();
     toSpawn=4+2*wave;spawnT=wave===1?1.8:.9;hitsThisWave=0;phase='intro';phaseT=SECS?2.8:2.2;sfx('wave');
     const sp=D.split(wave),tip=wave===1?'Type the code of the city under attack':sp>0&&D.split(wave-1)===0?'Heads up: bombs can split from this wave on':`${toSpawn} bombs incoming`;
     if(SECS)showOvl(`WAVE ${wave}`,`INCOMING · ${esc(deck.name.toUpperCase())}`,locatorSVG(root,deck)+`<div class="sub">${tip}</div>`);
@@ -1015,12 +990,13 @@ function defenderRun(root,diffKey,opt={}){
   function kill(b){bombs=bombs.filter(x=>x!==b);
     const pts=Math.round((50+120*(1-b.prog))*wave*mult()*HINT_PTS[b.hl]);score+=pts;combo++;kills++;if(b.hl<=1)clean++;
     booms.push({x:b.x,y:b.y,t:0,R:26,col:COL.hi});spark(b.x,b.y,16,[COL.hi,'#FFFFFF',COL.amb],150,.7,40);pops.push({x:b.x,y:b.y-10,t:0,text:'+'+pts+(b.hl===0?' CLEAN':'')});
-    grade(b.c.a.code,true,b.hl<=1?'recall':'hint');sfx('boom');
+    grade(b.c.a.code,true,b.hl<=1?'recall':'hint');sfx('boom');saves[b.c.a.code]=(saves[b.c.a.code]||0)+1;
     msg(`+${pts}  ${b.c.a.code} ${b.c.a.place} saved${b.hl===0?' with no hints':b.hl===4?' (full code was showing)':''}`,'ok');hud();}
   function fire(code){shots++;
     const cand=bombs.filter(b=>!b.locked&&b.c.a.code===code).sort((p,q)=>q.prog-p.prog);
     if(cand.length){const b=cand[0];b.locked=true;const base=BASES.reduce((p,q)=>Math.abs(q.x-b.x)<Math.abs(p.x-b.x)?q:p);
       base.ang=Math.atan2(b.y-base.y,b.x-base.x);base.kick=1;missiles.push({x:base.x,y:base.y,sx:base.x,sy:base.y,b,pf:0});sfx('fire');drawBuf('ok');return;}
+    if(code==='UFO'&&!BY.UFO&&!ufoUsed){ufoUsed=true;shots--;drawBuf('ok');ufo={x:-30,y:H*.22,t:0};msg('Roswell called. They want their saucer back.','ok');return;}
     const c=cities.find(c=>c.a.code===code),cs=STATE[code];
     if(c&&clock-(lastHit[code]??-9)<2){shots--;drawBuf('bad');if(lateT[code]){clearTimeout(lateT[code]);delete lateT[code];}msg(`Right code, just too late: ${c.a.place} was already hit. No mastery lost.`,'warn');return;}
     if(cs&&!c&&SECS&&clock-secAt<3){shots--;drawBuf('bad');msg(`The attack moved to ${deck.name}. ${code} is ${cs.a.place}, not here. No penalty.`,'warn');return;}
@@ -1043,7 +1019,7 @@ function defenderRun(root,diffKey,opt={}){
     else if(e.key==='Escape'||(e.key===' '&&initials===null)){e.preventDefault();togglePause();}};
   document.addEventListener('keydown',onKey);
   function togglePause(){if(over)return;paused=!paused;
-    if(paused){showOvl('PAUSED','Your codes are waiting.',`<div class="row"><button class="crt-btn primary" id="res">RESUME</button><button class="crt-btn" id="quit">QUIT</button></div>`);$('#res').onclick=togglePause;$('#quit').onclick=()=>{if(score>0){paused=false;ovl.hidden=true;gameOver();}else go(defender);};}
+    if(paused){showOvl('PAUSED','The bombs will wait.',`<div class="row"><button class="crt-btn primary" id="res">RESUME</button><button class="crt-btn" id="quit">QUIT</button></div>`);$('#res').onclick=togglePause;$('#quit').onclick=()=>{if(score>0){paused=false;ovl.hidden=true;gameOver();}else go(defender);};}
     else{ovl.hidden=true;if(phase==='intro')showOvl(`WAVE ${wave}`,'');last=performance.now();}}
   $('#pz').onclick=togglePause;
   const onVis=()=>{if(document.hidden&&!paused&&!over)togglePause();};document.addEventListener('visibilitychange',onVis);
@@ -1067,7 +1043,9 @@ function defenderRun(root,diffKey,opt={}){
       if(d<=step||d<6){missiles=missiles.filter(x=>x!==m);kill(m.b);}else{m.x+=dx/d*step;m.y+=dy/d*step;if((m.pf+=dt)>.02){m.pf=0;puff(m.x-dx/d*4*artK,m.y-dy/d*4*artK,'#C9D2CF',1.3,.45);}}}
     tickFx(dt);
   }
-  function tickFx(dt){booms=booms.filter(b=>(b.t+=dt)<.7);pops=pops.filter(p=>(p.t+=dt)<1.1);
+  function tickFx(dt){if(ufo){ufo.t+=dt;ufo.x+=dt*(W/4.5);if(ufo.x>W+30)ufo=null;}
+    if(cameo&&phase==='play'){cameo.t+=dt;if(cameo.t>cameo.at&&!cameo.said){cameo.said=true;if(!$('#msg').className.includes(' '))msg(cameo.text,'ok');}if(cameo.t>cameo.at+5)cameo=null;}
+    booms=booms.filter(b=>(b.t+=dt)<.7);pops=pops.filter(p=>(p.t+=dt)<1.1);
     parts=parts.filter(p=>(p.t+=dt)<p.life);for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;const f=Math.max(0,1-p.drag*dt);p.vx*=f;p.vy=p.vy*f+p.g*dt;}
     for(const L of BASES)L.kick=Math.max(0,(L.kick||0)-dt*4);cities.forEach(c=>{c.flash=Math.max(0,c.flash-dt*1.2);c.reveal=Math.max(0,c.reveal-dt);});}
   function boxes(code,n,x,y,al,fs,col){const bw=fs*1.15,bh=fs*1.35,gap=3,tot=bw*3+gap*2;
@@ -1080,14 +1058,14 @@ function defenderRun(root,diffKey,opt={}){
     ctx.setTransform(dpr*scale,0,0,dpr*scale,0,0);ctx.fillStyle=COL.bg;ctx.fillRect(0,0,W,H);
     ctx.strokeStyle=COL.lo;ctx.lineWidth=1;ctx.globalAlpha=.6;ctx.beginPath();for(let x=50;x<W;x+=50){ctx.moveTo(x,0);ctx.lineTo(x,H);}for(let y=50;y<H;y+=50){ctx.moveTo(0,y);ctx.lineTo(W,y);}ctx.stroke();ctx.globalAlpha=1;
     drawGeoCanvas(ctx,deck,COL,scale);
-    for(const L of BASES)drawLauncherArt(ctx,L,k,COL,H);
+    for(const L of BASES)drawLauncherArt(ctx,L,k*1.25,COL,H);
     const blinkOn=Math.floor(clock*4)%2===0;
     // smoke sits behind everything that flies
     for(const p of parts){if(p.kind!=='p')continue;const f=p.t/p.life;ctx.globalAlpha=(1-f)*.32;ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1+f*1.6),0,7);ctx.fill();}ctx.globalAlpha=1;
     const vis=cities.filter(c=>!deck.P[c.a.pi]?.dense||c.reveal>0||c.flash>0||bombs.some(b=>b.c===c&&!b.locked)),visS=new Set(vis);
     for(const c of cities){const threats=bombs.filter(b=>b.c===c&&!b.locked),threat=threats.length>0;
       const col=c.flash>0?COL.red:threat?(blinkOn?COL.amb:COL.hi):(c.dmg?COL.mid:COL.hi);
-      drawCityArt(ctx,c.art,c.x,c.y,k*Math.min(1,Math.max(.5,c.nd/(26*k))),col,COL.bg);
+      drawCityArt(ctx,c.art,c.x,c.y,k*1.3*Math.min(1,Math.max(.5,c.nd/(34*k))),col,COL.bg,threat?col:COL.amb,clock);
       if(c.dmg){ctx.fillStyle=COL.red;for(let j=0;j<Math.min(3,c.dmg);j++)ctx.fillRect(c.x+(-8+j*6)*k,c.y+8*k,4*k,2*k);}
       if(threat){ctx.strokeStyle=col;ctx.lineWidth=1.5;const rx=17*k,ry=14*k,cy=c.y-4*k,e=6*k;ctx.beginPath();
         [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{ctx.moveTo(c.x+sx*rx,cy+sy*(ry-e));ctx.lineTo(c.x+sx*rx,cy+sy*ry);ctx.lineTo(c.x+sx*(rx-e),cy+sy*ry);});ctx.stroke();}
@@ -1111,10 +1089,14 @@ function defenderRun(root,diffKey,opt={}){
       if(!b.locked){ctx.setLineDash([3,6]);ctx.strokeStyle=COL.amb;ctx.globalAlpha=.35;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.c.x,b.c.y);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
       const warn=b.splitAt&&!b.split&&b.prog>b.splitAt-.12;
       if(warn&&blinkOn){ctx.strokeStyle=COL.amb;ctx.lineWidth=2;ctx.beginPath();ctx.arc(b.x,b.y,9,0,7);ctx.stroke();}
-      drawBombArt(ctx,b,k,clock,COL,warn&&blinkOn);}
-    for(const m of missiles){ctx.strokeStyle=COL.hi;ctx.globalAlpha=.45;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(m.sx,m.sy);ctx.lineTo(m.x,m.y);ctx.stroke();ctx.globalAlpha=1;drawRocketArt(ctx,m,k,COL);}
+      drawBombArt(ctx,b,k*1.45,clock,COL,warn&&blinkOn);}
+    for(const m of missiles){ctx.strokeStyle=COL.hi;ctx.globalAlpha=.45;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(m.sx,m.sy);ctx.lineTo(m.x,m.y);ctx.stroke();ctx.globalAlpha=1;drawRocketArt(ctx,m,k*1.3,COL);}
     for(const p of parts){if(p.kind!=='s')continue;const f=p.t/p.life;ctx.globalAlpha=1-f;ctx.fillStyle=p.col;ctx.fillRect(p.x-p.r/2,p.y-p.r/2,p.r,p.r);}ctx.globalAlpha=1;
     for(const e of booms){const k=e.t/.7,r=e.R*Math.min(1,e.t/.22);ctx.globalAlpha=1-k;ctx.fillStyle=e.col;ctx.beginPath();ctx.arc(e.x,e.y,r,0,7);ctx.fill();ctx.globalAlpha=Math.max(0,.8-k);ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.x,e.y,r*.7,0,7);ctx.stroke();ctx.globalAlpha=1;}
+    if(cameo&&cameo.t>cameo.at){const f=Math.min(1,(cameo.t-cameo.at)/.6,(cameo.at+5-cameo.t)/.8);ctx.save();ctx.globalAlpha=Math.max(0,f)*.85;ctx.translate(cameo.x,cameo.y);ctx.scale(k*1.1,k*1.1);drawMotif(ctx,cameo.key,COL.mid,COL.bg,COL.amb,clock);ctx.restore();}
+    if(ufo){ctx.save();ctx.translate(ufo.x,ufo.y+Math.sin(ufo.t*5)*4);const mid=Math.abs(ufo.x-W/2)<W*.18;
+      if(mid){ctx.globalAlpha=.25;ctx.fillStyle=COL.amb;ctx.beginPath();ctx.moveTo(-5*k,0);ctx.lineTo(5*k,0);ctx.lineTo(18*k,60*k);ctx.lineTo(-18*k,60*k);ctx.fill();ctx.globalAlpha=1;}
+      ctx.scale(k*1.6,k*1.6);drawMotif(ctx,'saucer',COL.hi,COL.bg,COL.amb,clock);ctx.restore();}
     ctx.font=`600 ${fs}px ${MONO}`;ctx.textAlign='center';
     for(const p of pops){ctx.globalAlpha=Math.max(0,1-p.t/1.1);ctx.fillStyle=COL.hi;ctx.fillText(p.text,Math.min(Math.max(p.x,60),W-60),p.y-p.t*34);}
     ctx.globalAlpha=1;
@@ -1132,7 +1114,8 @@ function defenderRun(root,diffKey,opt={}){
     const acc=shots?Math.round((shots-misfires)/shots*100)+'%':'—';
     const miss=[...missedCodes].map(c=>`<span class="chip">${c} · ${esc(BY[c].place)}</span>`).join('');
     e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>WAVE <b>${wave}</b></span><span>STOPPED <b>${kills}</b></span><span>BEFORE ANY LETTERS <b>${clean}</b></span><span>ACCURACY <b>${acc}</b></span><span>BOMBS SPLIT <b>${splits}</b></span><span>XP <b>+${endXP}</b></span></div>
-      ${miss?`<p>Cities that got hit, with their codes. Lock these in:</p><div class="chips">${miss}</div>`:'<p>No city got hit. Try a harder level.</p>'}
+      ${miss?`<p>These cities got hit. Here are their codes:</p><div class="chips">${miss}</div>`:'<p>No city got hit. Try a harder level.</p>'}
+      ${spotlightHTML(Object.entries(saves).sort((p,q)=>q[1]-p[1])[0]?.[0]||Object.keys(STATE)[Math.floor(Math.random()*Object.keys(STATE).length)],saves)}
       ${liveTopHTML('defender',diffKey,{crt:true})}
       <h2 style="font-size:1.2rem">HIGH SCORES · ${DIFFS[diffKey].name.toUpperCase()}</h2>${hsTable(diffKey,hlIdx)}
       <div class="row"><button class="crt-btn primary" id="again" style="flex:2">PLAY AGAIN</button><button class="crt-btn" id="setup">SETTINGS</button></div>
@@ -1141,7 +1124,7 @@ function defenderRun(root,diffKey,opt={}){
     $('#again').onclick=()=>{sfx('wave');go(defenderRun,root,diffKey,opt);};$('#setup').onclick=()=>go(defender,opt.back);
     const d=$('#drill');if(d)d.onclick=()=>go(recall,{list:groupQueue([...missedCodes])});
     const wl=$('#wlb');if(wl)wl.onclick=()=>bridge.openLeaderboard('defender',diffKey);
-    e.scrollIntoView({block:'nearest'});report();}
+    paintLandmarks(e);e.scrollIntoView({block:'nearest'});report();}
   function saveInitials(){const n=initBuf;initials=null;const L=S.hs[diffKey];const entry={n,s:score,w:wave,m:root.name,d:today()};
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.hs[diffKey]=L.slice(0,10);save();renderEnd(false,S.hs[diffKey].indexOf(entry));}
   if(bridge.debug)window.__AD={bombs:()=>bombs.map(b=>({code:b.c.a.code,prog:+b.prog.toFixed(2),hl:b.hl,locked:b.locked,child:b.child})),st:()=>({wave,shields,score,phase,over,splits,kills,clean,toSpawn,sector:deck.name,cities:cities.length}),initials:()=>initials};
@@ -1156,7 +1139,7 @@ const TDIFFS={
  chief:{name:'Chief',desc:'Heavy traffic, tight fuel. Hints only when a pilot is desperate.',endur:58,dec:3,act:s=>Math.min(5,2+Math.floor(s/2)),gap:4.5,gapMin:2,hints:[11,16,21,26],fuelStop:()=>.55},
 };
 const CALLS=['SKY','PEAK','MESA','HAWK','TETON','BISON','SAGE','RANGER','ELK','BLUFF'];
-function hsTableFor(L,label,hlIdx=-1){if(!L.length)return `<p>No scores yet on ${label}. Be the first.</p>`;
+function hsTableFor(L,label,hlIdx=-1){if(!L.length)return `<p>No scores yet on ${label}.</p>`;
   return `<table class="hs"><thead><tr><th>#</th><th>NAME</th><th>MAP</th><th class="n">SHIFT</th><th class="n">SCORE</th></tr></thead><tbody>${L.map((r,i)=>`<tr class="${i===hlIdx?'me':''}"><td>${i+1}</td><td>${esc(r.n)}</td><td>${esc(r.m||'')}</td><td class="n">${r.w}</td><td class="n">${r.s}</td></tr>`).join('')}</tbody></table>`;}
 function kbHTML(){return `<div class="kb auto" id="kb">${['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].map((r,ri)=>`<div class="r">${[...r].map(ch=>`<button class="key" data-k="${ch}">${ch}</button>`).join('')}${ri===2?'<button class="key wide" data-k="DEL" aria-label="Delete">DEL</button>':''}</div>`).join('')}</div>`;}
 // opts.ch: the 50 Busiest Challenge (all 50 codes, whatever set is being studied); opts.sec: 'all' or a region index
@@ -1188,7 +1171,7 @@ function tower(opts={}){
       <h2 style="font-size:1.2rem">THIS DEVICE · ${TDIFFS[diff].name.toUpperCase()}</h2>${hsTableFor(S.ths[diff],TDIFFS[diff].name)}
     </div></div>`;
     main.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>{deckId=b.dataset.deck;if(CHD){S.area=secOf(deckId);save();}render();});
-    main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;S.tdiff=diff;save();render();});
+    main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;S.tdiff=diff;S.hlv.tower=diff;save();render();});
     $('#snd').onclick=()=>{S.mute=!S.mute;save();render();};
     $('#launch').onclick=()=>{sfx('wave');go(towerRun,DECKMAP[deckId],diff,{codes,back:CHD?{ch:true,sec:secOf(deckId)}:undefined});};
     const wl=$('#wlb');if(wl)wl.onclick=()=>bridge.openLeaderboard('tower',diff);
@@ -1228,8 +1211,9 @@ function towerRun(R0,dk,opt={}){
     {const k=$('#tClk');if(k)k.innerHTML=clockHTML(zonesOf(ports.map(p=>p.a)),{short:true});}}
   function nextSector(){if(SECS.length===1)return SECS[0];secQ=secQ.filter(x=>x!==deck);if(!secQ.length)secQ=SECS.filter(x=>x!==deck).sort(()=>Math.random()-.5);return secQ.shift();}
   enterSector(deck);
-  const lostCodes=new Set(),ovl=$('#ovl');
-  let initAt=0,reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'tower',level:dk,levelName:TDIFFS[dk].name,score,wave:shift,map:R0.name});}
+  const lostCodes=new Set(),ovl=$('#ovl'),landings={};
+  let runId=null;if(bridge.startRun)bridge.startRun('tower',dk).then(id=>{runId=id;}).catch(()=>{});
+  let initAt=0,reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'tower',level:dk,levelName:TDIFFS[dk].name,score,wave:shift,map:R0.name,run:runId});}
   const mult=()=>1+Math.min(2,Math.floor(combo/3)*.5);
   function showOvl(big,sub,btns=''){ovl.innerHTML=`<div class="big">${big}</div>${sub?`<div class="sub">${sub}</div>`:''}${btns}`;ovl.hidden=false;}
   function hud(){$('#tScore').textContent=score;$('#tShift').textContent=shift;$('#tLand').textContent=landed;{const r=$('#race');if(r)r.innerHTML=raceLine('tower',dk,score);}
@@ -1241,14 +1225,21 @@ function towerRun(R0,dk,opt={}){
   const needsRoute=p=>p&&p.state!=='gone'&&p.state!=='ground'&&p.target!==p.need;
   function autoSel(force){if(!force&&((sel&&needsRoute(sel))||buf.length))return;const c=active().filter(needsRoute).sort((a,b)=>a.fuel-b.fuel)[0];sel=c||active().find(p=>p.state!=='ground')||active()[0]||null;who();}
   function who(){const w=$('#who');if(!sel||sel.state==='gone'){w.textContent='No plane selected';return;}
-    w.innerHTML=`Talking to <b>${sel.call}</b>${sel.state==='ground'?' (refueling)':sel.target===sel.need?` · cleared to ${sel.need.a.code}`:` · needs ${esc(sel.need.a.place)}`}`;}
+    w.innerHTML=`Talking to <b>${sel.call}</b>${sel.state==='ground'?' (refueling)':sel.target===sel.need?` · cleared to ${sel.need.a.code}`:` · needs ${esc(sel.nm||sel.need.a.place)}`}`;}
   function endurance(){return Math.max(D.endur*.6,D.endur-(shift-1)*D.dec);}
-  function newCall(){let c;do{c=CALLS[Math.floor(Math.random()*CALLS.length)]+' '+(100+Math.floor(Math.random()*800));}while(planes.some(p=>p.call===c));return c;}
+  // a mix of real airliner types: mostly narrow-bodies, some regionals and turboprops, the odd jumbo
+  function pickType(){const r=Math.random();return r<.4?'narrow':r<.6?'regional':r<.75?'prop':r<.9?'wide':'jumbo';}
+  // now and then a pilot with a call sign you don't hear every day
+  function oddCall(){const mo=new Date().getMonth(),st=new Set(deck.P.map(P=>P.st)),L=['GOOSE 1','PIZZA 314','NOVA 42'];
+    if(st.has('WY'))L.push('JACKALOPE 1');if(st.has('WA')||st.has('OR'))L.push('BIGFOOT 9');if(st.has('NM'))L.push('ROSWELL 47');
+    if(mo===11)L.push('SLEIGH 1');if(mo===10)L.push('TURKEY 1');if(mo===9)L.push('PUMPKIN 31');
+    const c=L[Math.floor(Math.random()*L.length)];return planes.some(p=>p.call===c)?null:c;}
+  function newCall(){if(Math.random()<.05){const o=oddCall();if(o)return o;}let c;do{c=CALLS[Math.floor(Math.random()*CALLS.length)]+' '+(100+Math.floor(Math.random()*800));}while(planes.some(p=>p.call===c));return c;}
   function pickPort(ex){const busy=new Set(active().map(p=>p.need));let pool=ports.filter(p=>p!==ex&&!busy.has(p));if(!pool.length)pool=ports.filter(p=>p!==ex);
     const ws=pool.map(p=>weight(p.a));let r=Math.random()*ws.reduce((x,y)=>x+y,0);for(let j=0;j<pool.length;j++){r-=ws[j];if(r<=0)return pool[j];}return pool[pool.length-1];}
   function startHold(p,x,y){const r=20;const cx=Math.min(Math.max(x+r,BX.x0+30),BX.x1-30),cy=Math.min(Math.max(y,BX.y0+26),BX.y1-26);p.hold={cx,cy,r,ang:Math.atan2(y-cy,x-cx)};p.state='holding';}
-  function request(p){p.wait=0;p.hl=0;p.target=null;p.missed=false;
-    radio(p.leg==='fuel'?`${p.call}: Tower, we're low on fuel and need to stop at ${p.need.a.place}. We don't know the code.`:`${p.call}: Tower, we'd like to land at ${p.need.a.place}. What's the code?`);sfx('tick');}
+  function request(p){p.wait=0;p.hl=0;p.target=null;p.missed=false;const useNext=p.nextNm&&p.leg==='land'&&p.nextFor===p.need;p.nm=useNext?p.nextNm:anyName(p.need.a);if(useNext)p.nextNm=null;
+    radio(p.leg==='fuel'?`${p.call}: Tower, we're low on fuel and need to stop at ${p.nm}. We don't know the code.`:`${p.call}: Tower, we'd like to land at ${p.nm}. What's the code?`);sfx('tick');}
   function spawn(){
     const side=Math.floor(Math.random()*4),r=Math.random();
     const bw=BX.x1-BX.x0,bh=BX.y1-BX.y0;const [x,y]=side===0?[BX.x0+10+r*(bw-20),BX.y0]:side===1?[BX.x0+10+r*(bw-20),BX.y1]:side===2?[BX.x0,BX.y0+16+r*(bh-32)]:[BX.x1,BX.y0+16+r*(bh-32)];
@@ -1256,8 +1247,8 @@ function towerRun(R0,dk,opt={}){
     const need=pickPort(),next=fs?pickPort(need):null;
     const NP=(deck.P&&deck.P[need.a.pi])||{x0:BX.x0,y0:BX.y0,x1:BX.x1,y1:BX.y1},iw=Math.max(10,NP.x1-NP.x0-90),ih=Math.max(10,NP.y1-NP.y0-70);
     const wp={x:NP.x0+45+Math.random()*iw,y:NP.y0+35+Math.random()*ih};
-    const p={id:nextId++,call:newCall(),x,y,hdg:Math.atan2(wp.y-y,wp.x-x),spd:24*SPD,fuel:fs?52+Math.random()*14:78+Math.random()*18,state:'inbound',wp,hold:null,
-      need,next,leg:fs?'fuel':'land',target:null,wait:0,hl:0,routeHl:0,missed:false,trail:[],trT:0,ground:0};
+    const p={id:nextId++,call:newCall(),type:pickType(),x,y,hdg:Math.atan2(wp.y-y,wp.x-x),spd:24*SPD,fuel:fs?52+Math.random()*14:78+Math.random()*18,state:'inbound',wp,hold:null,
+      need,next,nextNm:next?anyName(next.a):null,nextFor:next,leg:fs?'fuel':'land',target:null,wait:0,hl:0,routeHl:0,missed:false,trail:[],trT:0,ground:0};
     planes.push(p);request(p);autoSel();}
   function route(code){
     const want=active().filter(x=>x.state!=='ground'&&x.target!==x.need&&x.need.a.code===code).sort((a,b)=>a.fuel-b.fuel);
@@ -1271,18 +1262,18 @@ function towerRun(R0,dk,opt={}){
     if(port===p.need){p.routeHl=p.hl;drawBuf('ok');sfx('fire');grade(code,true,p.hl<=1&&!p.missed?'recall':'hint');
       radio(`${p.call}: Heading to ${code}, ${port.a.place}. Thanks, Tower!`,'ok');autoSel(true);}
     else{combo=0;wrongs++;p.missed=true;score=Math.max(0,score-25);drawBuf('bad');sfx('bad');grade(p.need.a.code,false,'recog');
-      radio(`${p.call}: ${code} takes us to ${port.a.place}? We need ${p.need.a.place}! Send us the right code. −25`,'bad');}
+      radio(`${p.call}: ${code} takes us to ${port.a.place}? We need ${p.nm||p.need.a.place}! Send us the right code. −25`,'bad');}
     hud();}
   function arrive(p){const port=p.target;p.x=port.x;p.y=port.y;
-    if(port===p.need){const pts=Math.round((80+p.fuel*.8)*shift*mult()*HINT_PTS[Math.min(4,p.routeHl)]);score+=pts;combo++;legs++;
+    if(port===p.need){landings[port.a.code]=(landings[port.a.code]||0)+1;const pts=Math.round((80+p.fuel*.8)*shift*mult()*HINT_PTS[Math.min(4,p.routeHl)]);score+=pts;combo++;legs++;
       if(p.routeHl===0&&!p.missed)clean++;port.reveal=2.6;port.rcol=COL.good;pops.push({x:port.x,y:port.y-14,t:0,text:'+'+pts});sfx('wave');
       if(p.leg==='fuel'){p.state='ground';p.ground=2.4;radio(`${p.call}: On the ground at ${port.a.place}. Refueling now.`,'ok');}
       else{p.state='gone';landed++;radio(`${p.call}: Landed safely at ${port.a.place}, ${port.a.code}. Good work, Tower.`,'ok');}}
     else{p.state='gone';safety--;issues++;combo=0;port.reveal=2.6;port.rcol=COL.red;p.need.reveal=3.2;p.need.rcol=COL.amb;lostCodes.add(p.need.a.code);grade(p.need.a.code,false,'recall');
-      marks.push({x:port.x,y:port.y,t:0});sfx('hit');radio(`${p.call} landed at ${port.a.place} (${port.a.code}) but needed ${p.need.a.place}, which is ${p.need.a.code}.`,'bad');}
+      marks.push({x:port.x,y:port.y,t:0});sfx('hit');radio(`${p.call} landed at ${port.a.place} (${port.a.code}) but needed ${p.nm||p.need.a.place}, which is ${p.need.a.code}.`,'bad');}
     autoSel();hud();if(safety<=0)gameOver();}
   function emergency(p){p.state='gone';safety--;issues++;emerg++;combo=0;p.need.reveal=3.2;p.need.rcol=COL.amb;lostCodes.add(p.need.a.code);grade(p.need.a.code,false,'recall');
-    marks.push({x:p.x,y:p.y,t:0});sfx('hit');radio(`${p.call} ran out of fuel and made an emergency landing in a field. Everyone is OK. ${p.need.a.place} was ${p.need.a.code}.`,'bad');
+    marks.push({x:p.x,y:p.y,t:0});sfx('hit');radio(`${p.call} ran out of fuel and made an emergency landing in a field. Everyone is OK. ${p.nm||p.need.a.place} was ${p.need.a.code}.`,'bad');
     autoSel();hud();if(safety<=0)gameOver();}
   function startShift(){shift++;if(SECS&&shift>1)enterSector(nextSector());toSpawn=3+2*shift;spawnT=1.2;issues=0;phase='intro';phaseT=SECS?3:2.4;sfx('wave');
     const sub=shift===1?'Pilots will radio in. Type the code of the city they ask for.':`${toSpawn} flights on the schedule${D.fuelStop(shift)>0&&D.fuelStop(shift-1)===0?' · fuel stops start now':''}`;
@@ -1344,10 +1335,8 @@ function towerRun(R0,dk,opt={}){
       const isSel=p===sel,low=p.fuel<20&&p.state!=='ground';
       const col=low&&blink?COL.red:p.state==='ground'?COL.good:p.target&&p.target===p.need?COL.good:isSel?COL.amb:COL.hi;
       if(p.state==='ground'){ctx.strokeStyle=COL.good;ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,13,-Math.PI/2,-Math.PI/2+Math.PI*2*p.fuel/100);ctx.stroke();}
-      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.hdg);ctx.fillStyle=col;ctx.beginPath();
-      ctx.moveTo(10,0);ctx.lineTo(2,-1.6);ctx.lineTo(-1,-8);ctx.lineTo(-4,-8);ctx.lineTo(-2,-1.6);ctx.lineTo(-7,-1.4);ctx.lineTo(-9,-4.5);ctx.lineTo(-10.5,-4.5);ctx.lineTo(-9.5,0);
-      ctx.lineTo(-10.5,4.5);ctx.lineTo(-9,4.5);ctx.lineTo(-7,1.4);ctx.lineTo(-2,1.6);ctx.lineTo(-4,8);ctx.lineTo(-1,8);ctx.lineTo(2,1.6);ctx.closePath();ctx.fill();ctx.restore();
-      if(isSel){ctx.strokeStyle=COL.amb;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,16,0,7);ctx.stroke();}
+      drawPlaneArt(ctx,p,col,isSel,p.state==='ground',clock);
+      if(isSel){ctx.strokeStyle=COL.amb;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,18,0,7);ctx.stroke();}
       if(p.state==='ground')continue;
       ctx.font=`600 ${sm*1.1}px ${MONO}`;ctx.textAlign='left';const tl=p.call,t2=p.state==='ground'?'REFUEL':`${Math.max(0,Math.round(p.fuel))}% FUEL`;
       const tw=Math.max(ctx.measureText(tl).width,ctx.measureText(t2).width);let lx=p.x+14,ly=p.y-14;if(lx+tw>(W-4))lx=p.x-14-tw;if(ly<sm*2)ly=p.y+22;
@@ -1360,7 +1349,7 @@ function towerRun(R0,dk,opt={}){
     if(p.state==='ground')return `<span class="ok">Refueling ${Math.round(p.fuel)}%</span>`;
     if(p.target===p.need)return `<span class="ok">Cleared to ${p.need.a.code}</span>`;
     if(p.hl===0)return `<span class="dim">Hint in ${Math.max(1,Math.ceil(D.hints[0]-p.wait))}s</span>`;
-    if(p.hl===1)return `Clue: ${esc(p.need.a.clue)}`;
+    if(p.hl===1)return `Clue: ${esc(clueFor(p.need.a,p.nm))}`;
     return [0,1,2].map(k=>`<span class="lb">${k<p.hl-1?p.need.a.code[k]:'_'}</span>`).join('');}
   function strips(){
     const el=$('#strips'),act=active();
@@ -1369,7 +1358,7 @@ function towerRun(R0,dk,opt={}){
       const st=p.state==='ground'?'ON GROUND':p.state==='routed'?(wrong?`WRONG WAY → ${p.target.a.code}`:'CLEARED'):p.state==='holding'?'CIRCLING':'ARRIVING';
       return `<button class="strip${p===sel?' sel':''}${p.fuel<20&&p.state!=='ground'?' low':''}${wrong?' wrong':''}" data-id="${p.id}" type="button">
         <span class="cs">${p.call}</span>
-        <span class="nd">${p.state==='ground'?`Refueling at ${esc(p.need.a.place)}`:`${p.leg==='fuel'?'Fuel stop':'Land'} at <b>${esc(p.need.a.place)}</b>`}${p.next?` <span class="dim">then ${esc(p.next.a.place)}</span>`:''}</span>
+        <span class="nd">${p.state==='ground'?`Refueling at ${esc(p.nm||p.need.a.place)}`:`${p.leg==='fuel'?'Fuel stop':'Land'} at <b>${esc(p.nm||p.need.a.place)}</b>`}${p.next?` <span class="dim">then ${esc(p.nextNm||p.next.a.place)}</span>`:''}</span>
         <span class="stt">${st}</span>
         <span class="fu" aria-label="Fuel ${Math.round(p.fuel)}%"><i style="width:${Math.max(0,p.fuel)}%"></i></span>
         <span class="hn">${hintHTML(p)}</span></button>`;}).join('');who();}
@@ -1407,7 +1396,8 @@ function towerRun(R0,dk,opt={}){
     initials=null;$('#kb').hidden=true;root.querySelector('.crt-row').hidden=true;$('#radio').hidden=true;
     const miss=[...lostCodes].map(c=>`<span class="chip">${c} · ${esc(BY[c].place)}</span>`).join('');
     e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>SHIFT <b>${shift}</b></span><span>LANDED <b>${landed}</b></span><span>LEGS FLOWN <b>${legs}</b></span><span>NO-HINT ROUTES <b>${clean}</b></span><span>WRONG CODES <b>${wrongs}</b></span><span>XP <b>+${endXP}</b></span></div>
-      ${miss?`<p>Cities pilots needed that went wrong. Lock these in:</p><div class="chips">${miss}</div>`:'<p>Every plane made it. Try a harder level.</p>'}
+      ${miss?`<p>These flights went wrong. Here are the codes the pilots needed:</p><div class="chips">${miss}</div>`:'<p>Every plane made it. Try a harder level.</p>'}
+      ${spotlightHTML(Object.entries(landings).sort((p,q)=>q[1]-p[1])[0]?.[0]||ports[Math.floor(Math.random()*ports.length)]?.a.code,landings,'landing')}
       ${liveTopHTML('tower',dk,{crt:true})}
       <h2 style="font-size:1.2rem">HIGH SCORES · ${TDIFFS[dk].name.toUpperCase()}</h2>${hsTableFor(S.ths[dk],TDIFFS[dk].name,hlIdx)}
       <div class="row"><button class="crt-btn primary" id="again" style="flex:2">NEW SHIFT</button><button class="crt-btn" id="setup">SETTINGS</button></div>
@@ -1416,7 +1406,7 @@ function towerRun(R0,dk,opt={}){
     $('#again').onclick=()=>{sfx('wave');go(towerRun,R0,dk,opt);};$('#setup').onclick=()=>go(tower,opt.back);
     const d=$('#drill');if(d)d.onclick=()=>go(recall,{list:groupQueue([...lostCodes])});
     const wl=$('#wlb');if(wl)wl.onclick=()=>bridge.openLeaderboard('tower',dk);
-    e.scrollIntoView({block:'nearest'});report();}
+    paintLandmarks(e);e.scrollIntoView({block:'nearest'});report();}
   function saveInitials(){const n=initBuf;initials=null;const L=S.ths[dk];const entry={n,s:score,w:shift,m:R0.name,d:today()};
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.ths[dk]=L.slice(0,10);save();renderEnd(false,S.ths[dk].indexOf(entry));}
   if(bridge.debug)window.__TC={planes:()=>planes.map(p=>({id:p.id,call:p.call,need:p.need.a.code,leg:p.leg,state:p.state,fuel:Math.round(p.fuel),hl:p.hl,target:p.target?.a.code||null,sel:p===sel})),
@@ -1429,5 +1419,5 @@ function getFamily(k){return k==='display'?'"Big Shoulders Display", Impact, san
 
 rebuild();
 go(home);
-return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);window.removeEventListener('resize',onFit);window.removeEventListener('orientationchange',onFit);window.visualViewport?.removeEventListener('resize',onFit);if(fitRO)fitRO.disconnect();clearInterval(clockTimer);clearInterval(liveTimer);if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
+return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);window.removeEventListener('resize',onFit);window.removeEventListener('orientationchange',onFit);window.visualViewport?.removeEventListener('resize',onFit);if(fitRO)fitRO.disconnect();clearInterval(clockTimer);window.removeEventListener('act-theme',onThemeAll);document.removeEventListener('keydown',onKonami);clearInterval(liveTimer);if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
 }

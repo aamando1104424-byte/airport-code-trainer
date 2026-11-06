@@ -1,10 +1,12 @@
 # Airport Code Trainer
 
-Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** split into six regional maps): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** and **Tower Control** (both also playable as the **50 Busiest Challenge**: one region or all 50), local-time clocks for every set, and a **world leaderboard** on Supabase.
+Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** split into six regional maps): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** and **Tower Control** (both also playable as the **50 Busiest Challenge**: one region or all 50), local-time clocks for every set, color modes that repaint the whole page, and a **world leaderboard** on Supabase.
+
+Every one of the 484 cities has its own picture in Air Defender, based on what it's known for (the Space Needle, Carhenge, Cheyenne's bucking horse, Bubblegum Alley...). The same facts show up on the cheat sheet, in Flight School and on a City Spotlight card after each game.
 
 - No email, no password. Players pick a name like `cortes` or `mango`.
 - You can play as a guest. When a run ends with a score, you're offered a spot on the world board.
-- A **live world top 5** sits on the home screen and the game screens. When anyone posts a new best, every open copy updates within a second (Supabase Realtime broadcast, with a 20-second refresh as backup). During a game, a chase line shows who you're about to pass.
+- The home screen shows the **world top 3 for both games**, and the game screens show a top 5. When anyone posts a score that makes the top 5, every open copy updates within a couple of seconds (Supabase Realtime broadcast, with a 20-second refresh as backup). During a game, a chase line shows who you're about to pass.
 - When someone passes your score, you get a notice the next time you open the app, for example: *"cortes, your high score was beaten by mango… You're now #4."*
 
 ## 1. Run it in VS Code
@@ -40,11 +42,19 @@ The account bar at the top will show **Leaderboard** and **Sign in** buttons.
 - Typing a new name claims it. The database makes a random 12-character **account code** and stores only a hash of it. Your browser remembers the name and code, so you're never asked again on that device.
 - Typing a name that's taken asks for its account code. That's what stops someone from posting as you.
 - To use your name on another phone or browser, open **Account → Show my code** on the first device.
-- The tables are named `act_players`, `act_scores` and `act_notices`, so they never clash with other apps' tables in the same Supabase project. They're locked (row level security, no direct access). The browser can only call the functions in `schema.sql`, which check the name and code before saving anything.
+- The tables are named `act_players`, `act_scores`, `act_notices` and `act_runs`, so they never clash with other apps' tables in the same Supabase project. They're locked (row level security, no direct access). The browser can only call the functions in `schema.sql`, which check the name and code before saving anything.
 
 **Limits worth knowing**
-- Scores come from the browser, so a determined cheater could fake one. The database caps scores and rate-limits posts, but it can't replay the game to prove a score. To clean up the board, use **Table Editor → scores** in Supabase.
-- Lose the code and sign out (or clear browser data) and that name can't be recovered from the app. You can reset it in the `players` table.
+- Scores come from the browser, so they can't be made fully cheat-proof. What the database does check: every game asks for a round ticket when it starts, a score needs a ticket that hasn't been used, the round has to have lasted long enough for the wave or shift it claims (5 seconds a wave at least), and the score can't be higher than a perfect game could reach by then. One post every 3 seconds per player. Faking a big score would mean writing code and waiting it out, and you can still delete it in the Table Editor.
+- Names go through a word filter (in the browser and again in the database), so swears and slurs can't be claimed. A name that got in before the filter is hidden from the board and can't post.
+- Lose the code and sign out (or clear browser data) and that name can't be recovered from the app.
+
+## Using it with a class
+
+- **Run the newest `supabase/schema.sql` once** (SQL Editor → paste → Run). It turns on the name filter, the round tickets and the score check, and keeps every player and score. Until you run it, the site keeps posting scores the old way.
+- **Remove a name or a score:** Supabase → **Table Editor** → `act_players` (deleting a player also deletes their scores and notices) or `act_scores` for just one score.
+- **50+ players at once is fine** on Supabase's free tier: the live boards only ping everyone when a score reaches the top 5, each copy waits a random second or two before refreshing, and the boards also re-check every 20 seconds.
+- Progress (levels, XP, local high scores, color mode) lives in each student's own browser. Only names and world scores go to the database.
 
 ## Project layout
 
@@ -58,6 +68,11 @@ src/
   components/            AccountBar, SignInDialog, SubmitDialog, LeaderboardDialog,
                          AccountDialog, Notices, NameForm, CodeBox, Modal, Trainer
   trainer/engine.js      The study app and both games (plain JS, mounted by React)
+  trainer/art.js         Game art: city landmarks, bombs, launchers, airliners
+  trainer/motifs.js      The 240 hand-drawn landmark shapes
+  data/landmarks.json    What each city is known for, and which picture it gets
+  names.js               The name filter
+  themes.js              The color modes
   trainer/styles.css     All the app's styles and color tokens
 supabase/schema.sql      Tables, security and functions for the leaderboard
 ```
@@ -99,6 +114,10 @@ Optional settings, used by the 50 Busiest set:
 - `"dense": true` on a panel: labels shrink to just the code, and the games name only the cities in play.
 
 The same code can appear in more than one set (CVG, DCA, IAD, TRI, HTS, PKB, TTN), and progress on it is shared.
+
+A code that's listed under two names on the course list gets `"alts"`: `"SUN": { "place": "Sun Valley, ID", "alts": ["Hailey, ID"], ... }`. Practice, the Mock Test and Tower Control then ask with either name, and the cheat sheet shows both.
+
+**City pictures and "known for" lines** live in `src/data/landmarks.json`: `"CYS": ["bronc", "Cheyenne Frontier Days rodeo"]`. The first value is a hand-drawn landmark from `src/trainer/motifs.js` or an emoji. A new airport without an entry gets a small town hall.
 
 `src/data/geo.json` holds the map shapes (state outlines, lakes, rivers, interstates, mountains). It comes from public-domain US Census, Natural Earth and OurAirports data.
 

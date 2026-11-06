@@ -34,9 +34,11 @@ const MESSAGES = {
   name_taken: 'That name is taken.',
   bad_login: "That name and account code don't match.",
   bad_name: 'Names are 3 to 16 letters, numbers or underscores.',
+  name_blocked: "Pick a different name. That one isn't allowed.",
   slow_down: 'Too fast. Wait a few seconds and try again.',
   bad_score: 'That score could not be posted.',
   bad_board: "That leaderboard doesn't exist.",
+  bad_run: "This round can't be posted. It may have started while you were offline.",
 };
 function toError(error) {
   const msg = error?.message || '';
@@ -45,17 +47,20 @@ function toError(error) {
   }
   return Object.assign(new Error("Couldn't reach the leaderboard. Check your connection and try again."), { code: 'network' });
 }
-async function rpc(fn, args) {
+async function rpc(fn, args, raw = false) {
   if (!supabase) throw Object.assign(new Error('The world leaderboard is not set up yet.'), { code: 'offline' });
   const { data, error } = await supabase.rpc(fn, args);
-  if (error) throw toError(error);
+  if (error) throw raw ? error : toError(error);
   return data;
 }
+// A game asks for a round id when it starts. Posting needs it, so a score can't be made up from nothing.
+// null if the leaderboard is off or the database hasn't been updated yet.
+export const startRun = (game, level) => rpc('start_run', { p_game: game, p_level: level }).catch(() => null);
 
 export const claimName = (name) => rpc('claim_name', { p_name: name });
 export const signIn = (name, code) => rpc('sign_in', { p_name: name, p_code: cleanCode(code) });
 export const submitScore = async (acc, r) => {
-  const data = await rpc('submit_score', {
+  const args = {
     p_name: acc.name,
     p_code: acc.code,
     p_game: r.game,
@@ -63,14 +68,23 @@ export const submitScore = async (acc, r) => {
     p_score: Math.round(r.score),
     p_wave: Math.max(1, Math.round(r.wave || 1)),
     p_map: r.map || 'Wyoming',
-  });
-  if (data?.improved) announce(r.game, r.level);
+  };
+  let data;
+  try {
+    data = await rpc('submit_score', { ...args, p_run: r.run || null }, true);
+  } catch (e) {
+    // a database that hasn't run the newest schema.sql yet has no p_run: post the old way
+    if (e?.code === 'PGRST202' || /p_run|function.*not find|Could not find the function/i.test(e?.message || '')) data = await rpc('submit_score', args);
+    else throw toError(e);
+  }
+  // only a score that reaches the top 5 changes what the live boards show, so only then ping everyone
+  if (data?.improved && data.rank <= 5) announce(r.game, r.level);
   return data;
 };
 
 // ---- live updates -------------------------------------------------------
-// A new best is announced on a Supabase Realtime broadcast channel, so every
-// open copy of the app refreshes its top 5 within a second. Broadcast needs no
+// A new top-5 score is announced on a Supabase Realtime broadcast channel, so every
+// open copy of the app refreshes its boards within a couple of seconds. Broadcast needs no
 // table access, so the tables stay locked. Boards also re-check on a timer, so
 // they still stay fresh if Realtime is ever unreachable.
 const listeners = new Set();

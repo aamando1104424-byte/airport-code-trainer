@@ -2902,7 +2902,7 @@
   },
   "HNL": {
    "city": "Honolulu (Oahu)",
-   "place": "Honolulu (Oahu), HI",
+   "place": "Honolulu, Island of Oahu",
    "st": "HI",
    "lat": 21.3184,
    "lon": -157.9257,
@@ -2911,7 +2911,7 @@
   },
   "HNM": {
    "city": "Hana (Maui)",
-   "place": "Hana (Maui), HI",
+   "place": "Hana, Island of Maui",
    "st": "HI",
    "lat": 20.7956,
    "lon": -156.014,
@@ -3186,13 +3186,13 @@
    "tz": "America/New_York"
   },
   "ITO": {
-   "city": "Hilo (Big Island)",
-   "place": "Hilo (Big Island), HI",
+   "city": "Hilo (Island of Hawaii)",
+   "place": "Hilo, Island of Hawaii",
    "st": "HI",
    "lat": 19.7214,
    "lon": -155.0454,
    "label": "Hilo",
-   "tip": "The Big Island is nicknamed the Orchid Isle: “Island of The Orchids.”",
+   "tip": "The Island of Hawaii is nicknamed the Orchid Isle: “Island of The Orchids.”",
    "clue": "Island of The Orchids",
    "tz": "Pacific/Honolulu"
   },
@@ -3272,7 +3272,7 @@
   },
   "JHM": {
    "city": "Kapalua (Maui)",
-   "place": "Kapalua (Maui), HI",
+   "place": "Kapalua, Island of Maui",
    "st": "HI",
    "lat": 20.9629,
    "lon": -156.673,
@@ -3332,8 +3332,8 @@
    "tz": "America/Chicago"
   },
   "KOA": {
-   "city": "Kona (Big Island)",
-   "place": "Kona (Big Island), HI",
+   "city": "Kona (Island of Hawaii)",
+   "place": "Kona, Island of Hawaii",
    "st": "HI",
    "lat": 19.7388,
    "lon": -156.0456,
@@ -3487,12 +3487,15 @@
   },
   "LIH": {
    "city": "Lihue (Kauai)",
-   "place": "Lihue (Kauai), HI",
+   "place": "Lihue, Island of Kauai",
    "st": "HI",
    "lat": 21.9744,
    "lon": -159.3371,
    "label": "Lihue",
-   "tz": "Pacific/Honolulu"
+   "tz": "Pacific/Honolulu",
+   "alts": [
+    "Kauai Island/Lihue"
+   ]
   },
   "LIT": {
    "city": "Little Rock",
@@ -3539,7 +3542,7 @@
   },
   "LNY": {
    "city": "Lanai City (Lanai)",
-   "place": "Lanai City (Lanai), HI",
+   "place": "Lanai City, Island of Lanai",
    "st": "HI",
    "lat": 20.7857,
    "lon": -156.9513,
@@ -3573,7 +3576,7 @@
   },
   "LUP": {
    "city": "Kalaupapa (Molokai)",
-   "place": "Kalaupapa (Molokai), HI",
+   "place": "Kalaupapa, Island of Molokai",
    "st": "HI",
    "lat": 21.211,
    "lon": -156.974,
@@ -3837,7 +3840,7 @@
   },
   "MKK": {
    "city": "Hoolehua (Molokai)",
-   "place": "Hoolehua (Molokai), HI",
+   "place": "Hoolehua, Island of Molokai",
    "st": "HI",
    "lat": 21.1529,
    "lon": -157.096,
@@ -4012,8 +4015,8 @@
    "tz": "America/Denver"
   },
   "MUE": {
-   "city": "Kamuela (Big Island)",
-   "place": "Kamuela (Big Island), HI",
+   "city": "Kamuela (Island of Hawaii)",
+   "place": "Kamuela, Island of Hawaii",
    "st": "HI",
    "lat": 20.0013,
    "lon": -155.668,
@@ -4085,8 +4088,8 @@
    "tz": "America/Chicago"
   },
   "OGG": {
-   "city": "Kahului (Maui)",
-   "place": "Kahului (Maui), HI",
+   "city": "Maui/Kahului",
+   "place": "Maui/Kahului, Island of Maui",
    "st": "HI",
    "lat": 20.8963,
    "lon": -156.4318,
@@ -4241,8 +4244,8 @@
    "tz": "America/Chicago"
   },
   "PAK": {
-   "city": "Hanapepe (Kauai)",
-   "place": "Hanapepe (Kauai), HI",
+   "city": "Hanapepe",
+   "place": "Hanapepe, HI",
    "st": "HI",
    "lat": 21.8969,
    "lon": -159.603,
@@ -5039,13 +5042,16 @@
    "tz": "America/Los_Angeles"
   },
   "SUN": {
-   "city": "Sun Valley/Hailey",
-   "place": "Sun Valley/Hailey, ID",
+   "city": "Sun Valley",
+   "place": "Sun Valley, ID",
    "st": "ID",
    "lat": 43.5044,
    "lon": -114.296,
    "label": "Sun Valley",
-   "tz": "America/Boise"
+   "tz": "America/Boise",
+   "alts": [
+    "Hailey, ID"
+   ]
   },
   "SUX": {
    "city": "Sioux City",

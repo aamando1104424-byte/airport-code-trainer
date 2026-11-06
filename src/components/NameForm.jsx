@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NAME_RE, claimName, signIn, cleanCode } from '../leaderboard';
+import { nameProblem } from '../names';
 
 // Step 1: type a name. New name → account is made. Taken name → step 2: type its account code.
 // onSignedIn({ name, code }, isNew)
@@ -15,6 +16,11 @@ export default function NameForm({ onSignedIn, submitLabel = 'Continue', busyLab
     const n = name.trim();
     if (!NAME_RE.test(n)) {
       setErr('Use 3 to 16 letters, numbers or underscores. No spaces.');
+      return;
+    }
+    const why = nameProblem(n);
+    if (why) {
+      setErr(why);
       return;
     }
     setBusy(true);

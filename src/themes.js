@@ -1,13 +1,15 @@
-// Color modes for the game screens (Air Defender, Tower Control, the home cards).
-// The colors themselves live in trainer/styles.css under [data-crt="..."]; this file
-// keeps the list, remembers the choice in this browser and tells running games to recolor.
+// Color modes. "Original" is the sectional-chart paper with green game screens.
+// Every other mode repaints the whole page (background, cards, buttons, maps) and the game screens.
+// The colors live in trainer/styles.css under [data-crt="..."]; this file keeps the list,
+// remembers the choice in this browser and tells running games to recolor.
 export const THEMES = [
-  { id: 'green', name: 'Green', note: 'The original' },
+  { id: 'green', name: 'Original', note: 'Paper + green' },
+  { id: 'forest', name: 'Forest', note: 'Pine green' },
   { id: 'red', name: 'Red', note: 'Hot and bold' },
-  { id: 'orange', name: 'Orange', note: 'Sunset amber' },
+  { id: 'orange', name: 'Orange', note: 'Sunset' },
   { id: 'blue', name: 'Blue', note: 'Night radar' },
   { id: 'purple', name: 'Purple', note: 'Neon violet' },
-  { id: 'pink', name: 'Pink', note: 'Arcade pink' },
+  { id: 'pink', name: 'Pink', note: 'Arcade' },
   { id: 'ice', name: 'Ice', note: 'Cool cyan' },
   { id: 'mono', name: 'Mono', note: 'Black and white' },
 ];
@@ -26,6 +28,9 @@ export function applyTheme(id) {
   const t = valid(id) ? id : 'green';
   if (t === 'green') delete document.documentElement.dataset.crt;
   else document.documentElement.dataset.crt = t;
+  // the browser's own bars (phones) match the page
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() || meta.content;
   return t;
 }
 

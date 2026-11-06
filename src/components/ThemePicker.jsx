@@ -55,7 +55,7 @@ export default function ThemePicker() {
     const r = rail.current;
     if (r) r.scrollBy({ left: dir * Math.max(160, r.clientWidth * 0.8), behavior: 'smooth' });
   };
-  const curName = THEMES.find((t) => t.id === cur)?.name || 'Green';
+  const curName = THEMES.find((t) => t.id === cur)?.name || 'Original';
 
   return (
     <div className="tp" ref={wrap}>
@@ -67,7 +67,7 @@ export default function ThemePicker() {
         <div className="tp-panel" id="tp-panel" role="dialog" aria-label="Color mode">
           <div className="tp-head">
             <b>Color mode</b>
-            <span>Changes the games and the game cards. Saved on this device.</span>
+            <span>Repaints the whole page and both games. Saved on this device.</span>
             <button className="link tp-x" onClick={() => setOpen(false)} aria-label="Close colors">Close</button>
           </div>
           <div className="tp-slider">
