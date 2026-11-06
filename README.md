@@ -1,6 +1,6 @@
 # Airport Code Trainer
 
-Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** split into six regional maps): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** (with **Doomsday** mode) and **Tower Control**, with a **world leaderboard** on Supabase.
+Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** split into six regional maps): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** and **Tower Control** (both also playable as the **50 Busiest Challenge**: one region or all 50), local-time clocks for every set, and a **world leaderboard** on Supabase.
 
 - No email, no password. Players pick a name like `cortes` or `mango`.
 - You can play as a guest. When a run ends with a score, you're offered a spot on the world board.
@@ -31,7 +31,7 @@ Everything except the world leaderboard works right away.
    Both are under **Project Settings → API**, or the **Connect** button.
 4. Stop the dev server (Ctrl+C) and run `npm run dev` again.
 
-**Already ran `schema.sql` before?** Run it again after updating. It's safe to re-run: it keeps every player and score and only updates the functions (for example, to accept Doomsday scores).
+**Already ran `schema.sql` before?** Run it again after updating. It's safe to re-run: it keeps every player and score and only updates the functions.
 
 The account bar at the top will show **Leaderboard** and **Sign in** buttons.
 

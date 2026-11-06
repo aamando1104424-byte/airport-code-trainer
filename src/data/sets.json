@@ -1197,35 +1197,40 @@
    "st": "PA",
    "lat": 40.6518,
    "lon": -75.4428,
-   "label": "Allentown"
+   "label": "Allentown",
+   "tz": "America/New_York"
   },
   "ABI": {
    "city": "Abilene",
    "place": "Abilene, TX",
    "st": "TX",
    "lat": 32.4113,
-   "lon": -99.6819
+   "lon": -99.6819,
+   "tz": "America/Chicago"
   },
   "ABQ": {
    "city": "Albuquerque",
    "place": "Albuquerque, NM",
    "st": "NM",
    "lat": 35.04,
-   "lon": -106.6089
+   "lon": -106.6089,
+   "tz": "America/Denver"
   },
   "ABR": {
    "city": "Aberdeen",
    "place": "Aberdeen, SD",
    "st": "SD",
    "lat": 45.4491,
-   "lon": -98.4218
+   "lon": -98.4218,
+   "tz": "America/Chicago"
   },
   "ACK": {
    "city": "Nantucket",
    "place": "Nantucket, MA",
    "st": "MA",
    "lat": 41.2531,
-   "lon": -70.0602
+   "lon": -70.0602,
+   "tz": "America/New_York"
   },
   "ACT": {
    "city": "Waco",
@@ -1234,7 +1239,8 @@
    "lat": 31.6113,
    "lon": -97.2305,
    "tip": "A-C from wACo, then T for Texas.",
-   "clue": "wACo + T(exas)"
+   "clue": "wACo + T(exas)",
+   "tz": "America/Chicago"
   },
   "ACV": {
    "city": "Arcata/Eureka",
@@ -1244,14 +1250,16 @@
    "lon": -124.109,
    "label": "Arcata",
    "tip": "A-C from ArCata, then V: “ArCata Vista.”",
-   "clue": "ArCata Vista"
+   "clue": "ArCata Vista",
+   "tz": "America/Los_Angeles"
   },
   "ACY": {
    "city": "Atlantic City",
    "place": "Atlantic City, NJ",
    "st": "NJ",
    "lat": 39.4562,
-   "lon": -74.5775
+   "lon": -74.5775,
+   "tz": "America/New_York"
   },
   "ADK": {
    "city": "Adak Island",
@@ -1259,7 +1267,8 @@
    "st": "AK",
    "lat": 51.8836,
    "lon": -176.6428,
-   "label": "Adak"
+   "label": "Adak",
+   "tz": "America/Adak"
   },
   "ADQ": {
    "city": "Kodiak",
@@ -1268,35 +1277,40 @@
    "lat": 57.75,
    "lon": -152.494,
    "tip": "Kodiak is famous for its bears: “Alaska's Den Queen.”",
-   "clue": "Alaska's Den Queen"
+   "clue": "Alaska's Den Queen",
+   "tz": "America/Anchorage"
   },
   "AEX": {
    "city": "Alexandria",
    "place": "Alexandria, LA",
    "st": "LA",
    "lat": 31.3258,
-   "lon": -92.5467
+   "lon": -92.5467,
+   "tz": "America/Chicago"
   },
   "AGS": {
    "city": "Augusta",
    "place": "Augusta, GA",
    "st": "GA",
    "lat": 33.3699,
-   "lon": -81.9645
+   "lon": -81.9645,
+   "tz": "America/New_York"
   },
   "AHN": {
    "city": "Athens",
    "place": "Athens, GA",
    "st": "GA",
    "lat": 33.9488,
-   "lon": -83.3256
+   "lon": -83.3256,
+   "tz": "America/New_York"
   },
   "AIA": {
    "city": "Alliance",
    "place": "Alliance, NE",
    "st": "NE",
    "lat": 42.0525,
-   "lon": -102.804
+   "lon": -102.804,
+   "tz": "America/Denver"
   },
   "AKN": {
    "city": "King Salmon",
@@ -1305,56 +1319,64 @@
    "lat": 58.6778,
    "lon": -156.652,
    "tip": "A-K for AlasKa, then N from King salmoN.",
-   "clue": "AlasKa + salmoN"
+   "clue": "AlasKa + salmoN",
+   "tz": "America/Anchorage"
   },
   "ALB": {
    "city": "Albany",
    "place": "Albany, NY",
    "st": "NY",
    "lat": 42.7483,
-   "lon": -73.8017
+   "lon": -73.8017,
+   "tz": "America/New_York"
   },
   "ALM": {
    "city": "Alamogordo",
    "place": "Alamogordo, NM",
    "st": "NM",
    "lat": 32.8378,
-   "lon": -105.9931
+   "lon": -105.9931,
+   "tz": "America/Denver"
   },
   "ALO": {
    "city": "Waterloo",
    "place": "Waterloo, IA",
    "st": "IA",
    "lat": 42.5571,
-   "lon": -92.4003
+   "lon": -92.4003,
+   "tz": "America/Chicago"
   },
   "ALS": {
    "city": "Alamosa",
    "place": "Alamosa, CO",
    "st": "CO",
    "lat": 37.4349,
-   "lon": -105.867
+   "lon": -105.867,
+   "tz": "America/Denver"
   },
   "ALW": {
    "city": "Walla Walla",
    "place": "Walla Walla, WA",
    "st": "WA",
    "lat": 46.0949,
-   "lon": -118.288
+   "lon": -118.288,
+   "tz": "America/Los_Angeles"
   },
   "AMA": {
    "city": "Amarillo",
    "place": "Amarillo, TX",
    "st": "TX",
    "lat": 35.2179,
-   "lon": -101.7064
+   "lon": -101.7064,
+   "tz": "America/Chicago"
   },
   "ANC": {
    "city": "Anchorage",
    "place": "Anchorage, AK",
    "st": "AK",
    "lat": 61.179,
-   "lon": -149.9926
+   "lon": -149.9926,
+   "tz": "America/Anchorage"
   },
   "AOO": {
    "city": "Altoona/Martinsburg",
@@ -1362,7 +1384,8 @@
    "st": "PA",
    "lat": 40.2964,
    "lon": -78.32,
-   "label": "Altoona"
+   "label": "Altoona",
+   "tz": "America/New_York"
   },
   "APF": {
    "city": "Naples",
@@ -1371,35 +1394,40 @@
    "lat": 26.1526,
    "lon": -81.7753,
    "tip": "Naples beaches: “A Perfect Florida.”",
-   "clue": "A Perfect Florida"
+   "clue": "A Perfect Florida",
+   "tz": "America/New_York"
   },
   "APN": {
    "city": "Alpena",
    "place": "Alpena, MI",
    "st": "MI",
    "lat": 45.0781,
-   "lon": -83.5603
+   "lon": -83.5603,
+   "tz": "America/Detroit"
   },
   "ART": {
    "city": "Watertown",
    "place": "Watertown, NY",
    "st": "NY",
    "lat": 43.9919,
-   "lon": -76.0217
+   "lon": -76.0217,
+   "tz": "America/New_York"
   },
   "ASE": {
    "city": "Aspen",
    "place": "Aspen, CO",
    "st": "CO",
    "lat": 39.2232,
-   "lon": -106.869
+   "lon": -106.869,
+   "tz": "America/Denver"
   },
   "ATL": {
    "city": "Atlanta",
    "place": "Atlanta, GA",
    "st": "GA",
    "lat": 33.6367,
-   "lon": -84.4281
+   "lon": -84.4281,
+   "tz": "America/New_York"
   },
   "ATW": {
    "city": "Appleton",
@@ -1408,7 +1436,8 @@
    "lat": 44.2585,
    "lon": -88.519,
    "tip": "A-T from AppleTon, then W for Wisconsin.",
-   "clue": "AppleTon + W(isconsin)"
+   "clue": "AppleTon + W(isconsin)",
+   "tz": "America/Chicago"
   },
   "ATY": {
    "city": "Watertown",
@@ -1417,21 +1446,24 @@
    "lat": 44.914,
    "lon": -97.1547,
    "tip": "A-T from wATertown, then Y: “wATertown, Yes.”",
-   "clue": "wATertown + Y"
+   "clue": "wATertown + Y",
+   "tz": "America/Chicago"
   },
   "AUG": {
    "city": "Augusta",
    "place": "Augusta, ME",
    "st": "ME",
    "lat": 44.3206,
-   "lon": -69.7973
+   "lon": -69.7973,
+   "tz": "America/New_York"
   },
   "AUS": {
    "city": "Austin",
    "place": "Austin, TX",
    "st": "TX",
    "lat": 30.1975,
-   "lon": -97.662
+   "lon": -97.662,
+   "tz": "America/Chicago"
   },
   "AVL": {
    "city": "Asheville/Hendersonville",
@@ -1439,7 +1471,8 @@
    "st": "NC",
    "lat": 35.4355,
    "lon": -82.5419,
-   "label": "Asheville"
+   "label": "Asheville",
+   "tz": "America/New_York"
   },
   "AVP": {
    "city": "Scranton/Wilkes-Barre",
@@ -1449,14 +1482,16 @@
    "lon": -75.7242,
    "label": "Scranton",
    "tip": "The airport is in Avoca, PA: A-V from AVoca, then P for Pennsylvania.",
-   "clue": "AVoca PA"
+   "clue": "AVoca PA",
+   "tz": "America/New_York"
   },
   "AZO": {
    "city": "Kalamazoo",
    "place": "Kalamazoo, MI",
    "st": "MI",
    "lat": 42.2321,
-   "lon": -85.5496
+   "lon": -85.5496,
+   "tz": "America/Detroit"
   },
   "BDL": {
    "city": "Hartford/Windsor Locks",
@@ -1466,42 +1501,48 @@
    "lon": -72.688,
    "label": "Hartford",
    "tip": "Hartford's airport is Bradley International: B-D-L from BraDLey.",
-   "clue": "BraDLey"
+   "clue": "BraDLey",
+   "tz": "America/New_York"
   },
   "BED": {
    "city": "Bedford",
    "place": "Bedford, MA",
    "st": "MA",
    "lat": 42.47,
-   "lon": -71.289
+   "lon": -71.289,
+   "tz": "America/New_York"
   },
   "BEH": {
    "city": "Benton Harbor",
    "place": "Benton Harbor, MI",
    "st": "MI",
    "lat": 42.1286,
-   "lon": -86.4285
+   "lon": -86.4285,
+   "tz": "America/Detroit"
   },
   "BET": {
    "city": "Bethel",
    "place": "Bethel, AK",
    "st": "AK",
    "lat": 60.7798,
-   "lon": -161.838
+   "lon": -161.838,
+   "tz": "America/Nome"
   },
   "BFF": {
    "city": "Scottsbluff",
    "place": "Scottsbluff, NE",
    "st": "NE",
    "lat": 41.874,
-   "lon": -103.596
+   "lon": -103.596,
+   "tz": "America/Denver"
   },
   "BFL": {
    "city": "Bakersfield",
    "place": "Bakersfield, CA",
    "st": "CA",
    "lat": 35.4336,
-   "lon": -119.057
+   "lon": -119.057,
+   "tz": "America/Los_Angeles"
   },
   "BGM": {
    "city": "Binghamton/Endicott/Johnson City",
@@ -1509,56 +1550,64 @@
    "st": "NY",
    "lat": 42.2087,
    "lon": -75.9798,
-   "label": "Binghamton"
+   "label": "Binghamton",
+   "tz": "America/New_York"
   },
   "BGR": {
    "city": "Bangor",
    "place": "Bangor, ME",
    "st": "ME",
    "lat": 44.8064,
-   "lon": -68.8267
+   "lon": -68.8267,
+   "tz": "America/New_York"
   },
   "BHB": {
    "city": "Bar Harbor",
    "place": "Bar Harbor, ME",
    "st": "ME",
    "lat": 44.45,
-   "lon": -68.3615
+   "lon": -68.3615,
+   "tz": "America/New_York"
   },
   "BHM": {
    "city": "Birmingham",
    "place": "Birmingham, AL",
    "st": "AL",
    "lat": 33.5629,
-   "lon": -86.7507
+   "lon": -86.7507,
+   "tz": "America/Chicago"
   },
   "BID": {
    "city": "Block Island",
    "place": "Block Island, RI",
    "st": "RI",
    "lat": 41.1684,
-   "lon": -71.5786
+   "lon": -71.5786,
+   "tz": "America/New_York"
   },
   "BIL": {
    "city": "Billings",
    "place": "Billings, MT",
    "st": "MT",
    "lat": 45.8089,
-   "lon": -108.5412
+   "lon": -108.5412,
+   "tz": "America/Denver"
   },
   "BIS": {
    "city": "Bismarck",
    "place": "Bismarck, ND",
    "st": "ND",
    "lat": 46.7727,
-   "lon": -100.7469
+   "lon": -100.7469,
+   "tz": "America/Chicago"
   },
   "BJI": {
    "city": "Bemidji",
    "place": "Bemidji, MN",
    "st": "MN",
    "lat": 47.5094,
-   "lon": -94.9337
+   "lon": -94.9337,
+   "tz": "America/Chicago"
   },
   "BKW": {
    "city": "Beckley",
@@ -1567,7 +1616,8 @@
    "lat": 37.7873,
    "lon": -81.1242,
    "tip": "B-K from BecKley, then W for West Virginia.",
-   "clue": "BecKley + W(V)"
+   "clue": "BecKley + W(V)",
+   "tz": "America/New_York"
   },
   "BKX": {
    "city": "Brookings",
@@ -1576,7 +1626,8 @@
    "lat": 44.3048,
    "lon": -96.8169,
    "tip": "B-K from BrooKings, then X marks the spot.",
-   "clue": "BrooKings + X marks the spot"
+   "clue": "BrooKings + X marks the spot",
+   "tz": "America/Chicago"
   },
   "BLF": {
    "city": "Bluefield/Princeton",
@@ -1584,28 +1635,32 @@
    "st": "WV",
    "lat": 37.2958,
    "lon": -81.2077,
-   "label": "Bluefield"
+   "label": "Bluefield",
+   "tz": "America/New_York"
   },
   "BLI": {
    "city": "Bellingham",
    "place": "Bellingham, WA",
    "st": "WA",
    "lat": 48.7928,
-   "lon": -122.538
+   "lon": -122.538,
+   "tz": "America/Los_Angeles"
   },
   "BLV": {
    "city": "Belleville",
    "place": "Belleville, IL",
    "st": "IL",
    "lat": 38.5452,
-   "lon": -89.8352
+   "lon": -89.8352,
+   "tz": "America/Chicago"
   },
   "BMI": {
    "city": "Bloomington",
    "place": "Bloomington, IL",
    "st": "IL",
    "lat": 40.4771,
-   "lon": -88.9159
+   "lon": -88.9159,
+   "tz": "America/Chicago"
   },
   "BNA": {
    "city": "Nashville",
@@ -1614,21 +1669,24 @@
    "lat": 36.1245,
    "lon": -86.6782,
    "tip": "Nashville's airport was Berry Field: B, then N-A from NAshville.",
-   "clue": "Berry field NAshville"
+   "clue": "Berry field NAshville",
+   "tz": "America/Chicago"
   },
   "BOI": {
    "city": "Boise",
    "place": "Boise, ID",
    "st": "ID",
    "lat": 43.5644,
-   "lon": -116.223
+   "lon": -116.223,
+   "tz": "America/Boise"
   },
   "BOS": {
    "city": "Boston",
    "place": "Boston, MA",
    "st": "MA",
    "lat": 42.362,
-   "lon": -71.0079
+   "lon": -71.0079,
+   "tz": "America/New_York"
   },
   "BPT": {
    "city": "Beaumont/Port Arthur",
@@ -1636,7 +1694,8 @@
    "st": "TX",
    "lat": 29.9508,
    "lon": -94.0207,
-   "label": "Beaumont"
+   "label": "Beaumont",
+   "tz": "America/Chicago"
   },
   "BQK": {
    "city": "Brunswick",
@@ -1645,35 +1704,40 @@
    "lat": 31.2588,
    "lon": -81.4665,
    "tip": "B from Brunswick, then Q-K: “Brunswick's Quiet Keys.”",
-   "clue": "Brunswick Quiet Keys"
+   "clue": "Brunswick Quiet Keys",
+   "tz": "America/New_York"
   },
   "BRD": {
    "city": "Brainerd",
    "place": "Brainerd, MN",
    "st": "MN",
    "lat": 46.4029,
-   "lon": -94.1297
+   "lon": -94.1297,
+   "tz": "America/Chicago"
   },
   "BRL": {
    "city": "Burlington",
    "place": "Burlington, IA",
    "st": "IA",
    "lat": 40.7832,
-   "lon": -91.1255
+   "lon": -91.1255,
+   "tz": "America/Chicago"
   },
   "BRO": {
    "city": "Brownsville",
    "place": "Brownsville, TX",
    "st": "TX",
    "lat": 25.9072,
-   "lon": -97.4252
+   "lon": -97.4252,
+   "tz": "America/Chicago"
   },
   "BRW": {
    "city": "Barrow",
    "place": "Barrow, AK",
    "st": "AK",
    "lat": 71.2854,
-   "lon": -156.766
+   "lon": -156.766,
+   "tz": "America/Anchorage"
   },
   "BTM": {
    "city": "Butte",
@@ -1682,14 +1746,16 @@
    "lat": 45.9548,
    "lon": -112.497,
    "tip": "B-T from BuTte, then M for Montana.",
-   "clue": "BuTte + M(ontana)"
+   "clue": "BuTte + M(ontana)",
+   "tz": "America/Denver"
   },
   "BTR": {
    "city": "Baton Rouge",
    "place": "Baton Rouge, LA",
    "st": "LA",
    "lat": 30.5332,
-   "lon": -91.1496
+   "lon": -91.1496,
+   "tz": "America/Chicago"
   },
   "BTV": {
    "city": "Burlington",
@@ -1698,35 +1764,40 @@
    "lat": 44.4719,
    "lon": -73.1533,
    "tip": "B-T from BurlingTon, then V for Vermont.",
-   "clue": "BurlingTon Vermont"
+   "clue": "BurlingTon Vermont",
+   "tz": "America/New_York"
   },
   "BUF": {
    "city": "Buffalo",
    "place": "Buffalo, NY",
    "st": "NY",
    "lat": 42.9405,
-   "lon": -78.7322
+   "lon": -78.7322,
+   "tz": "America/New_York"
   },
   "BUR": {
    "city": "Burbank",
    "place": "Burbank, CA",
    "st": "CA",
    "lat": 34.2028,
-   "lon": -118.3581
+   "lon": -118.3581,
+   "tz": "America/Los_Angeles"
   },
   "BWD": {
    "city": "Brownwood",
    "place": "Brownwood, TX",
    "st": "TX",
    "lat": 31.7936,
-   "lon": -98.9565
+   "lon": -98.9565,
+   "tz": "America/Chicago"
   },
   "BWG": {
    "city": "Bowling Green",
    "place": "Bowling Green, KY",
    "st": "KY",
    "lat": 36.9645,
-   "lon": -86.4197
+   "lon": -86.4197,
+   "tz": "America/Chicago"
   },
   "BWI": {
    "city": "Baltimore",
@@ -1735,14 +1806,16 @@
    "lat": 39.1754,
    "lon": -76.6683,
    "tip": "Baltimore/Washington International: B-W-I.",
-   "clue": "Baltimore Washington International"
+   "clue": "Baltimore Washington International",
+   "tz": "America/New_York"
   },
   "BZN": {
    "city": "Bozeman",
    "place": "Bozeman, MT",
    "st": "MT",
    "lat": 45.7789,
-   "lon": -111.1537
+   "lon": -111.1537,
+   "tz": "America/Denver"
   },
   "CAE": {
    "city": "Columbia",
@@ -1751,7 +1824,8 @@
    "lat": 33.9382,
    "lon": -81.123,
    "tip": "C-A from ColumbiA, then E: “Columbia's Always Exciting.”",
-   "clue": "Columbia Always Exciting"
+   "clue": "Columbia Always Exciting",
+   "tz": "America/New_York"
   },
   "CAK": {
    "city": "Canton/Akron",
@@ -1759,63 +1833,72 @@
    "st": "OH",
    "lat": 40.9161,
    "lon": -81.4422,
-   "label": "Akron/Canton"
+   "label": "Akron/Canton",
+   "tz": "America/New_York"
   },
   "CBE": {
    "city": "Cumberland",
    "place": "Cumberland, MD",
    "st": "MD",
    "lat": 39.6154,
-   "lon": -78.7609
+   "lon": -78.7609,
+   "tz": "America/New_York"
   },
   "CCR": {
    "city": "Concord",
    "place": "Concord, CA",
    "st": "CA",
    "lat": 37.9897,
-   "lon": -122.057
+   "lon": -122.057,
+   "tz": "America/Los_Angeles"
   },
   "CDC": {
    "city": "Cedar City",
    "place": "Cedar City, UT",
    "st": "UT",
    "lat": 37.701,
-   "lon": -113.099
+   "lon": -113.099,
+   "tz": "America/Denver"
   },
   "CDR": {
    "city": "Chadron",
    "place": "Chadron, NE",
    "st": "NE",
    "lat": 42.8376,
-   "lon": -103.095
+   "lon": -103.095,
+   "tz": "America/Denver"
   },
   "CDV": {
    "city": "Cordova",
    "place": "Cordova, AK",
    "st": "AK",
    "lat": 60.4918,
-   "lon": -145.478
+   "lon": -145.478,
+   "tz": "America/Anchorage"
   },
   "CEC": {
    "city": "Crescent City",
    "place": "Crescent City, CA",
    "st": "CA",
    "lat": 41.7789,
-   "lon": -124.2364
+   "lon": -124.2364,
+   "tz": "America/Los_Angeles"
   },
   "CEZ": {
    "city": "Cortez",
    "place": "Cortez, CO",
    "st": "CO",
    "lat": 37.303,
-   "lon": -108.628
+   "lon": -108.628,
+   "tz": "America/Denver"
   },
   "CGI": {
    "city": "Cape Girardeau",
    "place": "Cape Girardeau, MO",
    "st": "MO",
    "lat": 37.2253,
-   "lon": -89.5708
+   "lon": -89.5708,
+   "tz": "America/Chicago"
   },
   "CGX": {
    "city": "Chicago - Meigs",
@@ -1825,42 +1908,48 @@
    "lon": -87.608,
    "label": "Meigs",
    "tip": "C-G from ChicaGo, then X: Meigs Field is crossed out with an X because it closed in 2003.",
-   "clue": "ChicaGo, crossed out with an X"
+   "clue": "ChicaGo, crossed out with an X",
+   "tz": "America/Chicago"
   },
   "CHA": {
    "city": "Chattanooga",
    "place": "Chattanooga, TN",
    "st": "TN",
    "lat": 35.0353,
-   "lon": -85.2038
+   "lon": -85.2038,
+   "tz": "America/New_York"
   },
   "CHO": {
    "city": "Charlottesville",
    "place": "Charlottesville, VA",
    "st": "VA",
    "lat": 38.1386,
-   "lon": -78.4529
+   "lon": -78.4529,
+   "tz": "America/New_York"
   },
   "CHS": {
    "city": "Charleston",
    "place": "Charleston, SC",
    "st": "SC",
    "lat": 32.8962,
-   "lon": -80.0382
+   "lon": -80.0382,
+   "tz": "America/New_York"
   },
   "CIC": {
    "city": "Chico",
    "place": "Chico, CA",
    "st": "CA",
    "lat": 39.7956,
-   "lon": -121.8577
+   "lon": -121.8577,
+   "tz": "America/Los_Angeles"
   },
   "CID": {
    "city": "Cedar Rapids",
    "place": "Cedar Rapids, IA",
    "st": "IA",
    "lat": 41.8847,
-   "lon": -91.7108
+   "lon": -91.7108,
+   "tz": "America/Chicago"
   },
   "CIU": {
    "city": "Sault Ste. Marie",
@@ -1870,35 +1959,40 @@
    "lon": -84.4621,
    "label": "Sault Ste Marie",
    "tip": "Sault Ste. Marie's airport is Chippewa County International: C-I-U from ChIppewa coUnty.",
-   "clue": "ChIppewa coUnty"
+   "clue": "ChIppewa coUnty",
+   "tz": "America/Detroit"
   },
   "CKB": {
    "city": "Clarksburg",
    "place": "Clarksburg, WV",
    "st": "WV",
    "lat": 39.2966,
-   "lon": -80.2281
+   "lon": -80.2281,
+   "tz": "America/New_York"
   },
   "CLD": {
    "city": "Carlsbad",
    "place": "Carlsbad, CA",
    "st": "CA",
    "lat": 33.1283,
-   "lon": -117.28
+   "lon": -117.28,
+   "tz": "America/Los_Angeles"
   },
   "CLE": {
    "city": "Cleveland",
    "place": "Cleveland, OH",
    "st": "OH",
    "lat": 41.4117,
-   "lon": -81.8498
+   "lon": -81.8498,
+   "tz": "America/New_York"
   },
   "CLL": {
    "city": "College Station",
    "place": "College Station, TX",
    "st": "TX",
    "lat": 30.5886,
-   "lon": -96.3638
+   "lon": -96.3638,
+   "tz": "America/Chicago"
   },
   "CLM": {
    "city": "Port Angeles",
@@ -1907,14 +2001,16 @@
    "lat": 48.1202,
    "lon": -123.5,
    "tip": "Port Angeles is in Clallam County: C-L-M from CLallaM.",
-   "clue": "CLallaM County"
+   "clue": "CLallaM County",
+   "tz": "America/Los_Angeles"
   },
   "CLT": {
    "city": "Charlotte",
    "place": "Charlotte, NC",
    "st": "NC",
    "lat": 35.214,
-   "lon": -80.9431
+   "lon": -80.9431,
+   "tz": "America/New_York"
   },
   "CMH": {
    "city": "Columbus",
@@ -1923,7 +2019,8 @@
    "lat": 39.998,
    "lon": -82.8919,
    "tip": "C-M from CoLuMbus, then H from oHio.",
-   "clue": "CoLuMbus, oHio"
+   "clue": "CoLuMbus, oHio",
+   "tz": "America/New_York"
   },
   "CMI": {
    "city": "Champaign/Urbana",
@@ -1931,7 +2028,8 @@
    "st": "IL",
    "lat": 40.0398,
    "lon": -88.2762,
-   "label": "Champaign"
+   "label": "Champaign",
+   "tz": "America/Chicago"
   },
   "CMX": {
    "city": "Hancock",
@@ -1940,7 +2038,8 @@
    "lat": 47.1684,
    "lon": -88.4891,
    "tip": "Hancock is in Michigan's Copper Country: “Copper Mine X.”",
-   "clue": "Copper Mine X"
+   "clue": "Copper Mine X",
+   "tz": "America/Detroit"
   },
   "CNK": {
    "city": "Concordia",
@@ -1949,7 +2048,8 @@
    "lat": 39.5493,
    "lon": -97.6523,
    "tip": "C-N from CoNcordia, then K for Kansas.",
-   "clue": "CoNcordia + K(ansas)"
+   "clue": "CoNcordia + K(ansas)",
+   "tz": "America/Chicago"
   },
   "CNM": {
    "city": "Carlsbad",
@@ -1958,7 +2058,8 @@
    "lat": 32.3375,
    "lon": -104.263,
    "tip": "C from Carlsbad, then N-M for New Mexico.",
-   "clue": "C + New Mexico"
+   "clue": "C + New Mexico",
+   "tz": "America/Denver"
   },
   "CNY": {
    "city": "Moab",
@@ -1967,7 +2068,8 @@
    "lat": 38.755,
    "lon": -109.755,
    "tip": "Moab's airport is Canyonlands Field: C-N-Y from CaNYonlands.",
-   "clue": "CaNYonlands"
+   "clue": "CaNYonlands",
+   "tz": "America/Denver"
   },
   "COD": {
    "city": "Cody/Yellowstone",
@@ -1976,7 +2078,8 @@
    "lat": 44.52,
    "lon": -109.024,
    "tip": "Just the first three letters: COD-y.",
-   "clue": "First 3 letters of the name"
+   "clue": "First 3 letters of the name",
+   "tz": "America/Denver"
   },
   "COS": {
    "city": "Colorado Springs",
@@ -1984,14 +2087,16 @@
    "st": "CO",
    "lat": 38.8058,
    "lon": -104.701,
-   "label": "Colo. Springs"
+   "label": "Colo. Springs",
+   "tz": "America/Denver"
   },
   "COU": {
    "city": "Columbia",
    "place": "Columbia, MO",
    "st": "MO",
    "lat": 38.8181,
-   "lon": -92.2196
+   "lon": -92.2196,
+   "tz": "America/Chicago"
   },
   "CPR": {
    "city": "Casper",
@@ -2000,14 +2105,16 @@
    "lat": 42.908,
    "lon": -106.464,
    "tip": "Take the C, P and R from CasPeR and skip the other letters. They spell CPR, like the first aid. Picture a cowboy getting CPR in Casper.",
-   "clue": "Think first aid"
+   "clue": "Think first aid",
+   "tz": "America/Denver"
   },
   "CRP": {
    "city": "Corpus Christi",
    "place": "Corpus Christi, TX",
    "st": "TX",
    "lat": 27.7704,
-   "lon": -97.5012
+   "lon": -97.5012,
+   "tz": "America/Chicago"
   },
   "CRW": {
    "city": "Charleston",
@@ -2016,7 +2123,8 @@
    "lat": 38.3731,
    "lon": -81.5932,
    "tip": "C-R from ChaRleston, then W for West Virginia.",
-   "clue": "ChaRleston + W(V)"
+   "clue": "ChaRleston + W(V)",
+   "tz": "America/New_York"
   },
   "CSG": {
    "city": "Columbus",
@@ -2025,7 +2133,8 @@
    "lat": 32.5164,
    "lon": -84.9396,
    "tip": "C-S from ColumbuS, then G for Georgia.",
-   "clue": "ColumbuS + G(eorgia)"
+   "clue": "ColumbuS + G(eorgia)",
+   "tz": "America/New_York"
   },
   "CVG": {
    "city": "Covington/Cincinnati",
@@ -2033,7 +2142,8 @@
    "st": "KY",
    "lat": 39.0488,
    "lon": -84.6678,
-   "label": "Cincinnati (KY)"
+   "label": "Cincinnati (KY)",
+   "tz": "America/New_York"
   },
   "CVN": {
    "city": "Clovis",
@@ -2042,7 +2152,8 @@
    "lat": 34.4266,
    "lon": -103.0788,
    "tip": "C-V from CloVis, then N for New Mexico.",
-   "clue": "CloVis + N(ew Mexico)"
+   "clue": "CloVis + N(ew Mexico)",
+   "tz": "America/Denver"
   },
   "CWA": {
    "city": "Stevens Point/Wausau",
@@ -2052,7 +2163,8 @@
    "lon": -89.6702,
    "label": "Wausau",
    "tip": "Central Wisconsin Airport: C-W-A.",
-   "clue": "Central Wisconsin Airport"
+   "clue": "Central Wisconsin Airport",
+   "tz": "America/Chicago"
   },
   "CYS": {
    "city": "Cheyenne",
@@ -2061,14 +2173,16 @@
    "lat": 41.156,
    "lon": -104.812,
    "tip": "C and Y come from CheYenne. For the S, think “State capital,” because Cheyenne is Wyoming’s capital city. Say it: “Capital? Yes, Sir!” C, Y, S.",
-   "clue": "Capital? Yes, Sir!"
+   "clue": "Capital? Yes, Sir!",
+   "tz": "America/Denver"
   },
   "DAB": {
    "city": "Daytona Beach",
    "place": "Daytona Beach, FL",
    "st": "FL",
    "lat": 29.1825,
-   "lon": -81.0595
+   "lon": -81.0595,
+   "tz": "America/New_York"
   },
   "DAL": {
    "city": "Dallas - Love Field",
@@ -2077,21 +2191,24 @@
    "lat": 32.8448,
    "lon": -96.8477,
    "label": "Love Field",
-   "tip": "Just the first three letters of Dallas: DAL. This is Love Field, the smaller airport. The big one is DFW (Dallas/Fort Worth)."
+   "tip": "Just the first three letters of Dallas: DAL. This is Love Field, the smaller airport. The big one is DFW (Dallas/Fort Worth).",
+   "tz": "America/Chicago"
   },
   "DAY": {
    "city": "Dayton",
    "place": "Dayton, OH",
    "st": "OH",
    "lat": 39.9024,
-   "lon": -84.2194
+   "lon": -84.2194,
+   "tz": "America/New_York"
   },
   "DBQ": {
    "city": "Dubuque",
    "place": "Dubuque, IA",
    "st": "IA",
    "lat": 42.402,
-   "lon": -90.7095
+   "lon": -90.7095,
+   "tz": "America/Chicago"
   },
   "DCA": {
    "city": "Washington - National",
@@ -2101,28 +2218,32 @@
    "lon": -77.0377,
    "label": "National",
    "tip": "Washington National is the D.C. Airport: D-C-A.",
-   "clue": "D.C. Airport"
+   "clue": "D.C. Airport",
+   "tz": "America/New_York"
   },
   "DDC": {
    "city": "Dodge City",
    "place": "Dodge City, KS",
    "st": "KS",
    "lat": 37.7634,
-   "lon": -99.9656
+   "lon": -99.9656,
+   "tz": "America/Chicago"
   },
   "DEC": {
    "city": "Decatur",
    "place": "Decatur, IL",
    "st": "IL",
    "lat": 39.8346,
-   "lon": -88.8657
+   "lon": -88.8657,
+   "tz": "America/Chicago"
   },
   "DEN": {
    "city": "Denver",
    "place": "Denver, CO",
    "st": "CO",
    "lat": 39.86,
-   "lon": -104.6738
+   "lon": -104.6738,
+   "tz": "America/Denver"
   },
   "DFW": {
    "city": "Dallas/Fort Worth",
@@ -2131,49 +2252,56 @@
    "lat": 32.8968,
    "lon": -97.038,
    "label": "Dallas/Fort Worth",
-   "tip": "D, F and W are the first letters of Dallas/Fort Worth. This is the big airport; the smaller one, Love Field, is DAL."
+   "tip": "D, F and W are the first letters of Dallas/Fort Worth. This is the big airport; the smaller one, Love Field, is DAL.",
+   "tz": "America/Chicago"
   },
   "DHN": {
    "city": "Dothan",
    "place": "Dothan, AL",
    "st": "AL",
    "lat": 31.3213,
-   "lon": -85.4496
+   "lon": -85.4496,
+   "tz": "America/Chicago"
   },
   "DIK": {
    "city": "Dickinson",
    "place": "Dickinson, ND",
    "st": "ND",
    "lat": 46.7975,
-   "lon": -102.8019
+   "lon": -102.8019,
+   "tz": "America/Denver"
   },
   "DLG": {
    "city": "Dillingham",
    "place": "Dillingham, AK",
    "st": "AK",
    "lat": 59.0447,
-   "lon": -158.505
+   "lon": -158.505,
+   "tz": "America/Anchorage"
   },
   "DLH": {
    "city": "Duluth",
    "place": "Duluth, MN",
    "st": "MN",
    "lat": 46.8419,
-   "lon": -92.1987
+   "lon": -92.1987,
+   "tz": "America/Chicago"
   },
   "DRO": {
    "city": "Durango",
    "place": "Durango, CO",
    "st": "CO",
    "lat": 37.1515,
-   "lon": -107.754
+   "lon": -107.754,
+   "tz": "America/Denver"
   },
   "DSM": {
    "city": "Des Moines",
    "place": "Des Moines, IA",
    "st": "IA",
    "lat": 41.534,
-   "lon": -93.6567
+   "lon": -93.6567,
+   "tz": "America/Chicago"
   },
   "DTW": {
    "city": "Detroit - Metro Wayne County",
@@ -2181,7 +2309,8 @@
    "st": "MI",
    "lat": 42.2138,
    "lon": -83.3538,
-   "label": "Detroit"
+   "label": "Detroit",
+   "tz": "America/Detroit"
   },
   "DUJ": {
    "city": "DuBois",
@@ -2190,105 +2319,120 @@
    "lat": 41.1783,
    "lon": -78.8987,
    "tip": "D-U from DUbois, then J: “DUbois Jets.”",
-   "clue": "DUbois Jets"
+   "clue": "DUbois Jets",
+   "tz": "America/New_York"
   },
   "DVL": {
    "city": "Devils Lake",
    "place": "Devils Lake, ND",
    "st": "ND",
    "lat": 48.1155,
-   "lon": -98.9088
+   "lon": -98.9088,
+   "tz": "America/Chicago"
   },
   "EAR": {
    "city": "Kearney",
    "place": "Kearney, NE",
    "st": "NE",
    "lat": 40.727,
-   "lon": -99.0068
+   "lon": -99.0068,
+   "tz": "America/Chicago"
   },
   "EAT": {
    "city": "Wenatchee",
    "place": "Wenatchee, WA",
    "st": "WA",
    "lat": 47.3989,
-   "lon": -120.207
+   "lon": -120.207,
+   "tz": "America/Los_Angeles"
   },
   "EAU": {
    "city": "Eau Claire",
    "place": "Eau Claire, WI",
    "st": "WI",
    "lat": 44.8658,
-   "lon": -91.4843
+   "lon": -91.4843,
+   "tz": "America/Chicago"
   },
   "EEN": {
    "city": "Keene",
    "place": "Keene, NH",
    "st": "NH",
    "lat": 42.8984,
-   "lon": -72.2708
+   "lon": -72.2708,
+   "tz": "America/New_York"
   },
   "EKO": {
    "city": "Elko",
    "place": "Elko, NV",
    "st": "NV",
    "lat": 40.8249,
-   "lon": -115.792
+   "lon": -115.792,
+   "tz": "America/Los_Angeles"
   },
   "ELD": {
    "city": "El Dorado",
    "place": "El Dorado, AR",
    "st": "AR",
    "lat": 33.221,
-   "lon": -92.8133
+   "lon": -92.8133,
+   "tz": "America/Chicago"
   },
   "ELM": {
    "city": "Elmira",
    "place": "Elmira, NY",
    "st": "NY",
    "lat": 42.1599,
-   "lon": -76.8916
+   "lon": -76.8916,
+   "tz": "America/New_York"
   },
   "ELP": {
    "city": "El Paso",
    "place": "El Paso, TX",
    "st": "TX",
    "lat": 31.8099,
-   "lon": -106.3756
+   "lon": -106.3756,
+   "tz": "America/Denver"
   },
   "ERI": {
    "city": "Erie",
    "place": "Erie, PA",
    "st": "PA",
    "lat": 42.0831,
-   "lon": -80.1739
+   "lon": -80.1739,
+   "tz": "America/New_York"
   },
   "ESC": {
    "city": "Escanaba",
    "place": "Escanaba, MI",
    "st": "MI",
    "lat": 45.7232,
-   "lon": -87.0886
+   "lon": -87.0886,
+   "tz": "America/Detroit"
   },
   "EUE": {
    "city": "Eureka",
    "place": "Eureka, NV",
    "st": "NV",
    "lat": 39.6042,
-   "lon": -116.005
+   "lon": -116.005,
+   "tz": "America/Los_Angeles"
   },
   "EUG": {
    "city": "Eugene",
    "place": "Eugene, OR",
    "st": "OR",
    "lat": 44.1246,
-   "lon": -123.212
+   "lon": -123.212,
+   "tz": "America/Los_Angeles"
   },
   "EVV": {
    "city": "Evansville",
    "place": "Evansville, IN",
    "st": "IN",
    "lat": 38.037,
-   "lon": -87.5324
+   "lon": -87.5324,
+   "tz": "America/Chicago"
   },
   "EWR": {
    "city": "Newark",
@@ -2296,28 +2440,32 @@
    "st": "NJ",
    "lat": 40.6894,
    "lon": -74.1705,
-   "tip": "E, W and R are inside nEWaRk, in order. Newark is in New Jersey, across the river from New York’s JFK and LGA."
+   "tip": "E, W and R are inside nEWaRk, in order. Newark is in New Jersey, across the river from New York’s JFK and LGA.",
+   "tz": "America/New_York"
   },
   "EYW": {
    "city": "Key West",
    "place": "Key West, FL",
    "st": "FL",
    "lat": 24.5561,
-   "lon": -81.7596
+   "lon": -81.7596,
+   "tz": "America/New_York"
   },
   "FAI": {
    "city": "Fairbanks",
    "place": "Fairbanks, AK",
    "st": "AK",
    "lat": 64.8151,
-   "lon": -147.856
+   "lon": -147.856,
+   "tz": "America/Anchorage"
   },
   "FAR": {
    "city": "Fargo",
    "place": "Fargo, ND",
    "st": "ND",
    "lat": 46.9207,
-   "lon": -96.8158
+   "lon": -96.8158,
+   "tz": "America/Chicago"
   },
   "FAT": {
    "city": "Fresno",
@@ -2326,14 +2474,16 @@
    "lat": 36.7758,
    "lon": -119.718,
    "tip": "Fresno Air Terminal: F-A-T.",
-   "clue": "Fresno Air Terminal"
+   "clue": "Fresno Air Terminal",
+   "tz": "America/Los_Angeles"
   },
   "FAY": {
    "city": "Fayetteville",
    "place": "Fayetteville, NC",
    "st": "NC",
    "lat": 34.9912,
-   "lon": -78.8803
+   "lon": -78.8803,
+   "tz": "America/New_York"
   },
   "FCA": {
    "city": "Kalispell",
@@ -2342,21 +2492,24 @@
    "lat": 48.3105,
    "lon": -114.256,
    "tip": "Kalispell's airport began as Flathead County Airport: F-C-A.",
-   "clue": "Flathead County Airport"
+   "clue": "Flathead County Airport",
+   "tz": "America/Denver"
   },
   "FKL": {
    "city": "Franklin",
    "place": "Franklin, PA",
    "st": "PA",
    "lat": 41.3779,
-   "lon": -79.8604
+   "lon": -79.8604,
+   "tz": "America/New_York"
   },
   "FLG": {
    "city": "Flagstaff",
    "place": "Flagstaff, AZ",
    "st": "AZ",
    "lat": 35.1398,
-   "lon": -111.6698
+   "lon": -111.6698,
+   "tz": "America/Phoenix"
   },
   "FLL": {
    "city": "Fort Lauderdale",
@@ -2364,14 +2517,16 @@
    "st": "FL",
    "lat": 26.0726,
    "lon": -80.1527,
-   "label": "Fort Lauderdale"
+   "label": "Fort Lauderdale",
+   "tz": "America/New_York"
   },
   "FLO": {
    "city": "Florence",
    "place": "Florence, SC",
    "st": "SC",
    "lat": 34.1854,
-   "lon": -79.7239
+   "lon": -79.7239,
+   "tz": "America/New_York"
   },
   "FNL": {
    "city": "Fort Collins/Loveland",
@@ -2379,21 +2534,24 @@
    "st": "CO",
    "lat": 40.4497,
    "lon": -105.0113,
-   "label": "Fort Collins"
+   "label": "Fort Collins",
+   "tz": "America/Denver"
   },
   "FNT": {
    "city": "Flint",
    "place": "Flint, MI",
    "st": "MI",
    "lat": 42.9693,
-   "lon": -83.7434
+   "lon": -83.7434,
+   "tz": "America/Detroit"
   },
   "FOD": {
    "city": "Fort Dodge",
    "place": "Fort Dodge, IA",
    "st": "IA",
    "lat": 42.5526,
-   "lon": -94.1912
+   "lon": -94.1912,
+   "tz": "America/Chicago"
   },
   "FOE": {
    "city": "Topeka",
@@ -2402,7 +2560,8 @@
    "lat": 38.9509,
    "lon": -95.6636,
    "tip": "Topeka's airport was Forbes Field: F-O-E from FOrbEs.",
-   "clue": "FOrbEs Field"
+   "clue": "FOrbEs Field",
+   "tz": "America/Chicago"
   },
   "FSD": {
    "city": "Sioux Falls",
@@ -2411,21 +2570,24 @@
    "lat": 43.5855,
    "lon": -96.7412,
    "tip": "Falls, South Dakota: F-S-D.",
-   "clue": "Falls South Dakota"
+   "clue": "Falls South Dakota",
+   "tz": "America/Chicago"
   },
   "FSM": {
    "city": "Fort Smith",
    "place": "Fort Smith, AR",
    "st": "AR",
    "lat": 35.3366,
-   "lon": -94.3674
+   "lon": -94.3674,
+   "tz": "America/Chicago"
   },
   "FWA": {
    "city": "Fort Wayne",
    "place": "Fort Wayne, IN",
    "st": "IN",
    "lat": 40.9789,
-   "lon": -85.1945
+   "lon": -85.1945,
+   "tz": "America/Indiana/Indianapolis"
   },
   "FYV": {
    "city": "Fayetteville - Municipal/Drake",
@@ -2433,7 +2595,8 @@
    "st": "AR",
    "lat": 36.0051,
    "lon": -94.1701,
-   "label": "Fayetteville (Drake)"
+   "label": "Fayetteville (Drake)",
+   "tz": "America/Chicago"
   },
   "GCC": {
    "city": "Gillette",
@@ -2442,7 +2605,8 @@
    "lat": 44.349,
    "lon": -105.539,
    "tip": "Only the G is in the name. For the rest, think of Gillette razors: “Gillette Cuts Clean.” G, C, C.",
-   "clue": "Gillette Cuts Clean"
+   "clue": "Gillette Cuts Clean",
+   "tz": "America/Denver"
   },
   "GCK": {
    "city": "Garden City",
@@ -2451,7 +2615,8 @@
    "lat": 37.9275,
    "lon": -100.724,
    "tip": "Garden City, Kansas: G-C-K.",
-   "clue": "Garden City Kansas"
+   "clue": "Garden City Kansas",
+   "tz": "America/Chicago"
   },
   "GCN": {
    "city": "Grand Canyon - National Park",
@@ -2459,14 +2624,16 @@
    "st": "AZ",
    "lat": 35.9524,
    "lon": -112.147,
-   "label": "Grand Canyon NP"
+   "label": "Grand Canyon NP",
+   "tz": "America/Phoenix"
   },
   "GDV": {
    "city": "Glendive",
    "place": "Glendive, MT",
    "st": "MT",
    "lat": 47.1377,
-   "lon": -104.8069
+   "lon": -104.8069,
+   "tz": "America/Denver"
   },
   "GEG": {
    "city": "Spokane",
@@ -2475,14 +2642,16 @@
    "lat": 47.6199,
    "lon": -117.534,
    "tip": "Spokane's airport was Geiger Field: G-E-G from GEiGer.",
-   "clue": "GEiGer Field"
+   "clue": "GEiGer Field",
+   "tz": "America/Los_Angeles"
   },
   "GFK": {
    "city": "Grand Forks",
    "place": "Grand Forks, ND",
    "st": "ND",
    "lat": 47.9493,
-   "lon": -97.1761
+   "lon": -97.1761,
+   "tz": "America/Chicago"
   },
   "GGG": {
    "city": "Gladewater/Kilgore/Longview",
@@ -2490,21 +2659,24 @@
    "st": "TX",
    "lat": 32.384,
    "lon": -94.7115,
-   "label": "Longview"
+   "label": "Longview",
+   "tz": "America/Chicago"
   },
   "GGW": {
    "city": "Glasgow",
    "place": "Glasgow, MT",
    "st": "MT",
    "lat": 48.2125,
-   "lon": -106.615
+   "lon": -106.615,
+   "tz": "America/Denver"
   },
   "GJT": {
    "city": "Grand Junction",
    "place": "Grand Junction, CO",
    "st": "CO",
    "lat": 39.1267,
-   "lon": -108.5294
+   "lon": -108.5294,
+   "tz": "America/Denver"
   },
   "GLH": {
    "city": "Greenville",
@@ -2513,14 +2685,16 @@
    "lat": 33.4829,
    "lon": -90.9856,
    "tip": "G-L from GreenviLle, then H: “GreenviLle Harbor.”",
-   "clue": "GreenviLle Harbor"
+   "clue": "GreenviLle Harbor",
+   "tz": "America/Chicago"
   },
   "GNV": {
    "city": "Gainesville",
    "place": "Gainesville, FL",
    "st": "FL",
    "lat": 29.6901,
-   "lon": -82.2718
+   "lon": -82.2718,
+   "tz": "America/New_York"
   },
   "GON": {
    "city": "Groton/New London",
@@ -2528,7 +2702,8 @@
    "st": "CT",
    "lat": 41.3301,
    "lon": -72.0451,
-   "label": "Groton"
+   "label": "Groton",
+   "tz": "America/New_York"
   },
   "GPT": {
    "city": "Biloxi/Gulfport",
@@ -2536,7 +2711,8 @@
    "st": "MS",
    "lat": 30.4056,
    "lon": -89.0698,
-   "label": "Gulfport"
+   "label": "Gulfport",
+   "tz": "America/Chicago"
   },
   "GPZ": {
    "city": "Grand Rapids",
@@ -2545,28 +2721,32 @@
    "lat": 47.2111,
    "lon": -93.5098,
    "tip": "G from Grand Rapids, then P-Z: “Grand Pines Zone” (Minnesota north woods).",
-   "clue": "Grand Pines Zone"
+   "clue": "Grand Pines Zone",
+   "tz": "America/Chicago"
   },
   "GRB": {
    "city": "Green Bay",
    "place": "Green Bay, WI",
    "st": "WI",
    "lat": 44.4835,
-   "lon": -88.1308
+   "lon": -88.1308,
+   "tz": "America/Chicago"
   },
   "GRI": {
    "city": "Grand Island",
    "place": "Grand Island, NE",
    "st": "NE",
    "lat": 40.9675,
-   "lon": -98.3096
+   "lon": -98.3096,
+   "tz": "America/Chicago"
   },
   "GRR": {
    "city": "Grand Rapids",
    "place": "Grand Rapids, MI",
    "st": "MI",
    "lat": 42.8808,
-   "lon": -85.5228
+   "lon": -85.5228,
+   "tz": "America/Detroit"
   },
   "GSO": {
    "city": "Greensboro/High Point",
@@ -2574,7 +2754,8 @@
    "st": "NC",
    "lat": 36.0994,
    "lon": -79.9373,
-   "label": "Greensboro"
+   "label": "Greensboro",
+   "tz": "America/New_York"
   },
   "GSP": {
    "city": "Greenville/Spartanburg",
@@ -2582,21 +2763,24 @@
    "st": "SC",
    "lat": 34.8957,
    "lon": -82.2189,
-   "label": "Spartanburg"
+   "label": "Spartanburg",
+   "tz": "America/New_York"
   },
   "GST": {
    "city": "Gustavus",
    "place": "Gustavus, AK",
    "st": "AK",
    "lat": 58.4253,
-   "lon": -135.707
+   "lon": -135.707,
+   "tz": "America/Juneau"
   },
   "GTF": {
    "city": "Great Falls",
    "place": "Great Falls, MT",
    "st": "MT",
    "lat": 47.482,
-   "lon": -111.371
+   "lon": -111.371,
+   "tz": "America/Denver"
   },
   "GTR": {
    "city": "Columbus",
@@ -2605,7 +2789,8 @@
    "lat": 33.4503,
    "lon": -88.5914,
    "tip": "Columbus, MS is served by Golden Triangle Regional: G-T-R.",
-   "clue": "Golden Triangle Regional"
+   "clue": "Golden Triangle Regional",
+   "tz": "America/Chicago"
   },
   "GUC": {
    "city": "Gunnison",
@@ -2614,14 +2799,16 @@
    "lat": 38.5347,
    "lon": -106.9346,
    "tip": "G-U from GUnnison, then C for Colorado.",
-   "clue": "GUnnison + C(olorado)"
+   "clue": "GUnnison + C(olorado)",
+   "tz": "America/Denver"
   },
   "GUP": {
    "city": "Gallup",
    "place": "Gallup, NM",
    "st": "NM",
    "lat": 35.5117,
-   "lon": -108.7882
+   "lon": -108.7882,
+   "tz": "America/Denver"
   },
   "GYY": {
    "city": "Gary",
@@ -2630,7 +2817,8 @@
    "lat": 41.6171,
    "lon": -87.4132,
    "tip": "G from Gary, then Y-Y: “Gary? Yes, Yes!”",
-   "clue": "Gary Yes Yes"
+   "clue": "Gary Yes Yes",
+   "tz": "America/Chicago"
   },
   "HAE": {
    "city": "Havasupai",
@@ -2639,28 +2827,32 @@
    "lat": 36.1916,
    "lon": -113.092,
    "tip": "H-A from HAvasupai, then E: “Havasupai: Always Exploring.”",
-   "clue": "HAvasupai + E"
+   "clue": "HAvasupai + E",
+   "tz": "America/Phoenix"
   },
   "HBB": {
    "city": "Hobbs",
    "place": "Hobbs, NM",
    "st": "NM",
    "lat": 32.7668,
-   "lon": -103.209
+   "lon": -103.209,
+   "tz": "America/Denver"
   },
   "HDN": {
    "city": "Hayden",
    "place": "Hayden, CO",
    "st": "CO",
    "lat": 40.4812,
-   "lon": -107.218
+   "lon": -107.218,
+   "tz": "America/Denver"
   },
   "HGR": {
    "city": "Hagerstown",
    "place": "Hagerstown, MD",
    "st": "MD",
    "lat": 39.7088,
-   "lon": -77.728
+   "lon": -77.728,
+   "tz": "America/New_York"
   },
   "HHH": {
    "city": "Hilton Head",
@@ -2669,7 +2861,8 @@
    "lat": 32.2244,
    "lon": -80.6975,
    "tip": "“Hilton Head Holiday”: H-H-H.",
-   "clue": "Hilton Head Holiday"
+   "clue": "Hilton Head Holiday",
+   "tz": "America/New_York"
   },
   "HIB": {
    "city": "Hibbing/Chisholm",
@@ -2677,7 +2870,8 @@
    "st": "MN",
    "lat": 47.3848,
    "lon": -92.8369,
-   "label": "Hibbing"
+   "label": "Hibbing",
+   "tz": "America/Chicago"
   },
   "HII": {
    "city": "Lake Havasu City",
@@ -2687,21 +2881,24 @@
    "lon": -114.3577,
    "label": "Lake Havasu",
    "tip": "“Havasu Is Incredible.” H from Havasu, I, I.",
-   "clue": "Havasu Is Incredible"
+   "clue": "Havasu Is Incredible",
+   "tz": "America/Phoenix"
   },
   "HKY": {
    "city": "Hickory",
    "place": "Hickory, NC",
    "st": "NC",
    "lat": 35.7411,
-   "lon": -81.3895
+   "lon": -81.3895,
+   "tz": "America/New_York"
   },
   "HLN": {
    "city": "Helena",
    "place": "Helena, MT",
    "st": "MT",
    "lat": 46.6068,
-   "lon": -111.983
+   "lon": -111.983,
+   "tz": "America/Denver"
   },
   "HNL": {
    "city": "Honolulu (Oahu)",
@@ -2709,7 +2906,8 @@
    "st": "HI",
    "lat": 21.3184,
    "lon": -157.9257,
-   "label": "Honolulu"
+   "label": "Honolulu",
+   "tz": "Pacific/Honolulu"
   },
   "HNM": {
    "city": "Hana (Maui)",
@@ -2717,21 +2915,24 @@
    "st": "HI",
    "lat": 20.7956,
    "lon": -156.014,
-   "label": "Hana"
+   "label": "Hana",
+   "tz": "Pacific/Honolulu"
   },
   "HON": {
    "city": "Huron",
    "place": "Huron, SD",
    "st": "SD",
    "lat": 44.3852,
-   "lon": -98.2285
+   "lon": -98.2285,
+   "tz": "America/Chicago"
   },
   "HOT": {
    "city": "Hot Springs",
    "place": "Hot Springs, AR",
    "st": "AR",
    "lat": 34.4788,
-   "lon": -93.0963
+   "lon": -93.0963,
+   "tz": "America/Chicago"
   },
   "HOU": {
    "city": "Houston - Hobby",
@@ -2740,7 +2941,8 @@
    "lat": 29.6453,
    "lon": -95.2768,
    "label": "Hobby",
-   "tip": "Just the first three letters of Houston: HOU. This is Hobby, the smaller airport. The big one is IAH."
+   "tip": "Just the first three letters of Houston: HOU. This is Hobby, the smaller airport. The big one is IAH.",
+   "tz": "America/Chicago"
   },
   "HPN": {
    "city": "Westchester County",
@@ -2750,28 +2952,32 @@
    "lon": -73.7076,
    "label": "Westchester",
    "tip": "Westchester County Airport is in White Plains: wHite PlaiNs.",
-   "clue": "wHite PlaiNs"
+   "clue": "wHite PlaiNs",
+   "tz": "America/New_York"
   },
   "HRL": {
    "city": "Harlingen",
    "place": "Harlingen, TX",
    "st": "TX",
    "lat": 26.2285,
-   "lon": -97.6544
+   "lon": -97.6544,
+   "tz": "America/Chicago"
   },
   "HRO": {
    "city": "Harrison",
    "place": "Harrison, AR",
    "st": "AR",
    "lat": 36.2615,
-   "lon": -93.1547
+   "lon": -93.1547,
+   "tz": "America/Chicago"
   },
   "HSV": {
    "city": "Huntsville",
    "place": "Huntsville, AL",
    "st": "AL",
    "lat": 34.6362,
-   "lon": -86.7744
+   "lon": -86.7744,
+   "tz": "America/Chicago"
   },
   "HTS": {
    "city": "Huntington/Ashland",
@@ -2779,7 +2985,8 @@
    "st": "KY",
    "lat": 38.3667,
    "lon": -82.558,
-   "label": "Huntington"
+   "label": "Huntington",
+   "tz": "America/New_York"
   },
   "HUF": {
    "city": "Terre Haute",
@@ -2788,35 +2995,40 @@
    "lat": 39.4515,
    "lon": -87.3076,
    "tip": "Terre Haute's airport is Hulman Field: H-U-F from HUlman Field.",
-   "clue": "HUlman Field"
+   "clue": "HUlman Field",
+   "tz": "America/Indiana/Indianapolis"
   },
   "HVN": {
    "city": "New Haven",
    "place": "New Haven, CT",
    "st": "CT",
    "lat": 41.2629,
-   "lon": -72.8877
+   "lon": -72.8877,
+   "tz": "America/New_York"
   },
   "HVR": {
    "city": "Havre",
    "place": "Havre, MT",
    "st": "MT",
    "lat": 48.5414,
-   "lon": -109.7629
+   "lon": -109.7629,
+   "tz": "America/Denver"
   },
   "HYA": {
    "city": "Hyannis",
    "place": "Hyannis, MA",
    "st": "MA",
    "lat": 41.6693,
-   "lon": -70.2804
+   "lon": -70.2804,
+   "tz": "America/New_York"
   },
   "HYS": {
    "city": "Hays",
    "place": "Hays, KS",
    "st": "KS",
    "lat": 38.8445,
-   "lon": -99.2731
+   "lon": -99.2731,
+   "tz": "America/Chicago"
   },
   "IAD": {
    "city": "Washington - Dulles",
@@ -2826,7 +3038,8 @@
    "lon": -77.4558,
    "label": "Dulles",
    "tip": "Dulles was going to be DIA, but that looked too much like DCA, so the letters were shuffled: I-A-D.",
-   "clue": "DIA, shuffled"
+   "clue": "DIA, shuffled",
+   "tz": "America/New_York"
   },
   "IAH": {
    "city": "Houston - Intercontinental",
@@ -2836,21 +3049,24 @@
    "lon": -95.3414,
    "label": "Houston Intl",
    "tip": "Intercontinental Airport, Houston: I-A-H.",
-   "clue": "Intercontinental Airport Houston"
+   "clue": "Intercontinental Airport Houston",
+   "tz": "America/Chicago"
   },
   "ICT": {
    "city": "Wichita",
    "place": "Wichita, KS",
    "st": "KS",
    "lat": 37.6503,
-   "lon": -97.4286
+   "lon": -97.4286,
+   "tz": "America/Chicago"
   },
   "IDA": {
    "city": "Idaho Falls",
    "place": "Idaho Falls, ID",
    "st": "ID",
    "lat": 43.5146,
-   "lon": -112.071
+   "lon": -112.071,
+   "tz": "America/Boise"
   },
   "IFP": {
    "city": "Bullhead City/Laughlin",
@@ -2860,49 +3076,56 @@
    "lon": -114.5593,
    "label": "Bullhead City",
    "tip": "Bullhead City sits across the river from Laughlin's casinos: “I Feel Prosperous.”",
-   "clue": "I Feel Prosperous"
+   "clue": "I Feel Prosperous",
+   "tz": "America/Phoenix"
   },
   "IGM": {
    "city": "Kingman",
    "place": "Kingman, AZ",
    "st": "AZ",
    "lat": 35.2595,
-   "lon": -113.938
+   "lon": -113.938,
+   "tz": "America/Phoenix"
   },
   "ILE": {
    "city": "Killeen",
    "place": "Killeen, TX",
    "st": "TX",
    "lat": 31.0858,
-   "lon": -97.6865
+   "lon": -97.6865,
+   "tz": "America/Chicago"
   },
   "ILG": {
    "city": "Wilmington",
    "place": "Wilmington, DE",
    "st": "DE",
    "lat": 39.6787,
-   "lon": -75.6065
+   "lon": -75.6065,
+   "tz": "America/New_York"
   },
   "ILM": {
    "city": "Wilmington",
    "place": "Wilmington, NC",
    "st": "NC",
    "lat": 34.2723,
-   "lon": -77.9051
+   "lon": -77.9051,
+   "tz": "America/New_York"
   },
   "IMT": {
    "city": "Iron Mountain",
    "place": "Iron Mountain, MI",
    "st": "MI",
    "lat": 45.8191,
-   "lon": -88.1146
+   "lon": -88.1146,
+   "tz": "America/Menominee"
   },
   "IND": {
    "city": "Indianapolis",
    "place": "Indianapolis, IN",
    "st": "IN",
    "lat": 39.7173,
-   "lon": -86.2944
+   "lon": -86.2944,
+   "tz": "America/Indiana/Indianapolis"
   },
   "INL": {
    "city": "International Falls",
@@ -2910,7 +3133,8 @@
    "st": "MN",
    "lat": 48.5662,
    "lon": -93.4031,
-   "label": "Intl Falls"
+   "label": "Intl Falls",
+   "tz": "America/Chicago"
   },
   "IPL": {
    "city": "El Centro/Imperial",
@@ -2918,42 +3142,48 @@
    "st": "CA",
    "lat": 32.8354,
    "lon": -115.574,
-   "label": "El Centro"
+   "label": "El Centro",
+   "tz": "America/Los_Angeles"
   },
   "IPT": {
    "city": "Williamsport",
    "place": "Williamsport, PA",
    "st": "PA",
    "lat": 41.2421,
-   "lon": -76.9224
+   "lon": -76.9224,
+   "tz": "America/New_York"
   },
   "IRK": {
    "city": "Kirksville",
    "place": "Kirksville, MO",
    "st": "MO",
    "lat": 40.0935,
-   "lon": -92.5449
+   "lon": -92.5449,
+   "tz": "America/Chicago"
   },
   "ISN": {
    "city": "Williston",
    "place": "Williston, ND",
    "st": "ND",
    "lat": 48.1779,
-   "lon": -103.642
+   "lon": -103.642,
+   "tz": "America/Chicago"
   },
   "ISP": {
    "city": "Islip",
    "place": "Islip, NY",
    "st": "NY",
    "lat": 40.7963,
-   "lon": -73.1017
+   "lon": -73.1017,
+   "tz": "America/New_York"
   },
   "ITH": {
    "city": "Ithaca",
    "place": "Ithaca, NY",
    "st": "NY",
    "lat": 42.491,
-   "lon": -76.4584
+   "lon": -76.4584,
+   "tz": "America/New_York"
   },
   "ITO": {
    "city": "Hilo (Big Island)",
@@ -2963,21 +3193,24 @@
    "lon": -155.0454,
    "label": "Hilo",
    "tip": "The Big Island is nicknamed the Orchid Isle: “Island of The Orchids.”",
-   "clue": "Island of The Orchids"
+   "clue": "Island of The Orchids",
+   "tz": "Pacific/Honolulu"
   },
   "IWD": {
    "city": "Ironwood",
    "place": "Ironwood, MI",
    "st": "MI",
    "lat": 46.5253,
-   "lon": -90.1316
+   "lon": -90.1316,
+   "tz": "America/Menominee"
   },
   "IYK": {
    "city": "Inyokern",
    "place": "Inyokern, CA",
    "st": "CA",
    "lat": 35.6588,
-   "lon": -117.83
+   "lon": -117.83,
+   "tz": "America/Los_Angeles"
   },
   "JAC": {
    "city": "Jackson Hole",
@@ -2986,14 +3219,16 @@
    "lat": 43.607,
    "lon": -110.738,
    "tip": "Just the first three letters: JAC-kson Hole.",
-   "clue": "First 3 letters of the name"
+   "clue": "First 3 letters of the name",
+   "tz": "America/Denver"
   },
   "JAN": {
    "city": "Jackson",
    "place": "Jackson, MS",
    "st": "MS",
    "lat": 32.3112,
-   "lon": -90.0759
+   "lon": -90.0759,
+   "tz": "America/Chicago"
   },
   "JAX": {
    "city": "Jacksonville",
@@ -3002,14 +3237,16 @@
    "lat": 30.4925,
    "lon": -81.6878,
    "tip": "J-A from JAcksonville, then X like LAX.",
-   "clue": "JAcksonville + X"
+   "clue": "JAcksonville + X",
+   "tz": "America/New_York"
   },
   "JBR": {
    "city": "Jonesboro",
    "place": "Jonesboro, AR",
    "st": "AR",
    "lat": 35.8317,
-   "lon": -90.6464
+   "lon": -90.6464,
+   "tz": "America/Chicago"
   },
   "JFK": {
    "city": "New York - Kennedy",
@@ -3019,7 +3256,8 @@
    "lon": -73.7793,
    "label": "JFK Kennedy",
    "tip": "Named for President John F. Kennedy: J-F-K.",
-   "clue": "John F. Kennedy"
+   "clue": "John F. Kennedy",
+   "tz": "America/New_York"
   },
   "JGC": {
    "city": "Grand Canyon - Heliport",
@@ -3029,7 +3267,8 @@
    "lon": -112.146,
    "label": "GC Heliport",
    "tip": "Jet-copter to Grand Canyon: J, then G-C for Grand Canyon.",
-   "clue": "Jet-copter Grand Canyon"
+   "clue": "Jet-copter Grand Canyon",
+   "tz": "America/Phoenix"
   },
   "JHM": {
    "city": "Kapalua (Maui)",
@@ -3039,7 +3278,8 @@
    "lon": -156.673,
    "label": "Kapalua",
    "tip": "“Just Hawaii, Maui.” Kapalua is on Maui.",
-   "clue": "Just Hawaii Maui"
+   "clue": "Just Hawaii Maui",
+   "tz": "Pacific/Honolulu"
   },
   "JHW": {
    "city": "Jamestown",
@@ -3048,42 +3288,48 @@
    "lat": 42.1542,
    "lon": -79.254,
    "tip": "J from Jamestown, then H-W: “Jamestown Heads West” (it's in western New York).",
-   "clue": "Jamestown Heads West"
+   "clue": "Jamestown Heads West",
+   "tz": "America/New_York"
   },
   "JLN": {
    "city": "Joplin",
    "place": "Joplin, MO",
    "st": "MO",
    "lat": 37.1518,
-   "lon": -94.4983
+   "lon": -94.4983,
+   "tz": "America/Chicago"
   },
   "JMS": {
    "city": "Jamestown",
    "place": "Jamestown, ND",
    "st": "ND",
    "lat": 46.9297,
-   "lon": -98.6782
+   "lon": -98.6782,
+   "tz": "America/Chicago"
   },
   "JNU": {
    "city": "Juneau",
    "place": "Juneau, AK",
    "st": "AK",
    "lat": 58.3549,
-   "lon": -134.5744
+   "lon": -134.5744,
+   "tz": "America/Juneau"
   },
   "JST": {
    "city": "Johnstown",
    "place": "Johnstown, PA",
    "st": "PA",
    "lat": 40.3161,
-   "lon": -78.8339
+   "lon": -78.8339,
+   "tz": "America/New_York"
   },
   "JVL": {
    "city": "Janesville",
    "place": "Janesville, WI",
    "st": "WI",
    "lat": 42.6203,
-   "lon": -89.0416
+   "lon": -89.0416,
+   "tz": "America/Chicago"
   },
   "KOA": {
    "city": "Kona (Big Island)",
@@ -3091,28 +3337,32 @@
    "st": "HI",
    "lat": 19.7388,
    "lon": -156.0456,
-   "label": "Kona"
+   "label": "Kona",
+   "tz": "Pacific/Honolulu"
   },
   "KTN": {
    "city": "Ketchikan",
    "place": "Ketchikan, AK",
    "st": "AK",
    "lat": 55.3556,
-   "lon": -131.714
+   "lon": -131.714,
+   "tz": "America/Sitka"
   },
   "LAF": {
    "city": "Lafayette",
    "place": "Lafayette, IN",
    "st": "IN",
    "lat": 40.4129,
-   "lon": -86.9394
+   "lon": -86.9394,
+   "tz": "America/Indiana/Indianapolis"
   },
   "LAN": {
    "city": "Lansing",
    "place": "Lansing, MI",
    "st": "MI",
    "lat": 42.7776,
-   "lon": -84.5857
+   "lon": -84.5857,
+   "tz": "America/Detroit"
   },
   "LAR": {
    "city": "Laramie",
@@ -3121,21 +3371,24 @@
    "lat": 41.312,
    "lon": -105.675,
    "tip": "Just the first three letters: LAR-amie.",
-   "clue": "First 3 letters of the name"
+   "clue": "First 3 letters of the name",
+   "tz": "America/Denver"
   },
   "LAS": {
    "city": "Las Vegas",
    "place": "Las Vegas, NV",
    "st": "NV",
    "lat": 36.0834,
-   "lon": -115.1518
+   "lon": -115.1518,
+   "tz": "America/Los_Angeles"
   },
   "LAW": {
    "city": "Lawton",
    "place": "Lawton, OK",
    "st": "OK",
    "lat": 34.5677,
-   "lon": -98.4166
+   "lon": -98.4166,
+   "tz": "America/Chicago"
   },
   "LAX": {
    "city": "Los Angeles",
@@ -3144,21 +3397,24 @@
    "lat": 33.9425,
    "lon": -118.408,
    "tip": "LA plus X. When codes went from two letters to three, Los Angeles added an X.",
-   "clue": "LA + X"
+   "clue": "LA + X",
+   "tz": "America/Los_Angeles"
   },
   "LBB": {
    "city": "Lubbock",
    "place": "Lubbock, TX",
    "st": "TX",
    "lat": 33.6636,
-   "lon": -101.823
+   "lon": -101.823,
+   "tz": "America/Chicago"
   },
   "LBE": {
    "city": "Latrobe",
    "place": "Latrobe, PA",
    "st": "PA",
    "lat": 40.2759,
-   "lon": -79.4048
+   "lon": -79.4048,
+   "tz": "America/New_York"
   },
   "LBF": {
    "city": "North Platte",
@@ -3167,21 +3423,24 @@
    "lat": 41.1262,
    "lon": -100.684,
    "tip": "North Platte's airport is Lee Bird Field: L-B-F.",
-   "clue": "Lee Bird Field"
+   "clue": "Lee Bird Field",
+   "tz": "America/Chicago"
   },
   "LBL": {
    "city": "Liberal",
    "place": "Liberal, KS",
    "st": "KS",
    "lat": 37.0442,
-   "lon": -100.96
+   "lon": -100.96,
+   "tz": "America/Chicago"
   },
   "LCH": {
    "city": "Lake Charles",
    "place": "Lake Charles, LA",
    "st": "LA",
    "lat": 30.1261,
-   "lon": -93.2233
+   "lon": -93.2233,
+   "tz": "America/Chicago"
   },
   "LEB": {
    "city": "Lebanon/Hanover",
@@ -3189,21 +3448,24 @@
    "st": "NH",
    "lat": 43.6261,
    "lon": -72.3042,
-   "label": "Lebanon"
+   "label": "Lebanon",
+   "tz": "America/New_York"
   },
   "LEX": {
    "city": "Lexington",
    "place": "Lexington, KY",
    "st": "KY",
    "lat": 38.0351,
-   "lon": -84.6067
+   "lon": -84.6067,
+   "tz": "America/New_York"
   },
   "LFT": {
    "city": "Lafayette",
    "place": "Lafayette, LA",
    "st": "LA",
    "lat": 30.2053,
-   "lon": -91.9876
+   "lon": -91.9876,
+   "tz": "America/Chicago"
   },
   "LGA": {
    "city": "New York - LaGuardia",
@@ -3212,14 +3474,16 @@
    "lat": 40.7772,
    "lon": -73.8726,
    "label": "LaGuardia",
-   "tip": "L, G and A are inside LaGuArdia, in order. New York also has JFK, and Newark (EWR) is just across the river."
+   "tip": "L, G and A are inside LaGuArdia, in order. New York also has JFK, and Newark (EWR) is just across the river.",
+   "tz": "America/New_York"
   },
   "LGB": {
    "city": "Long Beach",
    "place": "Long Beach, CA",
    "st": "CA",
    "lat": 33.8165,
-   "lon": -118.1499
+   "lon": -118.1499,
+   "tz": "America/Los_Angeles"
   },
   "LIH": {
    "city": "Lihue (Kauai)",
@@ -3227,14 +3491,16 @@
    "st": "HI",
    "lat": 21.9744,
    "lon": -159.3371,
-   "label": "Lihue"
+   "label": "Lihue",
+   "tz": "Pacific/Honolulu"
   },
   "LIT": {
    "city": "Little Rock",
    "place": "Little Rock, AR",
    "st": "AR",
    "lat": 34.7292,
-   "lon": -92.2236
+   "lon": -92.2236,
+   "tz": "America/Chicago"
   },
   "LKE": {
    "city": "Seattle - Lake Union",
@@ -3242,14 +3508,16 @@
    "st": "WA",
    "lat": 47.629,
    "lon": -122.339,
-   "label": "Lake Union"
+   "label": "Lake Union",
+   "tz": "America/Los_Angeles"
   },
   "LMT": {
    "city": "Klamath Falls",
    "place": "Klamath Falls, OR",
    "st": "OR",
    "lat": 42.1561,
-   "lon": -121.733
+   "lon": -121.733,
+   "tz": "America/Los_Angeles"
   },
   "LNK": {
    "city": "Lincoln",
@@ -3258,14 +3526,16 @@
    "lat": 40.8449,
    "lon": -96.7618,
    "tip": "L-N from LiNcoln, then K: say it “LiNK.”",
-   "clue": "LiNK"
+   "clue": "LiNK",
+   "tz": "America/Chicago"
   },
   "LNS": {
    "city": "Lancaster",
    "place": "Lancaster, PA",
    "st": "PA",
    "lat": 40.1217,
-   "lon": -76.2961
+   "lon": -76.2961,
+   "tz": "America/New_York"
   },
   "LNY": {
    "city": "Lanai City (Lanai)",
@@ -3273,7 +3543,8 @@
    "st": "HI",
    "lat": 20.7857,
    "lon": -156.9513,
-   "label": "Lanai City"
+   "label": "Lanai City",
+   "tz": "Pacific/Honolulu"
   },
   "LPS": {
    "city": "Lopez Island",
@@ -3281,21 +3552,24 @@
    "st": "WA",
    "lat": 48.4839,
    "lon": -122.938,
-   "label": "Lopez Is."
+   "label": "Lopez Is.",
+   "tz": "America/Los_Angeles"
   },
   "LRD": {
    "city": "Laredo",
    "place": "Laredo, TX",
    "st": "TX",
    "lat": 27.5438,
-   "lon": -99.4616
+   "lon": -99.4616,
+   "tz": "America/Chicago"
   },
   "LSE": {
    "city": "La Crosse",
    "place": "La Crosse, WI",
    "st": "WI",
    "lat": 43.879,
-   "lon": -91.2567
+   "lon": -91.2567,
+   "tz": "America/Chicago"
   },
   "LUP": {
    "city": "Kalaupapa (Molokai)",
@@ -3303,28 +3577,32 @@
    "st": "HI",
    "lat": 21.211,
    "lon": -156.974,
-   "label": "Kalaupapa"
+   "label": "Kalaupapa",
+   "tz": "Pacific/Honolulu"
   },
   "LWB": {
    "city": "Lewisburg",
    "place": "Lewisburg, WV",
    "st": "WV",
    "lat": 37.8579,
-   "lon": -80.4004
+   "lon": -80.4004,
+   "tz": "America/New_York"
   },
   "LWS": {
    "city": "Lewiston",
    "place": "Lewiston, ID",
    "st": "ID",
    "lat": 46.3745,
-   "lon": -117.015
+   "lon": -117.015,
+   "tz": "America/Los_Angeles"
   },
   "LWT": {
    "city": "Lewistown",
    "place": "Lewistown, MT",
    "st": "MT",
    "lat": 47.0484,
-   "lon": -109.4661
+   "lon": -109.4661,
+   "tz": "America/Denver"
   },
   "LYU": {
    "city": "Ely",
@@ -3333,7 +3611,8 @@
    "lat": 47.8245,
    "lon": -91.8307,
    "tip": "L-Y from eLY, then U: “eLY, yoU.”",
-   "clue": "eLY + yoU"
+   "clue": "eLY + yoU",
+   "tz": "America/Chicago"
   },
   "MAF": {
    "city": "Midland/Odessa",
@@ -3343,7 +3622,8 @@
    "lon": -102.202,
    "label": "Midland",
    "tip": "Midland Air Field: M-A-F.",
-   "clue": "Midland Air Field"
+   "clue": "Midland Air Field",
+   "tz": "America/Chicago"
   },
   "MBL": {
    "city": "Manistee",
@@ -3352,7 +3632,8 @@
    "lat": 44.2727,
    "lon": -86.2465,
    "tip": "Manistee's airport is Manistee County-Blacker: M, then B-L from BLacker.",
-   "clue": "Manistee BLacker"
+   "clue": "Manistee BLacker",
+   "tz": "America/Detroit"
   },
   "MBS": {
    "city": "Saginaw/Bay City/Midland",
@@ -3362,14 +3643,16 @@
    "lon": -84.0831,
    "label": "Saginaw",
    "tip": "The airport serves three cities: Midland, Bay City, Saginaw.",
-   "clue": "Midland Bay Saginaw"
+   "clue": "Midland Bay Saginaw",
+   "tz": "America/Detroit"
   },
   "MCE": {
    "city": "Merced",
    "place": "Merced, CA",
    "st": "CA",
    "lat": 37.2847,
-   "lon": -120.514
+   "lon": -120.514,
+   "tz": "America/Los_Angeles"
   },
   "MCI": {
    "city": "Kansas City",
@@ -3378,21 +3661,24 @@
    "lat": 39.3017,
    "lon": -94.7139,
    "tip": "Kansas City's airport was Mid-Continent International: M-C-I.",
-   "clue": "Mid-Continent International"
+   "clue": "Mid-Continent International",
+   "tz": "America/Chicago"
   },
   "MCK": {
    "city": "McCook",
    "place": "McCook, NE",
    "st": "NE",
    "lat": 40.2078,
-   "lon": -100.5928
+   "lon": -100.5928,
+   "tz": "America/Chicago"
   },
   "MCN": {
    "city": "Macon",
    "place": "Macon, GA",
    "st": "GA",
    "lat": 32.6928,
-   "lon": -83.6492
+   "lon": -83.6492,
+   "tz": "America/New_York"
   },
   "MCO": {
    "city": "Orlando - International",
@@ -3402,7 +3688,8 @@
    "lon": -81.309,
    "label": "Orlando Intl",
    "tip": "Orlando International used to be McCoy Air Force Base: M-C-O from MCcOy.",
-   "clue": "MCcOy Air Force Base"
+   "clue": "MCcOy Air Force Base",
+   "tz": "America/New_York"
   },
   "MCW": {
    "city": "Mason City",
@@ -3411,7 +3698,8 @@
    "lat": 43.1598,
    "lon": -93.3297,
    "tip": "Mason City, then W: “Mason City Wins.”",
-   "clue": "Mason City Wins"
+   "clue": "Mason City Wins",
+   "tz": "America/Chicago"
   },
   "MDH": {
    "city": "Carbondale",
@@ -3420,7 +3708,8 @@
    "lat": 37.7781,
    "lon": -89.252,
    "tip": "Carbondale is home to the SIU Salukis, a dog breed: “Many Dawgs Here.”",
-   "clue": "Many Dawgs Here"
+   "clue": "Many Dawgs Here",
+   "tz": "America/Chicago"
   },
   "MDJ": {
    "city": "Madras",
@@ -3429,7 +3718,8 @@
    "lat": 44.6702,
    "lon": -121.155,
    "tip": "M-D from MaDras, then J: “MaDras Junction.”",
-   "clue": "MaDras Junction"
+   "clue": "MaDras Junction",
+   "tz": "America/Los_Angeles"
   },
   "MDT": {
    "city": "Harrisburg",
@@ -3438,7 +3728,8 @@
    "lat": 40.1928,
    "lon": -76.7623,
    "tip": "Harrisburg International is in Middletown: M-D-T from MiDdleTown.",
-   "clue": "MiDdleTown"
+   "clue": "MiDdleTown",
+   "tz": "America/New_York"
   },
   "MDW": {
    "city": "Chicago - Midway",
@@ -3447,21 +3738,24 @@
    "lat": 41.786,
    "lon": -87.7524,
    "label": "Midway",
-   "tip": "M, D and W are inside MiDWay, in order. Chicago’s bigger airport is O’Hare, ORD."
+   "tip": "M, D and W are inside MiDWay, in order. Chicago’s bigger airport is O’Hare, ORD.",
+   "tz": "America/Chicago"
   },
   "MEI": {
    "city": "Meridian",
    "place": "Meridian, MS",
    "st": "MS",
    "lat": 32.3326,
-   "lon": -88.7519
+   "lon": -88.7519,
+   "tz": "America/Chicago"
   },
   "MEM": {
    "city": "Memphis",
    "place": "Memphis, TN",
    "st": "TN",
    "lat": 35.0438,
-   "lon": -89.9763
+   "lon": -89.9763,
+   "tz": "America/Chicago"
   },
   "MFE": {
    "city": "McAllen/Mission",
@@ -3471,28 +3765,32 @@
    "lon": -98.238,
    "label": "McAllen",
    "tip": "M from McAllen, then F-E: “McAllen Fiesta Everyday.”",
-   "clue": "McAllen Fiesta Everyday"
+   "clue": "McAllen Fiesta Everyday",
+   "tz": "America/Chicago"
   },
   "MFR": {
    "city": "Medford",
    "place": "Medford, OR",
    "st": "OR",
    "lat": 42.3742,
-   "lon": -122.873
+   "lon": -122.873,
+   "tz": "America/Los_Angeles"
   },
   "MGM": {
    "city": "Montgomery",
    "place": "Montgomery, AL",
    "st": "AL",
    "lat": 32.3006,
-   "lon": -86.394
+   "lon": -86.394,
+   "tz": "America/Chicago"
   },
   "MGW": {
    "city": "Morgantown",
    "place": "Morgantown, WV",
    "st": "WV",
    "lat": 39.6433,
-   "lon": -79.9176
+   "lon": -79.9176,
+   "tz": "America/New_York"
   },
   "MHK": {
    "city": "Manhattan",
@@ -3501,14 +3799,16 @@
    "lat": 39.141,
    "lon": -96.6708,
    "tip": "M-H from ManHattan, then K for Kansas.",
-   "clue": "ManHattan Kansas"
+   "clue": "ManHattan Kansas",
+   "tz": "America/Chicago"
   },
   "MHT": {
    "city": "Manchester",
    "place": "Manchester, NH",
    "st": "NH",
    "lat": 42.9326,
-   "lon": -71.4357
+   "lon": -71.4357,
+   "tz": "America/New_York"
   },
   "MIA": {
    "city": "Miami - International",
@@ -3516,21 +3816,24 @@
    "st": "FL",
    "lat": 25.796,
    "lon": -80.2898,
-   "label": "Miami Intl"
+   "label": "Miami Intl",
+   "tz": "America/New_York"
   },
   "MKE": {
    "city": "Milwaukee",
    "place": "Milwaukee, WI",
    "st": "WI",
    "lat": 42.9472,
-   "lon": -87.8966
+   "lon": -87.8966,
+   "tz": "America/Chicago"
   },
   "MKG": {
    "city": "Muskegon",
    "place": "Muskegon, MI",
    "st": "MI",
    "lat": 43.1695,
-   "lon": -86.2382
+   "lon": -86.2382,
+   "tz": "America/Detroit"
   },
   "MKK": {
    "city": "Hoolehua (Molokai)",
@@ -3540,7 +3843,8 @@
    "lon": -157.096,
    "label": "Hoolehua",
    "tip": "M-K from MoloKai, then say the K twice: M-K-K.",
-   "clue": "MoloKai, K twice"
+   "clue": "MoloKai, K twice",
+   "tz": "Pacific/Honolulu"
   },
   "MKL": {
    "city": "Jackson",
@@ -3549,35 +3853,40 @@
    "lat": 35.5999,
    "lon": -88.9156,
    "tip": "Jackson, TN's airport is McKellar-Sipes: M-K-L from McKelLar.",
-   "clue": "McKelLar field"
+   "clue": "McKelLar field",
+   "tz": "America/Chicago"
   },
   "MKT": {
    "city": "Mankato",
    "place": "Mankato, MN",
    "st": "MN",
    "lat": 44.2248,
-   "lon": -93.9191
+   "lon": -93.9191,
+   "tz": "America/Chicago"
   },
   "MLB": {
    "city": "Melbourne",
    "place": "Melbourne, FL",
    "st": "FL",
    "lat": 28.102,
-   "lon": -80.6411
+   "lon": -80.6411,
+   "tz": "America/New_York"
   },
   "MLI": {
    "city": "Moline",
    "place": "Moline, IL",
    "st": "IL",
    "lat": 41.4485,
-   "lon": -90.5075
+   "lon": -90.5075,
+   "tz": "America/Chicago"
   },
   "MLS": {
    "city": "Miles City",
    "place": "Miles City, MT",
    "st": "MT",
    "lat": 46.4273,
-   "lon": -105.8854
+   "lon": -105.8854,
+   "tz": "America/Denver"
   },
   "MLU": {
    "city": "Monroe",
@@ -3586,28 +3895,32 @@
    "lat": 32.5109,
    "lon": -92.0377,
    "tip": "M from Monroe, then L-U from LoUisiana.",
-   "clue": "Monroe + LoUisiana"
+   "clue": "Monroe + LoUisiana",
+   "tz": "America/Chicago"
   },
   "MOB": {
    "city": "Mobile",
    "place": "Mobile, AL",
    "st": "AL",
    "lat": 30.6912,
-   "lon": -88.2428
+   "lon": -88.2428,
+   "tz": "America/Chicago"
   },
   "MOD": {
    "city": "Modesto",
    "place": "Modesto, CA",
    "st": "CA",
    "lat": 37.6258,
-   "lon": -120.954
+   "lon": -120.954,
+   "tz": "America/Los_Angeles"
   },
   "MOT": {
    "city": "Minot",
    "place": "Minot, ND",
    "st": "ND",
    "lat": 48.258,
-   "lon": -101.2791
+   "lon": -101.2791,
+   "tz": "America/Chicago"
   },
   "MPB": {
    "city": "Miami - Seaplane Base",
@@ -3615,14 +3928,16 @@
    "st": "FL",
    "lat": 25.7783,
    "lon": -80.1703,
-   "label": "Miami Seaplane"
+   "label": "Miami Seaplane",
+   "tz": "America/New_York"
   },
   "MQT": {
    "city": "Marquette",
    "place": "Marquette, MI",
    "st": "MI",
    "lat": 46.3515,
-   "lon": -87.3959
+   "lon": -87.3959,
+   "tz": "America/Detroit"
   },
   "MRY": {
    "city": "Carmel/Monterey",
@@ -3630,7 +3945,8 @@
    "st": "CA",
    "lat": 36.5868,
    "lon": -121.8442,
-   "label": "Monterey"
+   "label": "Monterey",
+   "tz": "America/Los_Angeles"
   },
   "MSL": {
    "city": "Muscle Shoals (Florence & Sheffield)",
@@ -3638,21 +3954,24 @@
    "st": "AL",
    "lat": 34.7451,
    "lon": -87.613,
-   "label": "Muscle Shoals"
+   "label": "Muscle Shoals",
+   "tz": "America/Chicago"
   },
   "MSN": {
    "city": "Madison",
    "place": "Madison, WI",
    "st": "WI",
    "lat": 43.1399,
-   "lon": -89.3375
+   "lon": -89.3375,
+   "tz": "America/Chicago"
   },
   "MSO": {
    "city": "Missoula",
    "place": "Missoula, MT",
    "st": "MT",
    "lat": 46.9158,
-   "lon": -114.0911
+   "lon": -114.0911,
+   "tz": "America/Denver"
   },
   "MSP": {
    "city": "Minneapolis",
@@ -3661,14 +3980,16 @@
    "lat": 44.8801,
    "lon": -93.2217,
    "tip": "Minneapolis-Saint Paul: M-S-P.",
-   "clue": "Minneapolis Saint Paul"
+   "clue": "Minneapolis Saint Paul",
+   "tz": "America/Chicago"
   },
   "MSS": {
    "city": "Massena",
    "place": "Massena, NY",
    "st": "NY",
    "lat": 44.9362,
-   "lon": -74.8443
+   "lon": -74.8443,
+   "tz": "America/New_York"
   },
   "MSY": {
    "city": "New Orleans",
@@ -3677,7 +3998,8 @@
    "lat": 29.9934,
    "lon": -90.2647,
    "tip": "New Orleans’ airport was built on the old Moisant Stock Yards: M-S-Y.",
-   "clue": "Moisant Stock Yards"
+   "clue": "Moisant Stock Yards",
+   "tz": "America/Chicago"
   },
   "MTJ": {
    "city": "Montrose",
@@ -3686,7 +4008,8 @@
    "lat": 38.5098,
    "lon": -107.894,
    "tip": "M-T from MonTrose, then J: “MonTrose Jets.”",
-   "clue": "MonTrose Jets"
+   "clue": "MonTrose Jets",
+   "tz": "America/Denver"
   },
   "MUE": {
    "city": "Kamuela (Big Island)",
@@ -3694,7 +4017,8 @@
    "st": "HI",
    "lat": 20.0013,
    "lon": -155.668,
-   "label": "Kamuela"
+   "label": "Kamuela",
+   "tz": "Pacific/Honolulu"
   },
   "MVY": {
    "city": "Martha's Vineyard",
@@ -3702,7 +4026,8 @@
    "st": "MA",
    "lat": 41.3931,
    "lon": -70.6143,
-   "label": "Martha's Vineyard"
+   "label": "Martha's Vineyard",
+   "tz": "America/New_York"
   },
   "MWA": {
    "city": "Marion",
@@ -3711,7 +4036,8 @@
    "lat": 37.7512,
    "lon": -89.0166,
    "tip": "Marion's airport is Williamson County: M, then W-A for Williamson Airport.",
-   "clue": "Marion Williamson Airport"
+   "clue": "Marion Williamson Airport",
+   "tz": "America/Chicago"
   },
   "MWH": {
    "city": "Moses Lake",
@@ -3720,14 +4046,16 @@
    "lat": 47.2077,
    "lon": -119.32,
    "tip": "“Moses Walked Here.”",
-   "clue": "Moses Walked Here"
+   "clue": "Moses Walked Here",
+   "tz": "America/Los_Angeles"
   },
   "MYR": {
    "city": "Myrtle Beach",
    "place": "Myrtle Beach, SC",
    "st": "SC",
    "lat": 33.6797,
-   "lon": -78.9283
+   "lon": -78.9283,
+   "tz": "America/New_York"
   },
   "OAJ": {
    "city": "Jacksonville",
@@ -3736,7 +4064,8 @@
    "lat": 34.8292,
    "lon": -77.6121,
    "tip": "Jacksonville, NC is in Onslow County and its airport is Albert J. Ellis: O-A-J.",
-   "clue": "Onslow, Albert J."
+   "clue": "Onslow, Albert J.",
+   "tz": "America/New_York"
   },
   "OAK": {
    "city": "Oakland",
@@ -3744,14 +4073,16 @@
    "st": "CA",
    "lat": 37.7201,
    "lon": -122.2212,
-   "tip": "Just the first three letters of Oakland: OAK. It is across the bay from San Francisco, SFO."
+   "tip": "Just the first three letters of Oakland: OAK. It is across the bay from San Francisco, SFO.",
+   "tz": "America/Los_Angeles"
   },
   "OFK": {
    "city": "Norfolk",
    "place": "Norfolk, NE",
    "st": "NE",
    "lat": 41.9855,
-   "lon": -97.4351
+   "lon": -97.4351,
+   "tz": "America/Chicago"
   },
   "OGG": {
    "city": "Kahului (Maui)",
@@ -3761,42 +4092,48 @@
    "lon": -156.4318,
    "label": "Kahului",
    "tip": "Named for pilot Bertram Hogg: h-O-G-G.",
-   "clue": "Pilot Bertram Hogg's last name"
+   "clue": "Pilot Bertram Hogg's last name",
+   "tz": "Pacific/Honolulu"
   },
   "OGS": {
    "city": "Ogdensburg",
    "place": "Ogdensburg, NY",
    "st": "NY",
    "lat": 44.6819,
-   "lon": -75.4655
+   "lon": -75.4655,
+   "tz": "America/New_York"
   },
   "OKC": {
    "city": "Oklahoma City",
    "place": "Oklahoma City, OK",
    "st": "OK",
    "lat": 35.3934,
-   "lon": -97.5982
+   "lon": -97.5982,
+   "tz": "America/Chicago"
   },
   "OMA": {
    "city": "Omaha",
    "place": "Omaha, NE",
    "st": "NE",
    "lat": 41.3032,
-   "lon": -95.8941
+   "lon": -95.8941,
+   "tz": "America/Chicago"
   },
   "OME": {
    "city": "Nome",
    "place": "Nome, AK",
    "st": "AK",
    "lat": 64.5122,
-   "lon": -165.445
+   "lon": -165.445,
+   "tz": "America/Nome"
   },
   "ONT": {
    "city": "Ontario",
    "place": "Ontario, CA",
    "st": "CA",
    "lat": 34.056,
-   "lon": -117.601
+   "lon": -117.601,
+   "tz": "America/Los_Angeles"
   },
   "ORD": {
    "city": "Chicago - O'Hare",
@@ -3806,14 +4143,16 @@
    "lon": -87.9048,
    "label": "O'Hare",
    "tip": "O'Hare used to be Orchard Field: O-R-D from ORcharD.",
-   "clue": "ORcharD Field"
+   "clue": "ORcharD Field",
+   "tz": "America/Chicago"
   },
   "ORF": {
    "city": "Norfolk",
    "place": "Norfolk, VA",
    "st": "VA",
    "lat": 36.8953,
-   "lon": -76.201
+   "lon": -76.201,
+   "tz": "America/New_York"
   },
   "ORH": {
    "city": "Worcester",
@@ -3822,7 +4161,8 @@
    "lat": 42.2673,
    "lon": -71.8757,
    "tip": "Worcester is the city of seven hills: O-R from wORcester, H for Hills.",
-   "clue": "wORcester Hills"
+   "clue": "wORcester Hills",
+   "tz": "America/New_York"
   },
   "ORL": {
    "city": "Orlando - Herndon",
@@ -3830,42 +4170,48 @@
    "st": "FL",
    "lat": 28.5455,
    "lon": -81.3329,
-   "label": "Orlando Herndon"
+   "label": "Orlando Herndon",
+   "tz": "America/New_York"
   },
   "OSH": {
    "city": "Oshkosh",
    "place": "Oshkosh, WI",
    "st": "WI",
    "lat": 43.9844,
-   "lon": -88.557
+   "lon": -88.557,
+   "tz": "America/Chicago"
   },
   "OTH": {
    "city": "North Bend",
    "place": "North Bend, OR",
    "st": "OR",
    "lat": 43.4171,
-   "lon": -124.246
+   "lon": -124.246,
+   "tz": "America/Los_Angeles"
   },
   "OTM": {
    "city": "Ottumwa",
    "place": "Ottumwa, IA",
    "st": "IA",
    "lat": 41.1064,
-   "lon": -92.4498
+   "lon": -92.4498,
+   "tz": "America/Chicago"
   },
   "OTZ": {
    "city": "Kotzebue",
    "place": "Kotzebue, AK",
    "st": "AK",
    "lat": 66.8847,
-   "lon": -162.599
+   "lon": -162.599,
+   "tz": "America/Nome"
   },
   "OWB": {
    "city": "Owensboro",
    "place": "Owensboro, KY",
    "st": "KY",
    "lat": 37.7401,
-   "lon": -87.1668
+   "lon": -87.1668,
+   "tz": "America/Chicago"
   },
   "OXR": {
    "city": "Oxnard/Ventura",
@@ -3873,7 +4219,8 @@
    "st": "CA",
    "lat": 34.2008,
    "lon": -119.207,
-   "label": "Oxnard"
+   "label": "Oxnard",
+   "tz": "America/Los_Angeles"
   },
   "PAE": {
    "city": "Everett",
@@ -3882,14 +4229,16 @@
    "lat": 47.9063,
    "lon": -122.282,
    "tip": "Everett's airport is Paine Field: P-A-E from PAinE.",
-   "clue": "PAinE Field"
+   "clue": "PAinE Field",
+   "tz": "America/Los_Angeles"
   },
   "PAH": {
    "city": "Paducah",
    "place": "Paducah, KY",
    "st": "KY",
    "lat": 37.0608,
-   "lon": -88.7738
+   "lon": -88.7738,
+   "tz": "America/Chicago"
   },
   "PAK": {
    "city": "Hanapepe (Kauai)",
@@ -3899,7 +4248,8 @@
    "lon": -159.603,
    "label": "Hanapepe",
    "tip": "The airport is Port Allen, on Kauai: P-A from Port Allen, K for Kauai.",
-   "clue": "Port Allen Kauai"
+   "clue": "Port Allen Kauai",
+   "tz": "Pacific/Honolulu"
   },
   "PBI": {
    "city": "West Palm Beach",
@@ -3909,14 +4259,16 @@
    "lon": -80.0956,
    "label": "W Palm Beach",
    "tip": "Palm Beach International: P-B-I.",
-   "clue": "Palm Beach International"
+   "clue": "Palm Beach International",
+   "tz": "America/New_York"
   },
   "PDT": {
    "city": "Pendleton",
    "place": "Pendleton, OR",
    "st": "OR",
    "lat": 45.6951,
-   "lon": -118.841
+   "lon": -118.841,
+   "tz": "America/Los_Angeles"
   },
   "PDX": {
    "city": "Portland",
@@ -3925,7 +4277,8 @@
    "lat": 45.5887,
    "lon": -122.598,
    "tip": "P-D from PortlanD, then X like LAX.",
-   "clue": "PortlanD + X"
+   "clue": "PortlanD + X",
+   "tz": "America/Los_Angeles"
   },
   "PFN": {
    "city": "Panama City",
@@ -3934,7 +4287,8 @@
    "lat": 30.2121,
    "lon": -85.6828,
    "tip": "P from Panama, then F-N: “Panama, Florida, Now.”",
-   "clue": "Panama Florida Now"
+   "clue": "Panama Florida Now",
+   "tz": "America/Chicago"
   },
   "PGA": {
    "city": "Page",
@@ -3943,7 +4297,8 @@
    "lat": 36.9242,
    "lon": -111.4477,
    "tip": "P-G from PaGe, then A for Arizona.",
-   "clue": "PaGe + A(rizona)"
+   "clue": "PaGe + A(rizona)",
+   "tz": "America/Phoenix"
   },
   "PGV": {
    "city": "Greenville",
@@ -3952,7 +4307,8 @@
    "lat": 35.6355,
    "lon": -77.3843,
    "tip": "The airport is Pitt-Greenville: P-G-V from Pitt-GreenVille.",
-   "clue": "Pitt-GreenVille"
+   "clue": "Pitt-GreenVille",
+   "tz": "America/New_York"
   },
   "PHF": {
    "city": "Hampton/Newport News/Williamsburg",
@@ -3962,7 +4318,8 @@
    "lon": -76.493,
    "label": "Newport News",
    "tip": "The Newport News airport was Patrick Henry Field: P-H-F.",
-   "clue": "Patrick Henry Field"
+   "clue": "Patrick Henry Field",
+   "tz": "America/New_York"
   },
   "PHL": {
    "city": "Philadelphia - International",
@@ -3970,21 +4327,24 @@
    "st": "PA",
    "lat": 39.8719,
    "lon": -75.2411,
-   "label": "Philadelphia"
+   "label": "Philadelphia",
+   "tz": "America/New_York"
   },
   "PHX": {
    "city": "Phoenix",
    "place": "Phoenix, AZ",
    "st": "AZ",
    "lat": 33.4353,
-   "lon": -112.0059
+   "lon": -112.0059,
+   "tz": "America/Phoenix"
   },
   "PIA": {
    "city": "Peoria",
    "place": "Peoria, IL",
    "st": "IL",
    "lat": 40.6638,
-   "lon": -89.6926
+   "lon": -89.6926,
+   "tz": "America/Chicago"
   },
   "PIB": {
    "city": "Laurel",
@@ -3993,7 +4353,8 @@
    "lat": 31.4671,
    "lon": -89.3371,
    "tip": "Laurel is in the Pine Belt region: P-I-B from PIne Belt.",
-   "clue": "PIne Belt"
+   "clue": "PIne Belt",
+   "tz": "America/Chicago"
   },
   "PIE": {
    "city": "Clearwater/St. Petersburg",
@@ -4003,7 +4364,8 @@
    "lon": -82.6874,
    "label": "Clearwater",
    "tip": "St. Pete-Clearwater is in Pinellas County: P-I from PInellas, easy as PIE.",
-   "clue": "Pinellas County + a dessert"
+   "clue": "Pinellas County + a dessert",
+   "tz": "America/New_York"
   },
   "PIH": {
    "city": "Pocatello",
@@ -4012,21 +4374,24 @@
    "lat": 42.9098,
    "lon": -112.596,
    "tip": "Pocatello, Idaho: P, then I-H from IdaHo.",
-   "clue": "Pocatello IdaHo"
+   "clue": "Pocatello IdaHo",
+   "tz": "America/Boise"
   },
   "PIR": {
    "city": "Pierre",
    "place": "Pierre, SD",
    "st": "SD",
    "lat": 44.3827,
-   "lon": -100.286
+   "lon": -100.286,
+   "tz": "America/Chicago"
   },
   "PIT": {
    "city": "Pittsburgh",
    "place": "Pittsburgh, PA",
    "st": "PA",
    "lat": 40.4915,
-   "lon": -80.2329
+   "lon": -80.2329,
+   "tz": "America/New_York"
   },
   "PKB": {
    "city": "Parkersburg/Marietta",
@@ -4034,91 +4399,104 @@
    "st": "WV",
    "lat": 39.3451,
    "lon": -81.4392,
-   "label": "Parkersburg"
+   "label": "Parkersburg",
+   "tz": "America/New_York"
   },
   "PLB": {
    "city": "Plattsburgh",
    "place": "Plattsburgh, NY",
    "st": "NY",
    "lat": 44.6509,
-   "lon": -73.4681
+   "lon": -73.4681,
+   "tz": "America/New_York"
   },
   "PLN": {
    "city": "Pellston",
    "place": "Pellston, MI",
    "st": "MI",
    "lat": 45.5709,
-   "lon": -84.7967
+   "lon": -84.7967,
+   "tz": "America/Detroit"
   },
   "PNC": {
    "city": "Ponca City",
    "place": "Ponca City, OK",
    "st": "OK",
    "lat": 36.732,
-   "lon": -97.0998
+   "lon": -97.0998,
+   "tz": "America/Chicago"
   },
   "PNS": {
    "city": "Pensacola",
    "place": "Pensacola, FL",
    "st": "FL",
    "lat": 30.4727,
-   "lon": -87.1866
+   "lon": -87.1866,
+   "tz": "America/Chicago"
   },
   "POU": {
    "city": "Poughkeepsie",
    "place": "Poughkeepsie, NY",
    "st": "NY",
    "lat": 41.6266,
-   "lon": -73.8842
+   "lon": -73.8842,
+   "tz": "America/New_York"
   },
   "PQI": {
    "city": "Presque Isle",
    "place": "Presque Isle, ME",
    "st": "ME",
    "lat": 46.689,
-   "lon": -68.0448
+   "lon": -68.0448,
+   "tz": "America/New_York"
   },
   "PRC": {
    "city": "Prescott",
    "place": "Prescott, AZ",
    "st": "AZ",
    "lat": 34.6535,
-   "lon": -112.4199
+   "lon": -112.4199,
+   "tz": "America/Phoenix"
   },
   "PSC": {
    "city": "Pasco",
    "place": "Pasco, WA",
    "st": "WA",
    "lat": 46.2647,
-   "lon": -119.119
+   "lon": -119.119,
+   "tz": "America/Los_Angeles"
   },
   "PSG": {
    "city": "Petersburg",
    "place": "Petersburg, AK",
    "st": "AK",
    "lat": 56.8017,
-   "lon": -132.945
+   "lon": -132.945,
+   "tz": "America/Sitka"
   },
   "PSM": {
    "city": "Portsmouth",
    "place": "Portsmouth, NH",
    "st": "NH",
    "lat": 43.0779,
-   "lon": -70.8233
+   "lon": -70.8233,
+   "tz": "America/New_York"
   },
   "PSP": {
    "city": "Palm Springs",
    "place": "Palm Springs, CA",
    "st": "CA",
    "lat": 33.8297,
-   "lon": -116.507
+   "lon": -116.507,
+   "tz": "America/Los_Angeles"
   },
   "PUB": {
    "city": "Pueblo",
    "place": "Pueblo, CO",
    "st": "CO",
    "lat": 38.2891,
-   "lon": -104.497
+   "lon": -104.497,
+   "tz": "America/Denver"
   },
   "PUW": {
    "city": "Pullman",
@@ -4127,21 +4505,24 @@
    "lat": 46.7416,
    "lon": -117.1116,
    "tip": "P-U from PUllman, then W for Washington.",
-   "clue": "PUllman + W(ashington)"
+   "clue": "PUllman + W(ashington)",
+   "tz": "America/Los_Angeles"
   },
   "PVC": {
    "city": "Provincetown",
    "place": "Provincetown, MA",
    "st": "MA",
    "lat": 42.0719,
-   "lon": -70.2214
+   "lon": -70.2214,
+   "tz": "America/New_York"
   },
   "PVD": {
    "city": "Providence",
    "place": "Providence, RI",
    "st": "RI",
    "lat": 41.725,
-   "lon": -71.4257
+   "lon": -71.4257,
+   "tz": "America/New_York"
   },
   "PWM": {
    "city": "Portland",
@@ -4150,42 +4531,48 @@
    "lat": 43.6462,
    "lon": -70.3093,
    "tip": "P from Portland, then W-M: “Portland, Wonderful Maine.”",
-   "clue": "Portland Wonderful Maine"
+   "clue": "Portland Wonderful Maine",
+   "tz": "America/New_York"
   },
   "RAP": {
    "city": "Rapid City",
    "place": "Rapid City, SD",
    "st": "SD",
    "lat": 44.0453,
-   "lon": -103.057
+   "lon": -103.057,
+   "tz": "America/Denver"
   },
   "RCE": {
    "city": "Roche Harbor",
    "place": "Roche Harbor, WA",
    "st": "WA",
    "lat": 48.6123,
-   "lon": -123.139
+   "lon": -123.139,
+   "tz": "America/Los_Angeles"
   },
   "RDD": {
    "city": "Redding",
    "place": "Redding, CA",
    "st": "CA",
    "lat": 40.509,
-   "lon": -122.293
+   "lon": -122.293,
+   "tz": "America/Los_Angeles"
   },
   "RDG": {
    "city": "Reading",
    "place": "Reading, PA",
    "st": "PA",
    "lat": 40.3785,
-   "lon": -75.9652
+   "lon": -75.9652,
+   "tz": "America/New_York"
   },
   "RDM": {
    "city": "Redmond",
    "place": "Redmond, OR",
    "st": "OR",
    "lat": 44.2541,
-   "lon": -121.15
+   "lon": -121.15,
+   "tz": "America/Los_Angeles"
   },
   "RDU": {
    "city": "Raleigh/Durham",
@@ -4193,21 +4580,24 @@
    "st": "NC",
    "lat": 35.8787,
    "lon": -78.7873,
-   "label": "Raleigh/Durham"
+   "label": "Raleigh/Durham",
+   "tz": "America/New_York"
   },
   "RHI": {
    "city": "Rhinelander",
    "place": "Rhinelander, WI",
    "st": "WI",
    "lat": 45.6312,
-   "lon": -89.4675
+   "lon": -89.4675,
+   "tz": "America/Chicago"
   },
   "RIC": {
    "city": "Richmond",
    "place": "Richmond, VA",
    "st": "VA",
    "lat": 37.5052,
-   "lon": -77.3197
+   "lon": -77.3197,
+   "tz": "America/New_York"
   },
   "RIW": {
    "city": "Riverton",
@@ -4216,14 +4606,16 @@
    "lat": 43.064,
    "lon": -108.46,
    "tip": "R-I from RIverton, but it is not RIV: it ends in W. Picture “Riverton’s Icy Wind.” R, I, W.",
-   "clue": "Riverton’s Icy Wind (not RIV)"
+   "clue": "Riverton’s Icy Wind (not RIV)",
+   "tz": "America/Denver"
   },
   "RKD": {
    "city": "Rockland",
    "place": "Rockland, ME",
    "st": "ME",
    "lat": 44.0601,
-   "lon": -69.0992
+   "lon": -69.0992,
+   "tz": "America/New_York"
   },
   "RKS": {
    "city": "Rock Springs",
@@ -4232,35 +4624,40 @@
    "lat": 41.594,
    "lon": -109.065,
    "tip": "Think of the word ROCKS and take out the O and the C. What’s left is R, K, S.",
-   "clue": "ROCKS without the O and C"
+   "clue": "ROCKS without the O and C",
+   "tz": "America/Denver"
   },
   "RNO": {
    "city": "Reno",
    "place": "Reno, NV",
    "st": "NV",
    "lat": 39.4991,
-   "lon": -119.768
+   "lon": -119.768,
+   "tz": "America/Los_Angeles"
   },
   "ROA": {
    "city": "Roanoke",
    "place": "Roanoke, VA",
    "st": "VA",
    "lat": 37.3255,
-   "lon": -79.9754
+   "lon": -79.9754,
+   "tz": "America/New_York"
   },
   "ROC": {
    "city": "Rochester",
    "place": "Rochester, NY",
    "st": "NY",
    "lat": 43.1189,
-   "lon": -77.6724
+   "lon": -77.6724,
+   "tz": "America/New_York"
   },
   "ROW": {
    "city": "Roswell",
    "place": "Roswell, NM",
    "st": "NM",
    "lat": 33.3016,
-   "lon": -104.531
+   "lon": -104.531,
+   "tz": "America/Denver"
   },
   "RSJ": {
    "city": "Rosario",
@@ -4269,14 +4666,16 @@
    "lat": 48.6457,
    "lon": -122.868,
    "tip": "R-S from RoSario, then J for the San Juan Islands, where Rosario is.",
-   "clue": "RoSario + J(uan Islands)"
+   "clue": "RoSario + J(uan Islands)",
+   "tz": "America/Los_Angeles"
   },
   "RST": {
    "city": "Rochester",
    "place": "Rochester, MN",
    "st": "MN",
    "lat": 43.9083,
-   "lon": -92.5
+   "lon": -92.5,
+   "tz": "America/Chicago"
   },
   "RSW": {
    "city": "Fort Myers",
@@ -4285,56 +4684,64 @@
    "lat": 26.5347,
    "lon": -81.7528,
    "tip": "Fort Myers' airport started as Regional SouthWest: R-S-W.",
-   "clue": "Regional SouthWest"
+   "clue": "Regional SouthWest",
+   "tz": "America/New_York"
   },
   "RUT": {
    "city": "Rutland",
    "place": "Rutland, VT",
    "st": "VT",
    "lat": 43.5294,
-   "lon": -72.9496
+   "lon": -72.9496,
+   "tz": "America/New_York"
   },
   "SAF": {
    "city": "Santa Fe",
    "place": "Santa Fe, NM",
    "st": "NM",
    "lat": 35.6171,
-   "lon": -106.089
+   "lon": -106.089,
+   "tz": "America/Denver"
   },
   "SAN": {
    "city": "San Diego",
    "place": "San Diego, CA",
    "st": "CA",
    "lat": 32.7336,
-   "lon": -117.19
+   "lon": -117.19,
+   "tz": "America/Los_Angeles"
   },
   "SAT": {
    "city": "San Antonio",
    "place": "San Antonio, TX",
    "st": "TX",
    "lat": 29.5337,
-   "lon": -98.4698
+   "lon": -98.4698,
+   "tz": "America/Chicago"
   },
   "SAV": {
    "city": "Savannah",
    "place": "Savannah, GA",
    "st": "GA",
    "lat": 32.1266,
-   "lon": -81.2
+   "lon": -81.2,
+   "tz": "America/New_York"
   },
   "SBA": {
    "city": "Santa Barbara",
    "place": "Santa Barbara, CA",
    "st": "CA",
    "lat": 34.4262,
-   "lon": -119.84
+   "lon": -119.84,
+   "tz": "America/Los_Angeles"
   },
   "SBN": {
    "city": "South Bend",
    "place": "South Bend, IN",
    "st": "IN",
    "lat": 41.7083,
-   "lon": -86.3169
+   "lon": -86.3169,
+   "tz": "America/Indiana/Indianapolis"
   },
   "SBP": {
    "city": "San Luis Obispo",
@@ -4342,7 +4749,8 @@
    "st": "CA",
    "lat": 35.2368,
    "lon": -120.642,
-   "label": "SLO"
+   "label": "SLO",
+   "tz": "America/Los_Angeles"
   },
   "SBS": {
    "city": "Steamboat Springs",
@@ -4350,7 +4758,8 @@
    "st": "CO",
    "lat": 40.5163,
    "lon": -106.866,
-   "label": "Steamboat"
+   "label": "Steamboat",
+   "tz": "America/Denver"
   },
   "SBY": {
    "city": "Salisbury/Ocean City",
@@ -4358,7 +4767,8 @@
    "st": "MD",
    "lat": 38.3405,
    "lon": -75.5103,
-   "label": "Salisbury"
+   "label": "Salisbury",
+   "tz": "America/New_York"
   },
   "SCC": {
    "city": "Prudhoe Bay/Deadhorse",
@@ -4368,7 +4778,8 @@
    "lon": -148.465,
    "label": "Prudhoe Bay",
    "tip": "Prudhoe Bay is oil country on the North Slope: “Slope Crude Center.”",
-   "clue": "Slope Crude Center"
+   "clue": "Slope Crude Center",
+   "tz": "America/Anchorage"
   },
   "SCE": {
    "city": "State College/University Park",
@@ -4376,14 +4787,16 @@
    "st": "PA",
    "lat": 40.8494,
    "lon": -77.8485,
-   "label": "State College"
+   "label": "State College",
+   "tz": "America/New_York"
   },
   "SCK": {
    "city": "Stockton",
    "place": "Stockton, CA",
    "st": "CA",
    "lat": 37.8933,
-   "lon": -121.2381
+   "lon": -121.2381,
+   "tz": "America/Los_Angeles"
   },
   "SDF": {
    "city": "Louisville",
@@ -4392,14 +4805,16 @@
    "lat": 38.1706,
    "lon": -85.7351,
    "tip": "Louisville's airport was Standiford Field: S-D-F from StanDiford Field.",
-   "clue": "StanDiford Field"
+   "clue": "StanDiford Field",
+   "tz": "America/Kentucky/Louisville"
   },
   "SDL": {
    "city": "Scottsdale",
    "place": "Scottsdale, AZ",
    "st": "AZ",
    "lat": 33.6229,
-   "lon": -111.911
+   "lon": -111.911,
+   "tz": "America/Phoenix"
   },
   "SEA": {
    "city": "Seattle/Tacoma",
@@ -4407,21 +4822,24 @@
    "st": "WA",
    "lat": 47.4479,
    "lon": -122.3103,
-   "label": "Seattle/Tacoma"
+   "label": "Seattle/Tacoma",
+   "tz": "America/Los_Angeles"
   },
   "SFO": {
    "city": "San Francisco",
    "place": "San Francisco, CA",
    "st": "CA",
    "lat": 37.6198,
-   "lon": -122.3748
+   "lon": -122.3748,
+   "tz": "America/Los_Angeles"
   },
   "SGF": {
    "city": "Springfield",
    "place": "Springfield, MO",
    "st": "MO",
    "lat": 37.245,
-   "lon": -93.3886
+   "lon": -93.3886,
+   "tz": "America/Chicago"
   },
   "SGU": {
    "city": "St. George",
@@ -4430,7 +4848,8 @@
    "lat": 37.0364,
    "lon": -113.5103,
    "tip": "St. George, Utah: S-G-U.",
-   "clue": "St. George Utah"
+   "clue": "St. George Utah",
+   "tz": "America/Denver"
   },
   "SHD": {
    "city": "Staunton",
@@ -4440,7 +4859,8 @@
    "lon": -78.8964,
    "label": "Staunton",
    "tip": "Staunton is in the Shenandoah Valley: S-H-D from SHenanDoah.",
-   "clue": "SHenanDoah Valley"
+   "clue": "SHenanDoah Valley",
+   "tz": "America/New_York"
   },
   "SHR": {
    "city": "Sheridan",
@@ -4449,21 +4869,24 @@
    "lat": 44.769,
    "lon": -106.98,
    "tip": "Picture the SHeRiff of SHeRidan: S, H, R. Take the S and H, then jump ahead to the R.",
-   "clue": "The SHeRiff of SHeRidan"
+   "clue": "The SHeRiff of SHeRidan",
+   "tz": "America/Denver"
   },
   "SHV": {
    "city": "Shreveport",
    "place": "Shreveport, LA",
    "st": "LA",
    "lat": 32.4447,
-   "lon": -93.8267
+   "lon": -93.8267,
+   "tz": "America/Chicago"
   },
   "SIT": {
    "city": "Sitka",
    "place": "Sitka, AK",
    "st": "AK",
    "lat": 57.0471,
-   "lon": -135.362
+   "lon": -135.362,
+   "tz": "America/Sitka"
   },
   "SJC": {
    "city": "San Jose",
@@ -4472,7 +4895,8 @@
    "lat": 37.3625,
    "lon": -121.9292,
    "tip": "San Jose, California: S-J-C.",
-   "clue": "San Jose California"
+   "clue": "San Jose California",
+   "tz": "America/Los_Angeles"
   },
   "SJT": {
    "city": "San Angelo",
@@ -4481,42 +4905,48 @@
    "lat": 31.3577,
    "lon": -100.496,
    "tip": "S from San Angelo, then J-T: “San Angelo, Just Texas.”",
-   "clue": "San Angelo Just Texas"
+   "clue": "San Angelo Just Texas",
+   "tz": "America/Chicago"
   },
   "SJU": {
    "city": "San Juan",
    "place": "San Juan, PR",
    "st": "PR",
    "lat": 18.4394,
-   "lon": -66.0018
+   "lon": -66.0018,
+   "tz": "America/Puerto_Rico"
   },
   "SLC": {
    "city": "Salt Lake City",
    "place": "Salt Lake City, UT",
    "st": "UT",
    "lat": 40.7889,
-   "lon": -111.9799
+   "lon": -111.9799,
+   "tz": "America/Denver"
   },
   "SLE": {
    "city": "Salem",
    "place": "Salem, OR",
    "st": "OR",
    "lat": 44.9095,
-   "lon": -123.003
+   "lon": -123.003,
+   "tz": "America/Los_Angeles"
   },
   "SLK": {
    "city": "Saranac Lake",
    "place": "Saranac Lake, NY",
    "st": "NY",
    "lat": 44.3869,
-   "lon": -74.2046
+   "lon": -74.2046,
+   "tz": "America/New_York"
   },
   "SLN": {
    "city": "Salina",
    "place": "Salina, KS",
    "st": "KS",
    "lat": 38.791,
-   "lon": -97.6522
+   "lon": -97.6522,
+   "tz": "America/Chicago"
   },
   "SMF": {
    "city": "Sacramento",
@@ -4525,7 +4955,8 @@
    "lat": 38.6954,
    "lon": -121.591,
    "tip": "Sacramento Metropolitan Field: S-M-F.",
-   "clue": "Sacramento Metropolitan Field"
+   "clue": "Sacramento Metropolitan Field",
+   "tz": "America/Los_Angeles"
   },
   "SMX": {
    "city": "Santa Maria",
@@ -4534,7 +4965,8 @@
    "lat": 34.8989,
    "lon": -120.457,
    "tip": "Santa Maria: S-M, then X like LAX.",
-   "clue": "Santa Maria + X"
+   "clue": "Santa Maria + X",
+   "tz": "America/Los_Angeles"
   },
   "SNA": {
    "city": "Orange County/Santa Ana",
@@ -4542,21 +4974,24 @@
    "st": "CA",
    "lat": 33.6751,
    "lon": -117.8693,
-   "label": "Santa Ana"
+   "label": "Santa Ana",
+   "tz": "America/Los_Angeles"
   },
   "SOP": {
    "city": "Southern Pines",
    "place": "Southern Pines, NC",
    "st": "NC",
    "lat": 35.2372,
-   "lon": -79.3894
+   "lon": -79.3894,
+   "tz": "America/New_York"
   },
   "SPI": {
    "city": "Springfield",
    "place": "Springfield, IL",
    "st": "IL",
    "lat": 39.8441,
-   "lon": -89.6779
+   "lon": -89.6779,
+   "tz": "America/Chicago"
   },
   "SPS": {
    "city": "Wichita Falls",
@@ -4565,7 +5000,8 @@
    "lat": 33.9888,
    "lon": -98.4919,
    "tip": "Wichita Falls shares its field with Sheppard Air Force Base: “SheP-pard Skies.”",
-   "clue": "SheP(pard) Skies"
+   "clue": "SheP(pard) Skies",
+   "tz": "America/Chicago"
   },
   "SRQ": {
    "city": "Sarasota",
@@ -4574,14 +5010,16 @@
    "lat": 27.3946,
    "lon": -82.5544,
    "tip": "S-R from SaRasota, then Q: “SaRasota's Quiet beaches.”",
-   "clue": "SaRasota Quiet"
+   "clue": "SaRasota Quiet",
+   "tz": "America/New_York"
   },
   "STC": {
    "city": "St. Cloud",
    "place": "St. Cloud, MN",
    "st": "MN",
    "lat": 45.5466,
-   "lon": -94.0599
+   "lon": -94.0599,
+   "tz": "America/Chicago"
   },
   "STL": {
    "city": "St. Louis",
@@ -4589,14 +5027,16 @@
    "st": "MO",
    "lat": 38.7487,
    "lon": -90.37,
-   "tip": "St. is short for Saint: S-T from St., then L from Louis. STL."
+   "tip": "St. is short for Saint: S-T from St., then L from Louis. STL.",
+   "tz": "America/Chicago"
   },
   "STS": {
    "city": "Santa Rosa",
    "place": "Santa Rosa, CA",
    "st": "CA",
    "lat": 38.509,
-   "lon": -122.813
+   "lon": -122.813,
+   "tz": "America/Los_Angeles"
   },
   "SUN": {
    "city": "Sun Valley/Hailey",
@@ -4604,21 +5044,24 @@
    "st": "ID",
    "lat": 43.5044,
    "lon": -114.296,
-   "label": "Sun Valley"
+   "label": "Sun Valley",
+   "tz": "America/Boise"
   },
   "SUX": {
    "city": "Sioux City",
    "place": "Sioux City, IA",
    "st": "IA",
    "lat": 42.3976,
-   "lon": -96.3822
+   "lon": -96.3822,
+   "tz": "America/Chicago"
   },
   "SVC": {
    "city": "Silver City",
    "place": "Silver City, NM",
    "st": "NM",
    "lat": 32.6367,
-   "lon": -108.1547
+   "lon": -108.1547,
+   "tz": "America/Denver"
   },
   "SWF": {
    "city": "Newburgh/Stewart Field",
@@ -4626,14 +5069,16 @@
    "st": "NY",
    "lat": 41.5042,
    "lon": -74.1089,
-   "label": "Newburgh"
+   "label": "Newburgh",
+   "tz": "America/New_York"
   },
   "SYR": {
    "city": "Syracuse",
    "place": "Syracuse, NY",
    "st": "NY",
    "lat": 43.1112,
-   "lon": -76.1063
+   "lon": -76.1063,
+   "tz": "America/New_York"
   },
   "TBN": {
    "city": "Fort Leonard Wood",
@@ -4643,14 +5088,16 @@
    "lon": -92.1407,
    "label": "Ft Leonard Wood",
    "tip": "The airport serves the Army post: “Troops' Base Nearby.”",
-   "clue": "Troops Base Nearby"
+   "clue": "Troops Base Nearby",
+   "tz": "America/Chicago"
   },
   "TCL": {
    "city": "Tuscaloosa",
    "place": "Tuscaloosa, AL",
    "st": "AL",
    "lat": 33.2206,
-   "lon": -87.6114
+   "lon": -87.6114,
+   "tz": "America/Chicago"
   },
   "TEX": {
    "city": "Telluride",
@@ -4659,28 +5106,32 @@
    "lat": 37.9538,
    "lon": -107.908,
    "tip": "T-E from TElluride, then X: “Telluride EXtreme” skiing.",
-   "clue": "Telluride EXtreme"
+   "clue": "Telluride EXtreme",
+   "tz": "America/Denver"
   },
   "TLH": {
    "city": "Tallahassee",
    "place": "Tallahassee, FL",
    "st": "FL",
    "lat": 30.4012,
-   "lon": -84.3543
+   "lon": -84.3543,
+   "tz": "America/New_York"
   },
   "TOL": {
    "city": "Toledo",
    "place": "Toledo, OH",
    "st": "OH",
    "lat": 41.5868,
-   "lon": -83.8078
+   "lon": -83.8078,
+   "tz": "America/New_York"
   },
   "TPA": {
    "city": "Tampa",
    "place": "Tampa, FL",
    "st": "FL",
    "lat": 27.9755,
-   "lon": -82.5332
+   "lon": -82.5332,
+   "tz": "America/New_York"
   },
   "TRI": {
    "city": "Tri-Cities/Bristol",
@@ -4688,7 +5139,8 @@
    "st": "TN",
    "lat": 36.4752,
    "lon": -82.4074,
-   "label": "Bristol"
+   "label": "Bristol",
+   "tz": "America/New_York"
   },
   "TSM": {
    "city": "Taos",
@@ -4697,7 +5149,8 @@
    "lat": 36.4525,
    "lon": -105.6775,
    "tip": "T-S from TaoS, then M for (New) Mexico.",
-   "clue": "TaoS + M"
+   "clue": "TaoS + M",
+   "tz": "America/Denver"
   },
   "TTN": {
    "city": "Trenton/Mercer",
@@ -4705,35 +5158,40 @@
    "st": "NJ",
    "lat": 40.2767,
    "lon": -74.8135,
-   "label": "Trenton"
+   "label": "Trenton",
+   "tz": "America/New_York"
   },
   "TUL": {
    "city": "Tulsa",
    "place": "Tulsa, OK",
    "st": "OK",
    "lat": 36.1971,
-   "lon": -95.8862
+   "lon": -95.8862,
+   "tz": "America/Chicago"
   },
   "TUP": {
    "city": "Tupelo",
    "place": "Tupelo, MS",
    "st": "MS",
    "lat": 34.2681,
-   "lon": -88.7699
+   "lon": -88.7699,
+   "tz": "America/Chicago"
   },
   "TUS": {
    "city": "Tucson",
    "place": "Tucson, AZ",
    "st": "AZ",
    "lat": 32.115,
-   "lon": -110.9381
+   "lon": -110.9381,
+   "tz": "America/Phoenix"
   },
   "TVC": {
    "city": "Traverse City",
    "place": "Traverse City, MI",
    "st": "MI",
    "lat": 44.7414,
-   "lon": -85.5822
+   "lon": -85.5822,
+   "tz": "America/Detroit"
   },
   "TVF": {
    "city": "Thief River Falls",
@@ -4741,28 +5199,32 @@
    "st": "MN",
    "lat": 48.0657,
    "lon": -96.185,
-   "label": "Thief River Falls"
+   "label": "Thief River Falls",
+   "tz": "America/Chicago"
   },
   "TWF": {
    "city": "Twin Falls",
    "place": "Twin Falls, ID",
    "st": "ID",
    "lat": 42.4818,
-   "lon": -114.488
+   "lon": -114.488,
+   "tz": "America/Boise"
   },
   "TXK": {
    "city": "Texarkana",
    "place": "Texarkana, AR",
    "st": "AR",
    "lat": 33.4537,
-   "lon": -93.991
+   "lon": -93.991,
+   "tz": "America/Chicago"
   },
   "TYR": {
    "city": "Tyler",
    "place": "Tyler, TX",
    "st": "TX",
    "lat": 32.3541,
-   "lon": -95.4024
+   "lon": -95.4024,
+   "tz": "America/Chicago"
   },
   "TYS": {
    "city": "Knoxville",
@@ -4771,49 +5233,56 @@
    "lat": 35.811,
    "lon": -83.994,
    "tip": "Knoxville's airport is McGhee Tyson: T-Y-S from TYSon.",
-   "clue": "McGhee Tyson Airport (the second name)"
+   "clue": "McGhee Tyson Airport (the second name)",
+   "tz": "America/New_York"
   },
   "UCA": {
    "city": "Utica",
    "place": "Utica, NY",
    "st": "NY",
    "lat": 43.1451,
-   "lon": -75.3839
+   "lon": -75.3839,
+   "tz": "America/New_York"
   },
   "UIN": {
    "city": "Quincy",
    "place": "Quincy, IL",
    "st": "IL",
    "lat": 39.9427,
-   "lon": -91.1946
+   "lon": -91.1946,
+   "tz": "America/Chicago"
   },
   "VCT": {
    "city": "Victoria",
    "place": "Victoria, TX",
    "st": "TX",
    "lat": 28.8526,
-   "lon": -96.9185
+   "lon": -96.9185,
+   "tz": "America/Chicago"
   },
   "VEL": {
    "city": "Vernal",
    "place": "Vernal, UT",
    "st": "UT",
    "lat": 40.4362,
-   "lon": -109.5117
+   "lon": -109.5117,
+   "tz": "America/Denver"
   },
   "VIS": {
    "city": "Visalia",
    "place": "Visalia, CA",
    "st": "CA",
    "lat": 36.3187,
-   "lon": -119.393
+   "lon": -119.393,
+   "tz": "America/Los_Angeles"
   },
   "VLD": {
    "city": "Valdosta",
    "place": "Valdosta, GA",
    "st": "GA",
    "lat": 30.7825,
-   "lon": -83.2767
+   "lon": -83.2767,
+   "tz": "America/New_York"
   },
   "VPS": {
    "city": "Fort Walton Beach/Valparaiso",
@@ -4821,7 +5290,8 @@
    "st": "FL",
    "lat": 30.4813,
    "lon": -86.5158,
-   "label": "Ft Walton Beach"
+   "label": "Ft Walton Beach",
+   "tz": "America/Chicago"
   },
   "WDG": {
    "city": "Enid",
@@ -4830,7 +5300,8 @@
    "lat": 36.3792,
    "lon": -97.7911,
    "tip": "Enid's airport is Woodring Regional: W-D-G from WooDrinG.",
-   "clue": "WooDrinG"
+   "clue": "WooDrinG",
+   "tz": "America/Chicago"
   },
   "WMH": {
    "city": "Mountain Home",
@@ -4839,14 +5310,16 @@
    "lat": 36.3689,
    "lon": -92.4705,
    "tip": "W, then M-H for Mountain Home: “Welcome, Mountain Home.”",
-   "clue": "Welcome Mountain Home"
+   "clue": "Welcome Mountain Home",
+   "tz": "America/Chicago"
   },
   "WRG": {
    "city": "Wrangell",
    "place": "Wrangell, AK",
    "st": "AK",
    "lat": 56.4843,
-   "lon": -132.37
+   "lon": -132.37,
+   "tz": "America/Sitka"
   },
   "WRL": {
    "city": "Worland",
@@ -4855,14 +5328,16 @@
    "lat": 43.966,
    "lon": -107.951,
    "tip": "Take the vowels out of “WoRLd” and you get WRL. Worland starts the same way: W-o-R-L-and.",
-   "clue": "“WoRLd” with no O"
+   "clue": "“WoRLd” with no O",
+   "tz": "America/Denver"
   },
   "WST": {
    "city": "Westerly",
    "place": "Westerly, RI",
    "st": "RI",
    "lat": 41.3496,
-   "lon": -71.8034
+   "lon": -71.8034,
+   "tz": "America/New_York"
   },
   "WSX": {
    "city": "Westsound",
@@ -4871,7 +5346,8 @@
    "lat": 48.618,
    "lon": -122.953,
    "tip": "W-S from WestSound, then X: “WestSound eXpress,” like its ferries.",
-   "clue": "WestSound eXpress"
+   "clue": "WestSound eXpress",
+   "tz": "America/Los_Angeles"
   },
   "WYS": {
    "city": "West Yellowstone",
@@ -4879,7 +5355,8 @@
    "st": "MT",
    "lat": 44.6884,
    "lon": -111.118,
-   "label": "W Yellowstone"
+   "label": "W Yellowstone",
+   "tz": "America/Denver"
   },
   "XNA": {
    "city": "Bentonville/Fayetteville - NW Arkansas Regional",
@@ -4889,35 +5366,40 @@
    "lon": -94.3068,
    "label": "Bentonville (XNA)",
    "tip": "X, then N-A for Northwest Arkansas.",
-   "clue": "X + Northwest Arkansas"
+   "clue": "X + Northwest Arkansas",
+   "tz": "America/Chicago"
   },
   "YAK": {
    "city": "Yakutat",
    "place": "Yakutat, AK",
    "st": "AK",
    "lat": 59.5087,
-   "lon": -139.6604
+   "lon": -139.6604,
+   "tz": "America/Yakutat"
   },
   "YKM": {
    "city": "Yakima",
    "place": "Yakima, WA",
    "st": "WA",
    "lat": 46.5682,
-   "lon": -120.544
+   "lon": -120.544,
+   "tz": "America/Los_Angeles"
   },
   "YNG": {
    "city": "Youngstown",
    "place": "Youngstown, OH",
    "st": "OH",
    "lat": 41.2607,
-   "lon": -80.6791
+   "lon": -80.6791,
+   "tz": "America/New_York"
   },
   "YUM": {
    "city": "Yuma",
    "place": "Yuma, AZ",
    "st": "AZ",
    "lat": 32.6509,
-   "lon": -114.6094
+   "lon": -114.6094,
+   "tz": "America/Phoenix"
   },
   "ZRF": {
    "city": "Rockford - Park & Ride Bus",
@@ -4927,7 +5409,8 @@
    "lon": -89.094,
    "label": "Rockford P&R Bus",
    "tip": "Bus and train stops get Z codes: Z, then R-F from RockFord.",
-   "clue": "Z + RockFord"
+   "clue": "Z + RockFord",
+   "tz": "America/Chicago"
   },
   "ZRK": {
    "city": "Rockford - Van Galder Bus",
@@ -4937,7 +5420,8 @@
    "lon": -89.04,
    "label": "Rockford VG Bus",
    "tip": "Z for bus, then R-K from RocKford (the Van Galder bus).",
-   "clue": "Z + RocKford"
+   "clue": "Z + RocKford",
+   "tz": "America/Chicago"
   }
  }
 }

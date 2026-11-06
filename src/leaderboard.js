@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 export const GAMES = {
-  defender: { name: 'Air Defender', unit: 'Wave', levels: { cadet: 'Cadet', pilot: 'Pilot', ace: 'Ace', doomsday: 'Doomsday' } },
+  defender: { name: 'Air Defender', unit: 'Wave', levels: { cadet: 'Cadet', pilot: 'Pilot', ace: 'Ace' } },
   tower: { name: 'Tower Control', unit: 'Shift', levels: { trainee: 'Trainee', controller: 'Controller', chief: 'Chief' } },
 };
 export const boardName = (game, level) => `${GAMES[game]?.name ?? game} · ${GAMES[game]?.levels[level] ?? level}`;

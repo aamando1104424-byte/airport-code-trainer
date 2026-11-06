@@ -341,8 +341,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .map .pframe.inset{stroke:var(--ink);stroke-width:2}
 .map .ititle{fill:var(--ink);font-family:var(--f-mono);font-weight:600;font-size:10px;letter-spacing:.12em;opacity:.8}
 
-/* ================= Hardcore / Doomsday flavor ================= */
-:root{--hz-a:#E8B21A;--hz-b:#1B1B1B;--crt-doom:#FF5C4D}
+/* ================= Hardcore (50 Busiest) flavor ================= */
+:root{--hz-a:#E8B21A;--hz-b:#1B1B1B;--hc-red:#FF5C4D}
 .map .lead{stroke:var(--ink);opacity:.55;stroke-width:1.2}
 /* hazard tape */
 .hz,.hardbar::before{background:repeating-linear-gradient(-45deg,var(--hz-a) 0 10px,var(--hz-b) 10px 20px)}
@@ -351,40 +351,57 @@ button{font:inherit;color:inherit;cursor:pointer}
 .setrow.hard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:repeating-linear-gradient(-45deg,var(--hz-a) 0 8px,var(--hz-b) 8px 16px)}
 .setrow.hard b{font-family:var(--f-display);font-size:1.35rem;letter-spacing:.03em}
 .hardbar{position:relative;display:flex;gap:12px;align-items:center;padding:12px 14px 12px 22px;border-radius:8px;overflow:hidden;
-  background:var(--crt-bg);color:#FFE3DF;border:2px solid var(--crt-doom);box-shadow:0 0 0 3px color-mix(in srgb,var(--crt-doom) 22%,transparent)}
+  background:var(--crt-bg);color:#FFE3DF;border:2px solid var(--hc-red);box-shadow:0 0 0 3px color-mix(in srgb,var(--hc-red) 22%,transparent)}
 .hardbar::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px}
 .hardbar .hz{display:none}
-.hardbar b{display:block;font-family:var(--f-display);font-weight:800;font-size:1.25rem;letter-spacing:.08em;color:var(--crt-doom);text-shadow:0 0 10px color-mix(in srgb,var(--crt-doom) 55%,transparent)}
+.hardbar b{display:block;font-family:var(--f-display);font-weight:800;font-size:1.25rem;letter-spacing:.08em;color:var(--hc-red);text-shadow:0 0 10px color-mix(in srgb,var(--hc-red) 55%,transparent)}
 .hardbar span{font-family:var(--f-mono);font-size:.8rem;color:#E9B9B2}
-/* Doomsday home card */
-.feature.doom{border-color:var(--crt-doom);color:#FFD9D4;background:radial-gradient(120% 140% at 100% 0%,#3A0A08 0%,var(--crt-bg) 55%)}
-.feature.doom .t{color:var(--crt-doom);text-shadow:0 0 14px color-mix(in srgb,var(--crt-doom) 60%,transparent);animation:doomglow 2.4s ease-in-out infinite}
-.feature.doom .d{color:#E9A39A}
-.feature.doom .b{color:var(--crt-amber)}
-.feature.doom::before{content:"";position:absolute;right:-30px;bottom:-34px;width:120px;height:120px;opacity:.12;pointer-events:none;
-  background:conic-gradient(from -30deg,var(--crt-doom) 0 60deg,transparent 60deg 120deg,var(--crt-doom) 120deg 180deg,transparent 180deg 240deg,var(--crt-doom) 240deg 300deg,transparent 300deg);border-radius:50%;
-  -webkit-mask:radial-gradient(circle,transparent 0 13px,#000 14px 56px,transparent 57px);mask:radial-gradient(circle,transparent 0 13px,#000 14px 56px,transparent 57px)}
-@keyframes doomglow{50%{text-shadow:0 0 22px var(--crt-doom),0 0 2px #fff}}
-/* Air Defender in Doomsday */
-.choice.doom{grid-column:1/-1;border-color:color-mix(in srgb,var(--crt-doom) 55%,transparent);color:#E9A39A;
-  background:repeating-linear-gradient(-45deg,transparent 0 12px,color-mix(in srgb,var(--crt-doom) 8%,transparent) 12px 24px)}
-.choice.doom b{color:var(--crt-doom)}
-.choice.doom[aria-pressed="true"]{border-color:var(--crt-doom);color:#FFD9D4;box-shadow:inset 0 0 0 1px var(--crt-doom),0 0 18px color-mix(in srgb,var(--crt-doom) 30%,transparent)}
-.doomcrt{border-color:var(--crt-doom)}
-.doomcrt .ttl{color:var(--crt-doom);text-shadow:0 0 14px color-mix(in srgb,var(--crt-doom) 60%,transparent)}
-.doomcrt .doomrules li::marker{color:var(--crt-doom);font-weight:700}
-.hud .defcon{display:inline-block;margin-left:8px;padding:0 6px;border-radius:3px;font-weight:700;color:var(--crt-bg);background:var(--crt-mid)}
-.hud .defcon.d3{background:var(--crt-amber)}
-.hud .defcon.d2,.hud .defcon.d1{background:var(--crt-doom);animation:blinkd .7s steps(2,start) infinite}
-@keyframes blinkd{to{opacity:.35}}
-.crt.redalert{animation:redalert 1.6s ease-in-out infinite}
-@keyframes redalert{50%{box-shadow:0 0 0 3px var(--crt-doom),0 0 36px color-mix(in srgb,var(--crt-doom) 55%,transparent),inset 0 0 40px color-mix(in srgb,var(--crt-doom) 25%,transparent)}}
-.flashfx{position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0;mix-blend-mode:screen}
-.flashfx.go{animation:nukeflash .55s ease-out}
-@keyframes nukeflash{0%{opacity:.55}100%{opacity:0}}
-@media (prefers-reduced-motion:reduce){.feature.doom .t,.crt.redalert,.hud .defcon.d2,.hud .defcon.d1{animation:none}.flashfx.go{animation:none}}
-.doomcrt .ovl .big{color:var(--crt-doom);text-shadow:0 0 18px color-mix(in srgb,var(--crt-doom) 65%,transparent)}
-.doomcrt .crt-btn.primary{background:var(--crt-doom);border-color:var(--crt-doom);color:#140303;box-shadow:0 0 16px color-mix(in srgb,var(--crt-doom) 45%,transparent)}
+/* 50 Busiest Challenge home card: pick an area, then a game */
+.feature.chal{display:flex;flex-direction:column;align-items:stretch;gap:10px;border-color:var(--crt-amber);color:var(--crt-amber);
+  background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,var(--crt-amber) 14%,var(--crt-bg)) 0%,var(--crt-bg) 62%)}
+.feature.chal .t{font-size:1.7rem;color:var(--crt-amber);text-shadow:0 0 10px color-mix(in srgb,var(--crt-amber) 45%,transparent)}
+.feature.chal .d{color:color-mix(in srgb,var(--crt-amber) 72%,var(--crt-bg))}
+.areas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;position:relative;z-index:1}
+.area{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:7px 9px;border-radius:6px;min-height:44px;cursor:pointer;
+  background:transparent;color:var(--crt-amber);border:1.5px solid color-mix(in srgb,var(--crt-amber) 38%,transparent);font-family:var(--f-mono)}
+.area b{font-size:.78rem;letter-spacing:.06em;line-height:1.2}
+.area .ac{font-size:.7rem;color:color-mix(in srgb,var(--crt-amber) 65%,var(--crt-bg))}
+.area .lclk{font-size:.7rem;gap:2px 8px;color:color-mix(in srgb,var(--crt-amber) 80%,var(--crt-bg))}
+.area .lclk b{font-size:.72rem;letter-spacing:0}
+.area.all{grid-column:1/-1}
+.area:hover{border-color:var(--crt-amber)}
+.area.on{background:color-mix(in srgb,var(--crt-amber) 18%,transparent);border-color:var(--crt-amber);box-shadow:inset 0 0 0 1px var(--crt-amber)}
+.area.on b::before{content:"▸ "}
+.chgo{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;z-index:1}
+.cbtn{min-height:46px;border-radius:6px;font-family:var(--f-display);font-weight:800;font-size:1.05rem;letter-spacing:.06em;cursor:pointer;
+  background:var(--crt-amber);color:var(--crt-bg);border:2px solid var(--crt-amber)}
+.cbtn:hover{filter:brightness(1.08)}
+.cbtn:focus-visible,.area:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.ttl .ttl-sub{display:block;margin-top:4px;font-family:var(--f-mono);font-size:.82rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--crt-amber);text-shadow:none}
+/* ================= local time clocks ================= */
+.lclk{display:inline-flex;flex-wrap:wrap;gap:3px 10px;align-items:baseline}
+.lclk .z{white-space:nowrap}
+.lclk b{font-variant-numeric:tabular-nums}
+/* home: departure-board tiles under the title */
+.clockrow{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
+.clockrow .lclk{gap:6px}
+.clockrow .z{display:inline-flex;align-items:baseline;gap:6px;background:var(--tile);color:var(--tile-ink);border-radius:4px;padding:5px 9px;font-family:var(--f-mono)}
+.clockrow .zn{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.clockrow b{font-size:1.02rem;color:#FFC15A}
+.clockrow .za{font-size:.66rem;opacity:.7}
+/* top bar of every mode */
+.bar{flex-wrap:wrap}
+.bar-c{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.bar-c b{color:var(--ink);font-weight:600}
+.bar-c .za{opacity:.8}
+/* set picker */
+.tzline{display:block;font-family:var(--f-mono);font-size:.74rem;color:var(--muted);margin-top:2px}
+.setrow .tzline b{color:var(--ink);font-weight:600;font-family:var(--f-mono);font-size:inherit;letter-spacing:0}
+/* game HUD */
+.defender .crt>.hud:first-child{flex-wrap:wrap;row-gap:2px}
+.hud .hclk{color:var(--crt-mid);font-size:.8rem;order:9}
+.hud .hclk .lclk{gap:2px 8px}
+.hud .hclk b{font-size:.85rem}
 /* region mini-map in the wave banner */
 .ovl .locator{display:block;width:min(240px,62%);margin:10px auto 6px;overflow:visible}
 .ovl .locator .lc-land{fill:var(--crt-lo);stroke:var(--crt-mid);stroke-width:.5;opacity:.9}
