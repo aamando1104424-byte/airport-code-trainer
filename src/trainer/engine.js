@@ -241,13 +241,13 @@ function extrasSVG(P){const ex=DATA_GEO.extras&&DATA_GEO.extras[P.st];if(!ex)ret
   (ex.roads||[]).forEach(r=>{const q=r.pts[r.at];if(q){const p=Q(...q);s+=`<g transform="translate(${f1(p.x)},${f1(p.y)})"><rect class="shield" x="-14" y="-8" width="28" height="15" rx="3"/><text class="shieldt" y="3.5" text-anchor="middle">${r.n}</text></g>`;}});
   return s;}
 /* label placement: tries spots around each airport, nearest first, and keeps labels off each other */
-function placeLabels(items,pts){
-  const placed=[],res={},obst=pts.map(p=>({x0:p.x-8,y0:p.y-8,x1:p.x+8,y1:p.y+8}));
+function placeLabels(items,pts,o={}){
+  const sc=o.sc||1,ob=o.ob||{l:8,r:8,t:8,b:8},placed=[],res={},obst=pts.map(p=>({x0:p.x-ob.l*sc,y0:p.y-ob.t*sc,x1:p.x+ob.r*sc,y1:p.y+ob.b*sc}));
   const ov=(a,b)=>Math.max(0,Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0))*Math.max(0,Math.min(a.y1,b.y1)-Math.max(a.y0,b.y0));
   const dirs=[[1,0],[-1,0],[0,-1],[0,1],[1,-1],[-1,-1],[1,1],[-1,1]];
   const order=items.map(it=>[it,items.reduce((n,o)=>n+(Math.hypot(o.x-it.x,o.y-it.y)<90?1:0),0)]).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
   for(const it of order){let best=null,bs=1e18;
-    for(const [ring,dist] of [[0,12],[1,30],[2,54],[3,82]]){
+    for(const [ring,d0] of [[0,12],[1,30],[2,54],[3,82]]){const dist=d0*sc;
       for(const [ux,uy] of dirs){
         const F=it.fr;let x0=ux>0?it.x+dist:ux<0?it.x-dist-it.w:it.x-it.w/2;
         // a label above or below its dot may slide sideways to stay inside a narrow panel (small insets)
@@ -266,7 +266,7 @@ function placeLabels(items,pts){
     placed.push(best.R);res[it.key]=best;}
   return res;}
 const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
-function canvasLabeler(ctx,deck,list,mono){const memo=new Map();
+function canvasLabeler(ctx,deck,list,mono,opt){const memo=new Map();
   return (c,fs,vis)=>{const V=vis||list,key=fs+'|'+V.map(q=>q.a.code).join(',');let cache=memo.get(key);
     if(!cache){if(memo.size>80)memo.clear();ctx.save();ctx.font=`600 ${fs}px ${mono}`;
       // labels in an inset keep off its title (HAWAII, PUERTO RICO) in the top-left corner
@@ -274,7 +274,7 @@ function canvasLabeler(ctx,deck,list,mono){const memo=new Map();
       // ...and labels on a region map keep off the region badge
       const badge=P=>deck.isSub?[{x0:P.x0,y0:P.y0,x1:P.x0+16+P.name.length*fs*.74,y1:P.y0+fs*1.95}]:[];
       const items=V.map(q=>{const P=deck.P[q.a.pi]||deck.P[0];return{no:P.inset?ttl(P):deck.blocks.concat(badge(P)),key:q.a.code,x:q.x,y:q.y,w:ctx.measureText(lab(q.a)).width+8,h:fs*1.15,fr:{x0:P.x0+2,y0:P.y0+2,x1:P.x1-2,y1:P.y1-2}};});
-      ctx.restore();const res=placeLabels(items,list.map(q=>({x:q.x,y:q.y})));cache={};memo.set(key,cache);
+      ctx.restore();const res=placeLabels(items,list.map(q=>({x:q.x,y:q.y})),opt?opt(fs):undefined);cache={};memo.set(key,cache);
       for(const q of V){const r=res[q.a.code].R;cache[q.a.code]={x:r.x0,y:r.y0+fs*.85,bottom:r.y1,lead:res[q.a.code].ring>0,lx:clampv(q.x,r.x0,r.x1),ly:clampv(q.y,r.y0,r.y1)};}}
     return cache[c.a.code];};}
 /* canvas map for the games */
@@ -798,6 +798,87 @@ function summary({title,big,sub,missed,again,extra='',noMissNote=''}){
   const dm=$('#drillMiss');if(dm)dm.onclick=()=>go(recall,{list:groupQueue(missed)});
 }
 
+/* ================= Air Defender art =================
+   Every city gets its own little skyline, built from its code, so it looks the same every game.
+   Famous cities get a landmark; small towns get a silo, water tower, church or barn.
+   All drawing is in map units around the city's dot; k scales it up on small screens. */
+const LANDMARKS={SEA:'needle',STL:'arch',DCA:'dome',IAD:'obelisk',BWI:'dome',MSY:'dome',ORD:'twin',MDW:'twin',ATL:'twin',DFW:'twin',DAL:'twin',CLT:'twin',MSP:'twin',DTW:'twin',
+  JFK:'spire',LGA:'spire',EWR:'spire',BOS:'spire',PHL:'spire',LAS:'tower',HNL:'palm',OGG:'palm',KOA:'palm',LIH:'palm',ITO:'palm',MIA:'palm',FLL:'palm',TPA:'palm',RSW:'palm',SAN:'palm',LAX:'palm',
+  PHX:'cactus',TUS:'cactus',ELP:'cactus',ABQ:'cactus',SFO:'bridge',OAK:'bridge',SJC:'bridge',PIT:'bridge',DEN:'peaks',SLC:'peaks',JAC:'peaks',COD:'peaks',BZN:'peaks',BOI:'peaks',ANC:'peaks',PDX:'peaks',
+  IAH:'rocket',HOU:'rocket',MCO:'rocket',MLB:'rocket',HSV:'rocket'};
+const TOWN_EXTRAS=['silo','water','steeple','barn','silo','water'];
+function hashStr(t){let h=2166136261;for(let i=0;i<t.length;i++)h=Math.imul(h^t.charCodeAt(i),16777619);return h>>>0;}
+function seeded(seed){let s=seed||1;return ()=>{s=Math.imul(s^(s>>>15),1|s);s^=s+Math.imul(s^(s>>>7),61|s);return ((s^(s>>>14))>>>0)/4294967296;};}
+const ARTC={};
+function cityArt(code,big){const key=code+(big?'*':'');if(ARTC[key])return ARTC[key];const r=seeded(hashStr(key));
+  const land=LANDMARKS[code]||null,extra=land||(big?null:TOWN_EXTRAS[Math.floor(r()*TOWN_EXTRAS.length)]);
+  const n=big?4+Math.floor(r()*3):2+Math.floor(r()*2),span=big?20:13,ws=[];for(let i=0;i<n;i++)ws.push(.7+r());
+  const sum=ws.reduce((a,b)=>a+b,0),gap=.8,unit=(span-gap*(n-1))/sum,b=[];let x=-span/2-(extra&&!big?3:0);
+  const tall=Math.floor(r()*n);
+  for(let i=0;i<n;i++){const w=ws[i]*unit,h=big?(i===tall?13+r()*4:5+r()*8):2.5+r()*3.5;
+    b.push({x,w,h,roof:big?['flat','flat','step','antenna','crown','slant'][Math.floor(r()*6)]:['flat','peak','peak','flat'][Math.floor(r()*4)],lit:Math.floor(r()*997)});x+=w+gap;}
+  return ARTC[key]={b,extra,big};}
+function drawCityArt(ctx,A,x,y,k,col,bg){ctx.save();ctx.translate(x,y+6*k);ctx.scale(k,k);ctx.fillStyle=col;ctx.strokeStyle=col;ctx.lineCap='round';
+  const E=A.extra;
+  // landmarks that stand behind the skyline
+  if(E==='peaks'){ctx.globalAlpha=.42;ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(-6,-13);ctx.lineTo(-2,-8);ctx.lineTo(3,-16);ctx.lineTo(11,0);ctx.fill();
+    ctx.globalAlpha=.9;ctx.fillStyle=bg;ctx.beginPath();ctx.moveTo(1,-12.8);ctx.lineTo(3,-16);ctx.lineTo(5,-12.8);ctx.lineTo(3,-13.8);ctx.fill();ctx.fillStyle=col;ctx.globalAlpha=1;}
+  if(E==='bridge'){ctx.lineWidth=.8;ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(-15,-4);ctx.lineTo(15,-4);ctx.stroke();
+    ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(-15,-6);ctx.quadraticCurveTo(-11,-14,-7,-16);ctx.quadraticCurveTo(0,-5,7,-16);ctx.quadraticCurveTo(11,-14,15,-6);ctx.stroke();
+    ctx.globalAlpha=1;ctx.fillRect(-7.8,-17,1.6,17);ctx.fillRect(6.2,-17,1.6,17);}
+  // the buildings, with a few windows punched out
+  for(const B of A.b){ctx.fillRect(B.x,-B.h,B.w,B.h);
+    if(B.roof==='step'&&B.w>2.2)ctx.fillRect(B.x+B.w*.22,-B.h-2,B.w*.56,2);
+    else if(B.roof==='antenna'){ctx.fillRect(B.x+B.w/2-.35,-B.h-4.5,.7,4.5);}
+    else if(B.roof==='crown'){ctx.beginPath();ctx.moveTo(B.x,-B.h);ctx.lineTo(B.x+B.w/2,-B.h-3);ctx.lineTo(B.x+B.w,-B.h);ctx.fill();}
+    else if(B.roof==='slant'){ctx.beginPath();ctx.moveTo(B.x,-B.h);ctx.lineTo(B.x+B.w,-B.h-2.5);ctx.lineTo(B.x+B.w,-B.h);ctx.fill();}
+    else if(B.roof==='peak'){ctx.beginPath();ctx.moveTo(B.x-.3,-B.h);ctx.lineTo(B.x+B.w/2,-B.h-2.2);ctx.lineTo(B.x+B.w+.3,-B.h);ctx.fill();}
+    if(B.w>=2.4&&B.h>=4){ctx.fillStyle=bg;let n=B.lit;for(let wy=-B.h+1.6;wy<-1.2;wy+=2.3)for(let wx=B.x+.7;wx<B.x+B.w-1;wx+=1.6){n=(n*31+7)%97;if(n%3)ctx.fillRect(wx,wy,.8,1);}ctx.fillStyle=col;}}
+  // landmarks in front
+  if(E==='needle'){const X=10;ctx.fillRect(X-.4,-17,.8,17);ctx.fillRect(X-2.2,-1,4.4,1);ctx.beginPath();ctx.ellipse(X,-15,4,1.3,0,0,7);ctx.fill();ctx.fillRect(X-1.6,-17,3.2,1.4);ctx.fillRect(X-.2,-21,.4,4);}
+  else if(E==='arch'){ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-9,0);ctx.bezierCurveTo(-8,-22,8,-22,9,0);ctx.stroke();}
+  else if(E==='dome'){const X=9;ctx.fillRect(X-5,-4,10,4);ctx.beginPath();ctx.arc(X,-4,3.8,Math.PI,0);ctx.fill();ctx.fillRect(X-.6,-10,1.2,2.4);ctx.fillRect(X-.25,-11.4,.5,1.4);}
+  else if(E==='obelisk'){const X=9;ctx.beginPath();ctx.moveTo(X-1.4,0);ctx.lineTo(X-.9,-16);ctx.lineTo(X,-18);ctx.lineTo(X+.9,-16);ctx.lineTo(X+1.4,0);ctx.fill();}
+  else if(E==='spire'){const X=8;ctx.fillRect(X-3,-11,6,11);ctx.fillRect(X-2,-14,4,3);ctx.fillRect(X-1.2,-16.5,2.4,2.5);ctx.fillRect(X-.3,-21,.6,4.5);}
+  else if(E==='twin'){for(const X of [6.5,10.5]){ctx.fillRect(X-1.6,-17,3.2,17);ctx.fillRect(X-.3,-20.5,.6,3.5);}}
+  else if(E==='tower'){const X=10;ctx.fillRect(X-.8,-16,1.6,16);ctx.fillRect(X-2.6,-17.5,5.2,2.6);ctx.fillRect(X-.25,-22,.5,4.5);ctx.fillRect(X-3,-1.2,6,1.2);}
+  else if(E==='palm'){const X=10;ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(X,0);ctx.quadraticCurveTo(X+2.2,-6,X+.8,-12);ctx.stroke();ctx.lineWidth=.9;
+    for(const [dx,dy] of [[-5,-9.5],[-3.5,-13.5],[4.6,-13],[5.4,-9.5],[.8,-15.5]]){ctx.beginPath();ctx.moveTo(X+.8,-12);ctx.quadraticCurveTo(X+.8+dx*.5,-12+(dy+12)*1.4-1.5,X+.8+dx,-12+(dy+12)*1.2+2);ctx.stroke();}}
+  else if(E==='cactus'){const X=10;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X,0);ctx.lineTo(X,-12);ctx.moveTo(X,-5);ctx.lineTo(X-3,-5);ctx.lineTo(X-3,-9);ctx.moveTo(X,-7);ctx.lineTo(X+3,-7);ctx.lineTo(X+3,-10.5);ctx.stroke();}
+  else if(E==='rocket'){const X=10;ctx.fillRect(X-1.3,-14,2.6,14);ctx.beginPath();ctx.moveTo(X-1.3,-14);ctx.lineTo(X,-18.5);ctx.lineTo(X+1.3,-14);ctx.fill();
+    ctx.beginPath();ctx.moveTo(X-1.3,-3.5);ctx.lineTo(X-3.2,0);ctx.lineTo(X-1.3,0);ctx.moveTo(X+1.3,-3.5);ctx.lineTo(X+3.2,0);ctx.lineTo(X+1.3,0);ctx.fill();ctx.fillStyle=bg;ctx.fillRect(X-1.3,-10,2.6,.8);ctx.fillStyle=col;}
+  else if(E==='silo'){const X=7;ctx.fillRect(X-1.8,-8,3.6,8);ctx.beginPath();ctx.arc(X,-8,1.8,Math.PI,0);ctx.fill();ctx.fillRect(X+2.2,-4,4.4,4);ctx.beginPath();ctx.moveTo(X+1.8,-4);ctx.lineTo(X+4.4,-6.2);ctx.lineTo(X+7,-4);ctx.fill();}
+  else if(E==='water'){const X=8;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(X-2.4,0);ctx.lineTo(X-1.5,-8);ctx.moveTo(X+2.4,0);ctx.lineTo(X+1.5,-8);ctx.moveTo(X-2,-3.5);ctx.lineTo(X+2,-3.5);ctx.stroke();
+    ctx.beginPath();ctx.ellipse(X,-9.6,3.2,2.2,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(X-1.6,-11.4);ctx.lineTo(X,-13);ctx.lineTo(X+1.6,-11.4);ctx.fill();}
+  else if(E==='steeple'){const X=7.5;ctx.fillRect(X-2.6,-5,5.2,5);ctx.beginPath();ctx.moveTo(X-3,-5);ctx.lineTo(X,-7.4);ctx.lineTo(X+3,-5);ctx.fill();ctx.fillRect(X-.9,-10,1.8,4);ctx.beginPath();ctx.moveTo(X-1.1,-10);ctx.lineTo(X,-14);ctx.lineTo(X+1.1,-10);ctx.fill();
+    ctx.fillStyle=bg;ctx.fillRect(X-.6,-2.4,1.2,2.4);ctx.fillStyle=col;}
+  else if(E==='barn'){const X=7.5;ctx.beginPath();ctx.moveTo(X-3.6,0);ctx.lineTo(X-3.6,-4.4);ctx.lineTo(X-2,-6.6);ctx.lineTo(X,-7.4);ctx.lineTo(X+2,-6.6);ctx.lineTo(X+3.6,-4.4);ctx.lineTo(X+3.6,0);ctx.fill();
+    ctx.strokeStyle=bg;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(X-1.4,0);ctx.lineTo(X-1.4,-3.2);ctx.lineTo(X+1.4,-3.2);ctx.lineTo(X+1.4,0);ctx.moveTo(X-1.4,-3.2);ctx.lineTo(X+1.4,0);ctx.moveTo(X+1.4,-3.2);ctx.lineTo(X-1.4,0);ctx.stroke();}
+  // ground
+  ctx.globalAlpha=.55;ctx.fillRect(-12,0,24,.9);ctx.restore();}
+/* incoming bombs come in three looks (finned, spiky mine, striped capsule); a split half is a small dart */
+function drawBombArt(ctx,b,k,clock,col,warn){const a=Math.atan2(b.uy,b.ux),s=k*(b.child?.75:1);ctx.save();ctx.translate(b.x,b.y);ctx.scale(s,s);
+  ctx.shadowColor=col.red;ctx.shadowBlur=8;const body=warn?col.amb:'#EEF3F1',band=warn?'#FFFFFF':col.red;
+  if(b.child||b.kind===2){ctx.rotate(a);ctx.fillStyle=body;ctx.beginPath();ctx.moveTo(6,0);ctx.quadraticCurveTo(3,-2.2,-3,-2.2);ctx.lineTo(-5,-1.2);ctx.lineTo(-5,1.2);ctx.lineTo(-3,2.2);ctx.quadraticCurveTo(3,2.2,6,0);ctx.fill();
+    ctx.shadowBlur=0;ctx.fillStyle=band;ctx.fillRect(-1.5,-2.2,1.3,4.4);ctx.fillRect(1.5,-2,1,4);
+    ctx.beginPath();ctx.moveTo(-3.2,-2);ctx.lineTo(-6.2,-3.8);ctx.lineTo(-5,-1);ctx.moveTo(-3.2,2);ctx.lineTo(-6.2,3.8);ctx.lineTo(-5,1);ctx.fill();}
+  else if(b.kind===1){ctx.rotate(clock*2.2+b.spin);ctx.fillStyle=body;ctx.beginPath();ctx.arc(0,0,3.4,0,7);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=band;
+    for(let i=0;i<6;i++){const t=i*Math.PI/3;ctx.save();ctx.rotate(t);ctx.fillRect(2.8,-.65,2.4,1.3);ctx.restore();}
+    ctx.beginPath();ctx.arc(0,0,1.3,0,7);ctx.fill();}
+  else{ctx.rotate(a);ctx.fillStyle=body;ctx.beginPath();ctx.ellipse(.8,0,4.6,2.8,0,0,7);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=band;
+    ctx.fillRect(1.6,-2.7,1.2,5.4);ctx.beginPath();ctx.moveTo(-2.6,-1.6);ctx.lineTo(-6.6,-4);ctx.lineTo(-6.6,4);ctx.lineTo(-2.6,1.6);ctx.fill();ctx.fillStyle=body;ctx.fillRect(-6.8,-.5,3,1);}
+  ctx.restore();}
+/* an interceptor: a little white rocket with a flickering flame */
+function drawRocketArt(ctx,m,k,col){const a=Math.atan2(m.b.y-m.y,m.b.x-m.x);ctx.save();ctx.translate(m.x,m.y);ctx.rotate(a);ctx.scale(k,k);
+  ctx.fillStyle=col.amb;ctx.globalAlpha=.9;ctx.beginPath();ctx.moveTo(-3,-1.1);ctx.lineTo(-5.5-Math.random()*3.5,0);ctx.lineTo(-3,1.1);ctx.fill();ctx.globalAlpha=1;
+  ctx.fillStyle='#FFFFFF';ctx.beginPath();ctx.moveTo(4.5,0);ctx.lineTo(2.2,-1.2);ctx.lineTo(-3,-1.2);ctx.lineTo(-3,1.2);ctx.lineTo(2.2,1.2);ctx.fill();
+  ctx.fillStyle=col.hi;ctx.beginPath();ctx.moveTo(-1.5,-1.2);ctx.lineTo(-3.6,-2.8);ctx.lineTo(-3,-1.2);ctx.moveTo(-1.5,1.2);ctx.lineTo(-3.6,2.8);ctx.lineTo(-3,1.2);ctx.fill();ctx.restore();}
+/* a launcher at the bottom of the map: a dome with a barrel that swings toward its last shot */
+function drawLauncherArt(ctx,L,k,col,H){ctx.save();ctx.translate(L.x,H);ctx.scale(k,k);ctx.fillStyle=col.mid;
+  ctx.save();ctx.rotate(L.ang+Math.PI/2);ctx.fillRect(-1.6,-15+(L.kick||0)*3,3.2,9);ctx.restore();
+  ctx.beginPath();ctx.arc(0,0,8.5,Math.PI,0);ctx.fill();ctx.fillStyle=col.lo;ctx.fillRect(-11,-1.2,22,1.2);
+  if(L.kick>0){ctx.globalAlpha=L.kick;ctx.fillStyle=col.amb;ctx.beginPath();ctx.arc(Math.cos(L.ang)*16,Math.sin(L.ang)*16,3.2,0,7);ctx.fill();ctx.globalAlpha=1;}
+  ctx.restore();}
 /* ================= AIR DEFENDER ================= */
 /* hints: progress points (0 top → 1 city) where hint 1 (pattern), 2 (first letter), 3 (two letters), 4 (full code) unlock */
 const DIFFS={
@@ -856,7 +937,10 @@ function defenderRun(root,diffKey,opt={}){
   // a set split into regions plays one region per wave; each city keeps its damage marks across regions
   const SECS=root.sub?root.sub.filter(sd=>sd.airports.some(a=>s.has(a.code))):null;
   const STATE={};for(const a of root.airports)if(s.has(a.code))STATE[a.code]={a,x:a.x,y:a.y,dmg:0,flash:0,reveal:0};
-  let deck=SECS?SECS[Math.floor(Math.random()*SECS.length)]:root,cities=[],LBL=null,BASES=[],secQ=[],secAt=-9;
+  let deck=SECS?SECS[Math.floor(Math.random()*SECS.length)]:root,cities=[],LBL=null,BASES=[],secQ=[],secAt=-9,parts=[],artK=1;
+  // big cities (the 50 busiest) get a full skyline; the rest get small-town art
+  const BIG=new Set((DECKMAP.top50?DECKMAP.top50.airports:[]).map(a=>a.code)),REDUCE=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const LABEL_OPT=fs=>({sc:Math.min(2,fs/14),ob:{l:11,r:11,t:15,b:6}});
   const ACT=w=>D.act(w);
   const idleMsg=()=>SECS?`${deck.name}: type the code of the blinking city`:'Type the code of the blinking city';
   setWorld(deck);
@@ -871,14 +955,18 @@ function defenderRun(root,diffKey,opt={}){
   function size(){const w=cv.clientWidth||W;dpr=Math.min(2,window.devicePixelRatio||1);scale=w/W;cv.width=Math.round(w*dpr);cv.height=Math.round(w*H/W*dpr);}
   fitCanvas(cv);const ro=new ResizeObserver(size);ro.observe(cv);size();
   const cs=getComputedStyle(document.documentElement),V=n=>cs.getPropertyValue(n).trim();
-  const COL={bg:V('--crt-bg'),hi:V('--crt-hi'),mid:V('--crt-mid'),lo:V('--crt-lo'),amb:V('--crt-amber'),red:V('--crt-red'),water:V('--crt-water'),sea:V('--crt-sea'),land:V('--crt-land')};
+  // colors come from the color mode; a change in the Colors menu recolors the running game
+  const readCOL=()=>({bg:V('--crt-bg'),hi:V('--crt-hi'),mid:V('--crt-mid'),lo:V('--crt-lo'),amb:V('--crt-amber'),red:V('--crt-red'),water:V('--crt-water'),sea:V('--crt-sea'),land:V('--crt-land')});
+  const COL=readCOL(),onTheme=()=>Object.assign(COL,readCOL());window.addEventListener('act-theme',onTheme);
   const MONO=getFamily('mono');
   let bombs=[],missiles=[],booms=[],pops=[],buf='',score=0,wave=0,shields=5,combo=0,toSpawn=0,spawnT=0,phase='intro',phaseT=0,paused=false,over=false,
       hitsThisWave=0,kills=0,shots=0,misfires=0,splits=0,clean=0,last=performance.now(),raf=0,clock=0,initials=null,initBuf='',endXP=0,lastX=350;
   const missedCodes=new Set(),ovl=$('#ovl'),lastHit={},lateT={};
-  function enterSector(sd){deck=sd;secAt=typeof clock==='number'?clock:0;setWorld(deck);BASES=[{x:W*.17,y:H-6},{x:W/2,y:H-6},{x:W*.83,y:H-6}];fitCanvas(cv);size();
+  function enterSector(sd){deck=sd;secAt=typeof clock==='number'?clock:0;setWorld(deck);BASES=[{x:W*.17,y:H-6,ang:-Math.PI/2,kick:0},{x:W/2,y:H-6,ang:-Math.PI/2,kick:0},{x:W*.83,y:H-6,ang:-Math.PI/2,kick:0}];fitCanvas(cv);size();
     cities=deck.airports.filter(a=>STATE[a.code]).map(a=>{const c=STATE[a.code];c.a=a;c.x=a.x;c.y=a.y;return c;});
-    LBL=canvasLabeler(ctx,deck,cities,MONO);booms=[];pops=[];lastX=W/2;
+    // each city's art, and how close its nearest neighbor is (clustered cities draw smaller so they don't merge)
+    for(const c of cities){c.art=cityArt(c.a.code,BIG.has(c.a.code));c.nd=cities.reduce((m,o)=>o===c?m:Math.min(m,Math.hypot(o.x-c.x,o.y-c.y)),1e9);}
+    LBL=canvasLabeler(ctx,deck,cities,MONO,LABEL_OPT);booms=[];pops=[];parts=[];lastX=W/2;
     {const k=$('#dClk');if(k)k.innerHTML=clockHTML(zonesOf(cities.map(c=>c.a)),{short:true});}
     const m=$('#msg');if(m&&!over){m.textContent=idleMsg();m.className='msg';}}
   function nextSector(){const ok=SECS;if(ok.length===1)return ok[0];
@@ -894,7 +982,11 @@ function defenderRun(root,diffKey,opt={}){
     clearTimeout(bufT);if(state)bufT=setTimeout(()=>{b.className='buf';if(!buf&&initials===null)b.querySelectorAll('span').forEach(sp=>sp.textContent='');},260);}
   const progOf=(y,c)=>Math.max(0,Math.min(1,(y+6)/(c.y+6)));
   function makeBomb(sx,sy,c,speed,child){const dx=c.x-sx,dy=c.y-sy,dist=Math.hypot(dx,dy);
-    return{c,sx,sy,x:sx,y:sy,ux:dx/dist,uy:dy/dist,dist,trav:0,prog:progOf(sy,c),speed,locked:false,hl:0,child:!!child,splitAt:null,split:false};}
+    return{c,sx,sy,x:sx,y:sy,ux:dx/dist,uy:dy/dist,dist,trav:0,prog:progOf(sy,c),speed,locked:false,hl:0,child:!!child,splitAt:null,split:false,kind:Math.floor(Math.random()*3),spin:Math.random()*6,pf:0};}
+  // sparks and smoke: x,y,velocity, life, size, color, gravity, drag
+  function spark(x,y,n,cols,spd,life,g=0,up=0){if(REDUCE)n=Math.ceil(n/3);for(let i=0;i<n;i++){const t=Math.random()*Math.PI*2,v=spd*(.45+Math.random()*.75);
+    parts.push({x,y,vx:Math.cos(t)*v,vy:Math.sin(t)*v-up,t:0,life:life*(.6+Math.random()*.6),r:(.9+Math.random()*1.3)*artK,col:cols[i%cols.length],g,drag:2.2,kind:'s'});}}
+  function puff(x,y,col,r=2.2,life=.7){if(REDUCE||parts.length>420)return;parts.push({x,y,vx:(Math.random()-.5)*8,vy:-6-Math.random()*6,t:0,life,r:r*artK,col,g:0,drag:1,kind:'p'});}
   function pickCity(pool){const ws=pool.map(c=>weight(c.a));let r=Math.random()*ws.reduce((x,y)=>x+y,0);for(let j=0;j<pool.length;j++){r-=ws[j];if(r<=0)return pool[j];}return pool[pool.length-1];}
   function startWave(){wave++;if(SECS&&wave>1)enterSector(nextSector());
     toSpawn=4+2*wave;spawnT=wave===1?1.8:.9;hitsThisWave=0;phase='intro';phaseT=SECS?2.8:2.2;sfx('wave');
@@ -912,22 +1004,23 @@ function defenderRun(root,diffKey,opt={}){
       let pool=cities.filter(c=>c!==b.c&&c.y>b.y+45&&!targeted.has(c));if(!pool.length)pool=cities.filter(c=>c!==b.c&&c.y>b.y+45&&!hit.includes(c));if(!pool.length)break;
       const c=pickCity(pool),k=makeBomb(b.x,b.y,c,b.speed*(1.05+i*.06),true);k.parent=b;bombs.push(k);splits++;hit.push(c);}
     if(!hit.length)return;
-    booms.push({x:b.x,y:b.y,t:0,R:14+hit.length*4,col:COL.amb});sfx('split');
+    booms.push({x:b.x,y:b.y,t:0,R:14+hit.length*4,col:COL.amb});spark(b.x,b.y,8,[COL.amb,'#FFFFFF'],70,.5);sfx('split');
     msg(`Bomb split! ${hit[0].a.place} is now a target too.`,'warn');}
   function impact(b){lastHit[b.c.a.code]=clock;bombs=bombs.filter(x=>x!==b);hitsThisWave++;combo=0;b.c.dmg++;b.c.flash=1;b.c.reveal=3.2;
     missedCodes.add(b.c.a.code);{const code=b.c.a.code;clearTimeout(lateT[code]);lateT[code]=setTimeout(()=>{delete lateT[code];grade(code,false,'recog');},2000);}sfx('hit');
-    booms.push({x:b.c.x,y:b.c.y,t:0,R:42,col:COL.red});
+    booms.push({x:b.c.x,y:b.c.y,t:0,R:42,col:COL.red});spark(b.c.x,b.c.y-4*artK,14,[COL.red,COL.amb,COL.mid],110,.9,220,70);
+    for(let i=0;i<6;i++)puff(b.c.x+(Math.random()-.5)*18*artK,b.c.y-2*artK,COL.mid,3.2,1.2);
     const scr=$('#scr');scr.classList.remove('jolt');void scr.offsetWidth;scr.classList.add('jolt');
     shields--;msg(`${b.c.a.place} was hit. Its code is ${b.c.a.code}.`,'bad');hud();if(shields<=0)gameOver();}
   function kill(b){bombs=bombs.filter(x=>x!==b);
     const pts=Math.round((50+120*(1-b.prog))*wave*mult()*HINT_PTS[b.hl]);score+=pts;combo++;kills++;if(b.hl<=1)clean++;
-    booms.push({x:b.x,y:b.y,t:0,R:26,col:COL.hi});pops.push({x:b.x,y:b.y-10,t:0,text:'+'+pts+(b.hl===0?' CLEAN':'')});
+    booms.push({x:b.x,y:b.y,t:0,R:26,col:COL.hi});spark(b.x,b.y,16,[COL.hi,'#FFFFFF',COL.amb],150,.7,40);pops.push({x:b.x,y:b.y-10,t:0,text:'+'+pts+(b.hl===0?' CLEAN':'')});
     grade(b.c.a.code,true,b.hl<=1?'recall':'hint');sfx('boom');
     msg(`+${pts}  ${b.c.a.code} ${b.c.a.place} saved${b.hl===0?' with no hints':b.hl===4?' (full code was showing)':''}`,'ok');hud();}
   function fire(code){shots++;
     const cand=bombs.filter(b=>!b.locked&&b.c.a.code===code).sort((p,q)=>q.prog-p.prog);
     if(cand.length){const b=cand[0];b.locked=true;const base=BASES.reduce((p,q)=>Math.abs(q.x-b.x)<Math.abs(p.x-b.x)?q:p);
-      missiles.push({x:base.x,y:base.y,sx:base.x,sy:base.y,b});sfx('fire');drawBuf('ok');return;}
+      base.ang=Math.atan2(b.y-base.y,b.x-base.x);base.kick=1;missiles.push({x:base.x,y:base.y,sx:base.x,sy:base.y,b,pf:0});sfx('fire');drawBuf('ok');return;}
     const c=cities.find(c=>c.a.code===code),cs=STATE[code];
     if(c&&clock-(lastHit[code]??-9)<2){shots--;drawBuf('bad');if(lateT[code]){clearTimeout(lateT[code]);delete lateT[code];}msg(`Right code, just too late: ${c.a.place} was already hit. No mastery lost.`,'warn');return;}
     if(cs&&!c&&SECS&&clock-secAt<3){shots--;drawBuf('bad');msg(`The attack moved to ${deck.name}. ${code} is ${cs.a.place}, not here. No penalty.`,'warn');return;}
@@ -967,32 +1060,37 @@ function defenderRun(root,diffKey,opt={}){
     else if(phase==='clear'){phaseT-=dt;if(phaseT<=0)startWave();}
     for(const b of bombs.slice()){if(b.locked)continue;b.trav+=b.speed*dt;b.x=b.sx+b.ux*b.trav;b.y=b.sy+b.uy*b.trav;b.prog=progOf(b.y,b.c);
       let lvl=0;while(lvl<4&&b.prog>=D.hints[lvl])lvl++;if(lvl>b.hl){b.hl=lvl;}
+      if((b.pf+=dt)>.05){b.pf=0;puff(b.x-b.ux*5*artK,b.y-b.uy*5*artK,COL.mid,1.6,.6);}
       if(b.splitAt&&!b.split&&b.prog>=b.splitAt)doSplit(b);
       if(b.trav>=b.dist){impact(b);if(over)return;}}
     for(const m of missiles.slice()){const dx=m.b.x-m.x,dy=m.b.y-m.y,d=Math.hypot(dx,dy),step=1000*dt;
-      if(d<=step||d<6){missiles=missiles.filter(x=>x!==m);kill(m.b);}else{m.x+=dx/d*step;m.y+=dy/d*step;}}
+      if(d<=step||d<6){missiles=missiles.filter(x=>x!==m);kill(m.b);}else{m.x+=dx/d*step;m.y+=dy/d*step;if((m.pf+=dt)>.02){m.pf=0;puff(m.x-dx/d*4*artK,m.y-dy/d*4*artK,'#C9D2CF',1.3,.45);}}}
     tickFx(dt);
   }
-  function tickFx(dt){booms=booms.filter(b=>(b.t+=dt)<.7);pops=pops.filter(p=>(p.t+=dt)<1.1);cities.forEach(c=>{c.flash=Math.max(0,c.flash-dt*1.2);c.reveal=Math.max(0,c.reveal-dt);});}
+  function tickFx(dt){booms=booms.filter(b=>(b.t+=dt)<.7);pops=pops.filter(p=>(p.t+=dt)<1.1);
+    parts=parts.filter(p=>(p.t+=dt)<p.life);for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;const f=Math.max(0,1-p.drag*dt);p.vx*=f;p.vy=p.vy*f+p.g*dt;}
+    for(const L of BASES)L.kick=Math.max(0,(L.kick||0)-dt*4);cities.forEach(c=>{c.flash=Math.max(0,c.flash-dt*1.2);c.reveal=Math.max(0,c.reveal-dt);});}
   function boxes(code,n,x,y,al,fs,col){const bw=fs*1.15,bh=fs*1.35,gap=3,tot=bw*3+gap*2;
     let sx=al==='left'?x:al==='right'?x-tot:x-tot/2;sx=Math.min(Math.max(sx,4),(W-4)-tot);
     ctx.font=`600 ${fs}px ${MONO}`;ctx.textAlign='center';
     for(let k=0;k<3;k++){const bx=sx+k*(bw+gap);ctx.fillStyle=COL.bg;ctx.fillRect(bx,y,bw,bh);ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.strokeRect(bx,y,bw,bh);
       ctx.fillStyle=col;ctx.fillText(k<n?code[k]:'_',bx+bw/2,y+bh*.74);}}
   function draw(){
-    const fs=Math.max(14,12/scale);
+    const fs=Math.max(14,12/scale),k=artK=Math.min(2,Math.max(1,.8/scale));
     ctx.setTransform(dpr*scale,0,0,dpr*scale,0,0);ctx.fillStyle=COL.bg;ctx.fillRect(0,0,W,H);
     ctx.strokeStyle=COL.lo;ctx.lineWidth=1;ctx.globalAlpha=.6;ctx.beginPath();for(let x=50;x<W;x+=50){ctx.moveTo(x,0);ctx.lineTo(x,H);}for(let y=50;y<H;y+=50){ctx.moveTo(0,y);ctx.lineTo(W,y);}ctx.stroke();ctx.globalAlpha=1;
     drawGeoCanvas(ctx,deck,COL,scale);
-    ctx.fillStyle=COL.mid;for(const b of BASES){ctx.beginPath();ctx.moveTo(b.x-12,H);ctx.lineTo(b.x,H-14);ctx.lineTo(b.x+12,H);ctx.fill();}
+    for(const L of BASES)drawLauncherArt(ctx,L,k,COL,H);
     const blinkOn=Math.floor(clock*4)%2===0;
+    // smoke sits behind everything that flies
+    for(const p of parts){if(p.kind!=='p')continue;const f=p.t/p.life;ctx.globalAlpha=(1-f)*.32;ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1+f*1.6),0,7);ctx.fill();}ctx.globalAlpha=1;
     const vis=cities.filter(c=>!deck.P[c.a.pi]?.dense||c.reveal>0||c.flash>0||bombs.some(b=>b.c===c&&!b.locked)),visS=new Set(vis);
     for(const c of cities){const threats=bombs.filter(b=>b.c===c&&!b.locked),threat=threats.length>0;
       const col=c.flash>0?COL.red:threat?(blinkOn?COL.amb:COL.hi):(c.dmg?COL.mid:COL.hi);
-      ctx.fillStyle=col;ctx.fillRect(c.x-9,c.y-5,5,9);ctx.fillRect(c.x-3,c.y-10,6,14);ctx.fillRect(c.x+4,c.y-3,5,7);
-      if(c.dmg){ctx.fillStyle=COL.red;for(let k=0;k<Math.min(3,c.dmg);k++)ctx.fillRect(c.x-8+k*6,c.y+7,4,2);}
-      if(threat){ctx.strokeStyle=col;ctx.lineWidth=1.5;const r=16;ctx.beginPath();
-        [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{ctx.moveTo(c.x+sx*r,c.y+sy*(r-6));ctx.lineTo(c.x+sx*r,c.y+sy*r);ctx.lineTo(c.x+sx*(r-6),c.y+sy*r);});ctx.stroke();}
+      drawCityArt(ctx,c.art,c.x,c.y,k*Math.min(1,Math.max(.5,c.nd/(26*k))),col,COL.bg);
+      if(c.dmg){ctx.fillStyle=COL.red;for(let j=0;j<Math.min(3,c.dmg);j++)ctx.fillRect(c.x+(-8+j*6)*k,c.y+8*k,4*k,2*k);}
+      if(threat){ctx.strokeStyle=col;ctx.lineWidth=1.5;const rx=17*k,ry=14*k,cy=c.y-4*k,e=6*k;ctx.beginPath();
+        [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{ctx.moveTo(c.x+sx*rx,cy+sy*(ry-e));ctx.lineTo(c.x+sx*rx,cy+sy*ry);ctx.lineTo(c.x+sx*(rx-e),cy+sy*ry);});ctx.stroke();}
       if(!visS.has(c))continue;
       ctx.font=`600 ${fs}px ${MONO}`;const P=LBL(c,fs,vis);P.al='left';ctx.textAlign='left';
       if(P.lead){ctx.save();ctx.strokeStyle=COL.hi;ctx.globalAlpha=.7;ctx.lineWidth=1.2;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(c.x,c.y);ctx.lineTo(P.lx,P.ly);ctx.stroke();ctx.restore();}
@@ -1013,8 +1111,9 @@ function defenderRun(root,diffKey,opt={}){
       if(!b.locked){ctx.setLineDash([3,6]);ctx.strokeStyle=COL.amb;ctx.globalAlpha=.35;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.c.x,b.c.y);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
       const warn=b.splitAt&&!b.split&&b.prog>b.splitAt-.12;
       if(warn&&blinkOn){ctx.strokeStyle=COL.amb;ctx.lineWidth=2;ctx.beginPath();ctx.arc(b.x,b.y,9,0,7);ctx.stroke();}
-      ctx.fillStyle=warn&&blinkOn?COL.amb:'#ffffff';ctx.shadowColor=COL.red;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(b.x,b.y,b.child?3:3.8,0,7);ctx.fill();ctx.shadowBlur=0;}
-    for(const m of missiles){ctx.strokeStyle=COL.hi;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m.sx,m.sy);ctx.lineTo(m.x,m.y);ctx.stroke();ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(m.x,m.y,2.5,0,7);ctx.fill();}
+      drawBombArt(ctx,b,k,clock,COL,warn&&blinkOn);}
+    for(const m of missiles){ctx.strokeStyle=COL.hi;ctx.globalAlpha=.45;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(m.sx,m.sy);ctx.lineTo(m.x,m.y);ctx.stroke();ctx.globalAlpha=1;drawRocketArt(ctx,m,k,COL);}
+    for(const p of parts){if(p.kind!=='s')continue;const f=p.t/p.life;ctx.globalAlpha=1-f;ctx.fillStyle=p.col;ctx.fillRect(p.x-p.r/2,p.y-p.r/2,p.r,p.r);}ctx.globalAlpha=1;
     for(const e of booms){const k=e.t/.7,r=e.R*Math.min(1,e.t/.22);ctx.globalAlpha=1-k;ctx.fillStyle=e.col;ctx.beginPath();ctx.arc(e.x,e.y,r,0,7);ctx.fill();ctx.globalAlpha=Math.max(0,.8-k);ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.x,e.y,r*.7,0,7);ctx.stroke();ctx.globalAlpha=1;}
     ctx.font=`600 ${fs}px ${MONO}`;ctx.textAlign='center';
     for(const p of pops){ctx.globalAlpha=Math.max(0,1-p.t/1.1);ctx.fillStyle=COL.hi;ctx.fillText(p.text,Math.min(Math.max(p.x,60),W-60),p.y-p.t*34);}
@@ -1046,7 +1145,7 @@ function defenderRun(root,diffKey,opt={}){
   function saveInitials(){const n=initBuf;initials=null;const L=S.hs[diffKey];const entry={n,s:score,w:wave,m:root.name,d:today()};
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.hs[diffKey]=L.slice(0,10);save();renderEnd(false,S.hs[diffKey].indexOf(entry));}
   if(bridge.debug)window.__AD={bombs:()=>bombs.map(b=>({code:b.c.a.code,prog:+b.prog.toFixed(2),hl:b.hl,locked:b.locked,child:b.child})),st:()=>({wave,shields,score,phase,over,splits,kills,clean,toSpawn,sector:deck.name,cities:cities.length}),initials:()=>initials};
-  cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(msgT);clearTimeout(bufT);};
+  cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();window.removeEventListener('act-theme',onTheme);document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(msgT);clearTimeout(bufT);};
   hud();startWave();raf=requestAnimationFrame(t=>{last=t;frame(t);fitAll();});if(LIVE)liveFetch('defender/'+diffKey,true).then(()=>{if(!over)hud();});
 }
 /* ================= TOWER CONTROL ================= */
@@ -1117,7 +1216,9 @@ function towerRun(R0,dk,opt={}){
   function size(){const w=cv.clientWidth||W;dpr=Math.min(2,window.devicePixelRatio||1);scale=w/W;cv.width=Math.round(w*dpr);cv.height=Math.round(w*H/W*dpr);}
   fitCanvas(cv);const ro=new ResizeObserver(size);ro.observe(cv);size();
   const cs=getComputedStyle(root),V=n=>cs.getPropertyValue(n).trim();
-  const COL={bg:V('--crt-bg'),hi:V('--crt-hi'),mid:V('--crt-mid'),lo:V('--crt-lo'),amb:V('--crt-amber'),red:V('--crt-red'),good:V('--rad-good'),water:V('--crt-water'),sea:V('--crt-sea'),land:V('--crt-land')};
+  // colors come from the color mode; a change in the Colors menu recolors the running game
+  const readCOL=()=>({bg:V('--crt-bg'),hi:V('--crt-hi'),mid:V('--crt-mid'),lo:V('--crt-lo'),amb:V('--crt-amber'),red:V('--crt-red'),good:V('--rad-good'),water:V('--crt-water'),sea:V('--crt-sea'),land:V('--crt-land')});
+  const COL=readCOL(),onTheme=()=>Object.assign(COL,readCOL());window.addEventListener('act-theme',onTheme);
   let LBL=null;
   const MONO=getFamily('mono'),reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let planes=[],marks=[],pops=[],buf='',score=0,shift=0,safety=5,combo=0,toSpawn=0,spawnT=0,phase='intro',phaseT=0,paused=false,over=false,
@@ -1320,7 +1421,7 @@ function towerRun(R0,dk,opt={}){
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.ths[dk]=L.slice(0,10);save();renderEnd(false,S.ths[dk].indexOf(entry));}
   if(bridge.debug)window.__TC={planes:()=>planes.map(p=>({id:p.id,call:p.call,need:p.need.a.code,leg:p.leg,state:p.state,fuel:Math.round(p.fuel),hl:p.hl,target:p.target?.a.code||null,sel:p===sel})),
     st:()=>({shift,safety,score,phase,over,landed,legs,wrongs,emerg,toSpawn,sector:deck.name,ports:ports.length}),select:id=>{const p=planes.find(x=>x.id===id);if(p){sel=p;who();}},initials:()=>initials};
-  cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(bufT);};
+  cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();window.removeEventListener('act-theme',onTheme);document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(bufT);};
   hud();startShift();strips();raf=requestAnimationFrame(t=>{last=t;frame(t);fitAll();});if(LIVE)liveFetch('tower/'+dk,true).then(()=>{if(!over)hud();});
 }
 

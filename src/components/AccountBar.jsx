@@ -1,3 +1,5 @@
+import ThemePicker from './ThemePicker';
+
 export default function AccountBar({ account, online, unread, onSignIn, onBoard, onAccount, onSetup }) {
   return (
     <div className="acctbar">
@@ -12,6 +14,7 @@ export default function AccountBar({ account, online, unread, onSignIn, onBoard,
         )}
       </div>
       <div className="acct-r">
+        <ThemePicker />
         {!online ? (
           <button className="btn sm" onClick={onSetup}>Leaderboard is off</button>
         ) : (

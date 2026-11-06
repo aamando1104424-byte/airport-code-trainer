@@ -341,6 +341,26 @@ button{font:inherit;color:inherit;cursor:pointer}
 .map .pframe.inset{stroke:var(--ink);stroke-width:2}
 .map .ititle{fill:var(--ink);font-family:var(--f-mono);font-weight:600;font-size:10px;letter-spacing:.12em;opacity:.8}
 
+/* ================= color modes =================
+   Picked from the Colors menu (src/themes.js). Green is the original: green Air Defender, blue Tower radar.
+   Every other mode recolors all the game screens and cards, Tower included. The [data-crt-prev] rules
+   paint the little front-page previews in the menu, whatever mode the page itself is in. */
+:root[data-crt="red"],:root[data-crt="red"] .radar{--crt-bg:#140506;--crt-hi:#FFB4A9;--crt-mid:#EC5A45;--crt-lo:#401310;--crt-amber:#FFD36B;--crt-red:#FFF4E0;--crt-water:#C24A3A;--crt-sea:#0A0203;--crt-land:#2A0C0A;--rad-good:#FFD36B}
+:root[data-crt="orange"],:root[data-crt="orange"] .radar{--crt-bg:#140B03;--crt-hi:#FFD7A3;--crt-mid:#F5932F;--crt-lo:#42280C;--crt-amber:#FFF1A6;--crt-red:#FF5248;--crt-water:#D88A35;--crt-sea:#0B0602;--crt-land:#2C1907;--rad-good:#C8F07A}
+:root[data-crt="blue"],:root[data-crt="blue"] .radar{--crt-bg:#030B18;--crt-hi:#C4E4FF;--crt-mid:#4AA3F0;--crt-lo:#0F2D50;--crt-amber:#FFC15A;--crt-red:#FF6B5C;--crt-water:#3B7FE3;--crt-sea:#020712;--crt-land:#0D2546;--rad-good:#6BE39A}
+:root[data-crt="purple"],:root[data-crt="purple"] .radar{--crt-bg:#0C0617;--crt-hi:#E8D2FF;--crt-mid:#AE78FF;--crt-lo:#2C1849;--crt-amber:#FFC97A;--crt-red:#FF5C86;--crt-water:#7A5DE6;--crt-sea:#060310;--crt-land:#1E1135;--rad-good:#7DF0B0}
+:root[data-crt="pink"],:root[data-crt="pink"] .radar{--crt-bg:#17050F;--crt-hi:#FFC9E7;--crt-mid:#FF63B4;--crt-lo:#481232;--crt-amber:#8DF2FF;--crt-red:#FFE45C;--crt-water:#E0559F;--crt-sea:#0C0208;--crt-land:#2E0B1F;--rad-good:#8DF2FF}
+:root[data-crt="ice"],:root[data-crt="ice"] .radar{--crt-bg:#021317;--crt-hi:#CCFBFF;--crt-mid:#3DD5E8;--crt-lo:#0B3842;--crt-amber:#FFC15A;--crt-red:#FF6B5C;--crt-water:#2CA6C7;--crt-sea:#010A0C;--crt-land:#0A2B32;--rad-good:#9DF59A}
+:root[data-crt="mono"],:root[data-crt="mono"] .radar{--crt-bg:#0A0B0C;--crt-hi:#F4F4F4;--crt-mid:#A7ADB3;--crt-lo:#2F3439;--crt-amber:#FFC15A;--crt-red:#FF5C4D;--crt-water:#7C858D;--crt-sea:#050607;--crt-land:#1B1E21;--rad-good:#8FE3A6}
+.tp-page[data-crt-prev="green"],.tp-dot[data-crt-prev="green"],.tp-page[data-crt-prev="green"] .radar{--crt-bg:#03100A;--crt-hi:#86FFAD;--crt-mid:#36B96A;--crt-lo:#0E3320;--crt-amber:#FFC15A;--crt-red:#FF5C4D;--crt-water:#3FB7A6;--crt-sea:#020A06;--crt-land:#0B2A1A;--rad-good:#6BE39A}
+.tp-page[data-crt-prev="red"],.tp-dot[data-crt-prev="red"],.tp-page[data-crt-prev="red"] .radar{--crt-bg:#140506;--crt-hi:#FFB4A9;--crt-mid:#EC5A45;--crt-lo:#401310;--crt-amber:#FFD36B;--crt-red:#FFF4E0;--crt-water:#C24A3A;--crt-sea:#0A0203;--crt-land:#2A0C0A;--rad-good:#FFD36B}
+.tp-page[data-crt-prev="orange"],.tp-dot[data-crt-prev="orange"],.tp-page[data-crt-prev="orange"] .radar{--crt-bg:#140B03;--crt-hi:#FFD7A3;--crt-mid:#F5932F;--crt-lo:#42280C;--crt-amber:#FFF1A6;--crt-red:#FF5248;--crt-water:#D88A35;--crt-sea:#0B0602;--crt-land:#2C1907;--rad-good:#C8F07A}
+.tp-page[data-crt-prev="blue"],.tp-dot[data-crt-prev="blue"],.tp-page[data-crt-prev="blue"] .radar{--crt-bg:#030B18;--crt-hi:#C4E4FF;--crt-mid:#4AA3F0;--crt-lo:#0F2D50;--crt-amber:#FFC15A;--crt-red:#FF6B5C;--crt-water:#3B7FE3;--crt-sea:#020712;--crt-land:#0D2546;--rad-good:#6BE39A}
+.tp-page[data-crt-prev="purple"],.tp-dot[data-crt-prev="purple"],.tp-page[data-crt-prev="purple"] .radar{--crt-bg:#0C0617;--crt-hi:#E8D2FF;--crt-mid:#AE78FF;--crt-lo:#2C1849;--crt-amber:#FFC97A;--crt-red:#FF5C86;--crt-water:#7A5DE6;--crt-sea:#060310;--crt-land:#1E1135;--rad-good:#7DF0B0}
+.tp-page[data-crt-prev="pink"],.tp-dot[data-crt-prev="pink"],.tp-page[data-crt-prev="pink"] .radar{--crt-bg:#17050F;--crt-hi:#FFC9E7;--crt-mid:#FF63B4;--crt-lo:#481232;--crt-amber:#8DF2FF;--crt-red:#FFE45C;--crt-water:#E0559F;--crt-sea:#0C0208;--crt-land:#2E0B1F;--rad-good:#8DF2FF}
+.tp-page[data-crt-prev="ice"],.tp-dot[data-crt-prev="ice"],.tp-page[data-crt-prev="ice"] .radar{--crt-bg:#021317;--crt-hi:#CCFBFF;--crt-mid:#3DD5E8;--crt-lo:#0B3842;--crt-amber:#FFC15A;--crt-red:#FF6B5C;--crt-water:#2CA6C7;--crt-sea:#010A0C;--crt-land:#0A2B32;--rad-good:#9DF59A}
+.tp-page[data-crt-prev="mono"],.tp-dot[data-crt-prev="mono"],.tp-page[data-crt-prev="mono"] .radar{--crt-bg:#0A0B0C;--crt-hi:#F4F4F4;--crt-mid:#A7ADB3;--crt-lo:#2F3439;--crt-amber:#FFC15A;--crt-red:#FF5C4D;--crt-water:#7C858D;--crt-sea:#050607;--crt-land:#1B1E21;--rad-good:#8FE3A6}
+.tp-page[data-crt-prev="green"] .radar{--crt-bg:#06121C;--crt-hi:#E4F2FF;--crt-mid:#4DB2DD;--crt-lo:#123049;--crt-amber:#FFC15A;--crt-red:#FF6B5C;--crt-water:#3D86D6;--crt-sea:#030B12;--crt-land:#0F2940;--rad-good:#6BE39A}
 /* ================= Hardcore (50 Busiest) flavor ================= */
 :root{--hz-a:#E8B21A;--hz-b:#1B1B1B;--hc-red:#FF5C4D}
 .map .lead{stroke:var(--ink);opacity:.55;stroke-width:1.2}
@@ -387,7 +407,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .clockrow .lclk{gap:6px}
 .clockrow .z{display:inline-flex;align-items:baseline;gap:6px;background:var(--tile);color:var(--tile-ink);border-radius:4px;padding:5px 9px;font-family:var(--f-mono)}
 .clockrow .zn{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
-.clockrow b{font-size:1.02rem;color:#FFC15A}
+.clockrow b{font-size:1.02rem;color:var(--crt-amber)}
 .clockrow .za{font-size:.66rem;opacity:.7}
 /* top bar of every mode */
 .bar{flex-wrap:wrap}
