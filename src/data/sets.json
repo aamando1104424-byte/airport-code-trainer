@@ -23,7 +23,8 @@
       "PDX",
       "SLC",
       "DEN"
-     ]
+     ],
+     "dense": true
     },
     {
      "st": "R_CA",
@@ -37,7 +38,8 @@
       "SNA",
       "SAN",
       "LAS"
-     ]
+     ],
+     "dense": true
     },
     {
      "st": "R_SW",
@@ -50,7 +52,8 @@
       "HOU",
       "AUS",
       "SAT"
-     ]
+     ],
+     "dense": true
     },
     {
      "st": "R_MW",
@@ -66,7 +69,8 @@
       "CMH",
       "CVG",
       "IND"
-     ]
+     ],
+     "dense": true
     },
     {
      "st": "R_SE",
@@ -82,7 +86,8 @@
       "FLL",
       "RSW",
       "MSY"
-     ]
+     ],
+     "dense": true
     },
     {
      "st": "R_NE",
@@ -97,7 +102,8 @@
       "IAD",
       "DCA",
       "PIT"
-     ]
+     ],
+     "dense": true
     },
     {
      "st": "HI",
@@ -2054,7 +2060,7 @@
    "st": "WY",
    "lat": 41.156,
    "lon": -104.812,
-   "tip": "C and Y come from CheYenne. The S stands for State capital, because Cheyenne is Wyoming’s capital city. Say it: “Capital? Yes, Sir!” C, Y, S.",
+   "tip": "C and Y come from CheYenne. For the S, think “State capital,” because Cheyenne is Wyoming’s capital city. Say it: “Capital? Yes, Sir!” C, Y, S.",
    "clue": "Capital? Yes, Sir!"
   },
   "DAB": {
@@ -2070,7 +2076,8 @@
    "st": "TX",
    "lat": 32.8448,
    "lon": -96.8477,
-   "label": "Love Field"
+   "label": "Love Field",
+   "tip": "Just the first three letters of Dallas: DAL. This is Love Field, the smaller airport. The big one is DFW (Dallas/Fort Worth)."
   },
   "DAY": {
    "city": "Dayton",
@@ -2088,7 +2095,7 @@
   },
   "DCA": {
    "city": "Washington - National",
-   "place": "Washington - National (Arlington, VA), DC",
+   "place": "Washington, DC (Reagan National)",
    "st": "DC",
    "lat": 38.8521,
    "lon": -77.0377,
@@ -2123,7 +2130,8 @@
    "st": "TX",
    "lat": 32.8968,
    "lon": -97.038,
-   "label": "Dallas/Ft Worth"
+   "label": "Dallas/Fort Worth",
+   "tip": "D, F and W are the first letters of Dallas/Fort Worth. This is the big airport; the smaller one, Love Field, is DAL."
   },
   "DHN": {
    "city": "Dothan",
@@ -2287,7 +2295,8 @@
    "place": "Newark, NJ",
    "st": "NJ",
    "lat": 40.6894,
-   "lon": -74.1705
+   "lon": -74.1705,
+   "tip": "E, W and R are inside nEWaRk, in order. Newark is in New Jersey, across the river from New York’s JFK and LGA."
   },
   "EYW": {
    "city": "Key West",
@@ -2355,7 +2364,7 @@
    "st": "FL",
    "lat": 26.0726,
    "lon": -80.1527,
-   "label": "Ft Lauderdale"
+   "label": "Fort Lauderdale"
   },
   "FLO": {
    "city": "Florence",
@@ -2432,7 +2441,7 @@
    "st": "WY",
    "lat": 44.349,
    "lon": -105.539,
-   "tip": "Only the G is easy to see in the name. Think of Gillette razors: “Gillette Cuts Clean.” G, C, C.",
+   "tip": "Only the G is in the name. For the rest, think of Gillette razors: “Gillette Cuts Clean.” G, C, C.",
    "clue": "Gillette Cuts Clean"
   },
   "GCK": {
@@ -2730,7 +2739,8 @@
    "st": "TX",
    "lat": 29.6453,
    "lon": -95.2768,
-   "label": "Hobby"
+   "label": "Hobby",
+   "tip": "Just the first three letters of Houston: HOU. This is Hobby, the smaller airport. The big one is IAH."
   },
   "HPN": {
    "city": "Westchester County",
@@ -2810,7 +2820,7 @@
   },
   "IAD": {
    "city": "Washington - Dulles",
-   "place": "Washington - Dulles International, DC",
+   "place": "Washington, DC (Dulles)",
    "st": "DC",
    "lat": 38.9445,
    "lon": -77.4558,
@@ -3201,7 +3211,8 @@
    "st": "NY",
    "lat": 40.7772,
    "lon": -73.8726,
-   "label": "LaGuardia"
+   "label": "LaGuardia",
+   "tip": "L, G and A are inside LaGuArdia, in order. New York also has JFK, and Newark (EWR) is just across the river."
   },
   "LGB": {
    "city": "Long Beach",
@@ -3435,7 +3446,8 @@
    "st": "IL",
    "lat": 41.786,
    "lon": -87.7524,
-   "label": "Midway"
+   "label": "Midway",
+   "tip": "M, D and W are inside MiDWay, in order. Chicago’s bigger airport is O’Hare, ORD."
   },
   "MEI": {
    "city": "Meridian",
@@ -3664,7 +3676,7 @@
    "st": "LA",
    "lat": 29.9934,
    "lon": -90.2647,
-   "tip": "New Orleans' airport was Moisant Field, built by stock yards: Moisant Stock Yards.",
+   "tip": "New Orleans’ airport was built on the old Moisant Stock Yards: M-S-Y.",
    "clue": "Moisant Stock Yards"
   },
   "MTJ": {
@@ -3731,7 +3743,8 @@
    "place": "Oakland, CA",
    "st": "CA",
    "lat": 37.7201,
-   "lon": -122.2212
+   "lon": -122.2212,
+   "tip": "Just the first three letters of Oakland: OAK. It is across the bay from San Francisco, SFO."
   },
   "OFK": {
    "city": "Norfolk",
@@ -4202,8 +4215,8 @@
    "st": "WY",
    "lat": 43.064,
    "lon": -108.46,
-   "tip": "R and I are the first two letters of RIverton. Add W for Wyoming: “Riverton In Wyoming.” R, I, W.",
-   "clue": "Riverton In Wyoming"
+   "tip": "R-I from RIverton, but it is not RIV: it ends in W. Picture “Riverton’s Icy Wind.” R, I, W.",
+   "clue": "Riverton’s Icy Wind (not RIV)"
   },
   "RKD": {
    "city": "Rockland",
@@ -4435,8 +4448,8 @@
    "st": "WY",
    "lat": 44.769,
    "lon": -106.98,
-   "tip": "Take the first two letters, S and H, then jump ahead to the R: SHeRidan.",
-   "clue": "S, H, then jump to the R"
+   "tip": "Picture the SHeRiff of SHeRidan: S, H, R. Take the S and H, then jump ahead to the R.",
+   "clue": "The SHeRiff of SHeRidan"
   },
   "SHV": {
    "city": "Shreveport",
@@ -4575,7 +4588,8 @@
    "place": "St. Louis, MO",
    "st": "MO",
    "lat": 38.7487,
-   "lon": -90.37
+   "lon": -90.37,
+   "tip": "St. is short for Saint: S-T from St., then L from Louis. STL."
   },
   "STS": {
    "city": "Santa Rosa",
@@ -4840,8 +4854,8 @@
    "st": "WY",
    "lat": 43.966,
    "lon": -107.951,
-   "tip": "Take the W, skip the O, then take the R and L: W-o-R-L-and. W, R, L.",
-   "clue": "Skip the O"
+   "tip": "Take the vowels out of “WoRLd” and you get WRL. Worland starts the same way: W-o-R-L-and.",
+   "clue": "“WoRLd” with no O"
   },
   "WST": {
    "city": "Westerly",

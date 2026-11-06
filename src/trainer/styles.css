@@ -41,7 +41,7 @@ body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
   -webkit-tap-highlight-color:transparent}
 .app{max-width:560px;margin:0 auto;padding-block:14px 48px}
 .app.wide{max-width:940px}
-.g0{--gc:var(--blue)} .g1{--gc:var(--magenta)} .g2{--gc:var(--ochre)}
+.g0{--gc:var(--blue)} .g1{--gc:var(--magenta)} .g2{--gc:var(--ochre)} .gp{--gc:var(--ink)}
 h1,h2,h3{margin:0;text-wrap:balance}
 h1{font-family:var(--f-display);font-weight:800;font-size:2.6rem;line-height:.95;letter-spacing:.01em;text-transform:uppercase}
 h2{font-family:var(--f-display);font-weight:800;font-size:1.5rem;text-transform:uppercase;letter-spacing:.02em}
@@ -191,7 +191,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* games */
 .stage{display:flex;flex-direction:column;gap:14px;padding-top:14px}
-.prompt{font-family:var(--f-display);font-weight:800;font-size:2.5rem;line-height:1;text-transform:uppercase;overflow-wrap:anywhere}
+.prompt{font-family:var(--f-display);font-weight:800;font-size:clamp(1.7rem,8.5vw,2.5rem);line-height:1;text-transform:uppercase;overflow-wrap:break-word}
 .answer{display:flex;gap:10px}
 #ans{flex:1;min-width:0;font-family:var(--f-mono);font-weight:600;font-size:2rem;letter-spacing:.35em;text-transform:uppercase;text-align:center;
   padding:8px 0 8px .35em;border:2px solid var(--ink);border-radius:6px;background:var(--panel);color:var(--ink)}
@@ -262,7 +262,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .key{flex:1;max-width:46px;min-height:46px;background:var(--crt-lo);color:var(--crt-hi);border:1px solid var(--crt-mid);border-radius:5px;font-family:var(--f-mono);font-weight:600;font-size:1.05rem;padding:0}
 .key:active{background:var(--crt-mid);color:var(--crt-bg)}
 .key.wide{max-width:72px;flex:1.6;font-size:.8rem}
-.ovl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:color-mix(in srgb,var(--crt-bg) 60%,transparent)}
+.ovl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:color-mix(in srgb,var(--crt-bg) 84%,transparent)}
 .ovl .big{font-family:var(--f-display);font-weight:800;font-size:clamp(1.4rem,6.5vw,2.4rem);letter-spacing:.08em;color:var(--crt-hi);text-shadow:0 0 14px color-mix(in srgb,var(--crt-hi) 60%,transparent)}
 .ovl .sub{color:var(--crt-mid);font-size:.9rem;max-width:40ch}
 .choices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -423,3 +423,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media (max-width:420px){.lt-list .mp{display:none}.lt-list li{grid-template-columns:2.4em minmax(0,1fr) auto}}
 .race{font:600 .74rem/1.3 var(--f-mono);letter-spacing:.06em;color:var(--crt-amber);text-align:center;padding:2px 6px 6px;min-height:1.3em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (prefers-reduced-motion:reduce){.lt-dot,.lt-list li.fresh{animation:none}}
+/* pattern colour legend + review fixes */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:.2rem 0 .6rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;background:var(--gc);display:inline-block}
+.crt ol{padding-left:1.6em}
+/* wave banner fits short region maps (Texas) */
+.ovl .locator{width:auto;height:clamp(44px,26%,128px);max-width:62%}
+.ovl .big{font-size:clamp(1.2rem,5.5vw,2.2rem)}

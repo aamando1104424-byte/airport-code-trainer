@@ -93,12 +93,14 @@ function buildSubs(d){
   d.sub=d.panels.map((p,i)=>[p,i]).filter(([p])=>!p.inset).map(([p,i],n)=>{
     const idxs=[i,...d.panels.map((q,j)=>[q,j]).filter(([q])=>q.inset&&(q.inset.in||0)===i).map(x=>x[1])];
     const sd={id:d.id+'~'+n,name:p.name,parent:d,isSub:true,region:d.region,
-      panels:idxs.map(j=>{const q={...d.panels[j]};delete q.idx;if(q.inset)q.inset={...q.inset,in:0};return q;}),
+      panels:idxs.map(j=>{const q={...d.panels[j]};delete q.idx;delete q.dense;if(q.inset)q.inset={...q.inset,in:0};return q;}),
       airports:d.airports.filter(a=>idxs.includes(a.pi)).map(a=>({...a,pi:idxs.indexOf(a.pi)}))};
     layout(sd);return sd;});}
 const lab=a=>a.label||a.city;
 const studied=a=>{const it=S.items[a.code];return it&&(it.learned||it.r+it.w>0);};
-const twins=a=>AP.filter(o=>o.code!==a.code&&o.code.slice(0,2)===a.code.slice(0,2)&&[...(CODEDECKS[o.code]||[])].some(x=>CODEDECKS[a.code]?.has(x)));
+/* look-alikes in the same set, closest first: same first two letters, then cities that start the same, then same first letter and state */
+const twinScore=(a,o)=>o.code.slice(0,2)===a.code.slice(0,2)?3:letters(o.city).slice(0,2)===letters(a.city).slice(0,2)?2:o.st===a.st?1:0;
+const twins=a=>AP.filter(o=>o.code!==a.code&&o.code[0]===a.code[0]&&twinScore(a,o)>0&&[...(CODEDECKS[o.code]||[])].some(x=>CODEDECKS[a.code]?.has(x))).sort((p,q)=>twinScore(a,q)-twinScore(a,p));
 /* a code can be in more than one set (ATL is in Georgia and in the 50 Busiest).
    Its "home" is the set you have most of picked, so lessons and maps show the set you're studying. */
 function deckRank(){const s=selSet();return ALLDECKS.map((d,i)=>({d,i,f:d.airports.length?d.airports.filter(a=>s.has(a.code)).length/d.airports.length:0})).sort((a,b)=>b.f-a.f||a.i-b.i).map(x=>x.d);}
@@ -106,7 +108,7 @@ function deckRank(){const s=selSet();return ALLDECKS.map((d,i)=>({d,i,f:d.airpor
 function homeDecks(min=3){const s=selSet(),cnt={};const R=deckRank();for(const c of s){const d=R.find(d=>d.airports.some(a=>a.code===c));if(d)cnt[d.id]=(cnt[d.id]||0)+1;}
   return ALLDECKS.filter(d=>(cnt[d.id]||0)>=min);}
 function homeOf(code){for(const d of deckRank()){const a=d.airports.find(x=>x.code===code);if(a)return a;}return BY[code];}
-function placeHL(a){const h=hl(a);return a.place.startsWith(a.city)?h+esc(a.place.slice(a.city.length)):`${h} <span class="placest">${esc(a.place)}</span>`;}
+function placeHL(a){const h=hl(a);return (a.place.startsWith(a.city)?h+esc(a.place.slice(a.city.length)):`${h} <span class="placest">${esc(a.place)}</span>`).replace(/(?<!<)\//g,'/<wbr>');}
 
 /* ---------- map layout: one panel per state, laid out in a grid ---------- */
 const GEO_STATE_BOX={};
@@ -134,6 +136,8 @@ function layout(d){
     P.geo=[L0,T-ch/s,L0+w/(s*o.k),T];
     d.P[o.p.idx]=P;}
   for(const row of rows){
+    // two states side by side: give the wider state more of the width so both fill their panels (Montana vs Nevada)
+    if(!d.grid&&row.length===2){const iv=row.map(c=>1/Math.max(.3,Math.min(2.5,c.p[0].asp))),w0=Math.min(1.4,Math.max(.6,2*iv[0]/(iv[0]+iv[1])));row[0].w=w0;row[1].w=2-w0;}
     const ncol=d.grid?row.length:cols,sw=d.grid?row.reduce((t,c)=>t+c.w,0):cols,avail=W0-2*pad-gap*(ncol-1);
     row.forEach(c=>{c.cw=avail*c.w/sw;c.hs=c.p.map(o=>Math.max(c.cw*Math.min(o.asp,lim),c.cw*minA));c.nat=c.hs.reduce((t,h)=>t+h,0)+(c.p.length-1)*(head+gap);});
     const RH=Math.max(...row.map(c=>c.nat));
@@ -180,7 +184,8 @@ function groupQueue(codes){const a=shuffle(codes.slice());let b=shuffle(codes.sl
 function lessonsFor(){const out=[],s=selSet(),home={};
   for(const d of deckRank())for(const a of d.airports)if(s.has(a.code)&&!home[a.code])home[a.code]=d.id;
   for(const d of ALLDECKS)for(let g=0;g<3;g++){const list=d.airports.filter(a=>s.has(a.code)&&a.g===g&&home[a.code]===d.id);
-    for(let k=0;k<list.length;k+=4)out.push({deck:d,g,codes:list.slice(k,k+4).map(a=>a.code),title:GROUPS[g].name+(list.length>4?` ${k/4+1}`:'')});}
+    const n=Math.ceil(list.length/4);let k=0;
+    for(let i=0;i<n;i++){const sz=Math.ceil((list.length-k)/(n-i));out.push({deck:d,g,codes:list.slice(k,k+sz).map(a=>a.code),title:GROUPS[g].name+(n>1?` ${i+1}`:'')});k+=sz;}}
   return out;}
 const lessonDone=L=>L.codes.every(c=>S.items[c].learned);
 
@@ -233,6 +238,9 @@ function placeLabels(items,pts){
         const R={x0,y0,x1:x0+it.w,y1:y0+it.h},F=it.fr;
         let sc=ring*45+(ux&&uy?5:0)+(Math.max(0,F.x0-R.x0)+Math.max(0,R.x1-F.x1)+Math.max(0,F.y0-R.y0)+Math.max(0,R.y1-F.y1))*80;
         for(const q of placed)sc+=ov(R,q)*14;for(const q of obst)sc+=ov(R,q)*9;for(const q of it.no||[])sc+=ov(R,q)*40;
+        // never let a label sit closer to another city's dot than to its own (it would teach the wrong spot)
+        {const dr=p=>Math.hypot(Math.max(R.x0-p.x,0,p.x-R.x1),Math.max(R.y0-p.y,0,p.y-R.y1)),own=dr(it);
+          for(const q of pts){if(q.x===it.x&&q.y===it.y)continue;const d=dr(q);if(d<own+4)sc+=900+(own+4-d)*40;}}
         if(sc<bs){bs=sc;best={R,ux,uy,ring};}
       }
       if(bs<ring*45+6)break;
@@ -275,6 +283,8 @@ function drawGeoCanvas(ctx,d,COL,scale){
   }
 }
 let mapUid=0;
+/* a set split into regions shows just the region a code is in, full size, on study screens */
+const regionOf=(deck,code)=>deck.sub?.find(sd=>sd.airports.some(x=>x.code===code))||deck;
 function mapSVG(deck,o={}){
   const s0=o.codes||selSet(),list=deck.airports.filter(a=>s0.has(a.code)),uid='m'+(++mapUid);
   let s=`<svg class="map" viewBox="0 0 ${deck.W} ${deck.H}" role="img" aria-label="Map of ${esc(deck.name)} with airport locations"><defs><pattern id="mhatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" class="hatch"/></pattern></defs>`;
@@ -297,7 +307,7 @@ function mapSVG(deck,o={}){
     if(!ch)break;}
   const SH=Object.fromEntries(items.map(it=>[it.key,it.short]));
   for(const a of list){const isT=o.target===a.code;
-    const cls=`apt g${a.g}${isT?' target':''}${o.dim&&!show(a)&&!isT?' dim':''}`;
+    const cls=`apt ${o.plain?'gp':'g'+a.g}${isT?' target':''}${o.dim&&!show(a)&&!isT?' dim':''}`;
     s+=`<g class="${cls}" transform="translate(${f1(a.x)},${f1(a.y)})">${isT?'<circle class="pulse" r="7"/>':''}<circle class="core" r="6"/><line x1="0" y1="-6" x2="0" y2="-10"/><line x1="0" y1="6" x2="0" y2="10"/><line x1="-6" y1="0" x2="-10" y2="0"/><line x1="6" y1="0" x2="10" y2="0"/></g>`;}
   for(const a of list){if(!L[a.code])continue;const r=L[a.code].R,right=L[a.code].ux<0;
     if(L[a.code].ring>0)s+=`<line class="lead" x1="${f1(a.x)}" y1="${f1(a.y)}" x2="${f1(clampv(a.x,r.x0,r.x1))}" y2="${f1(clampv(a.y,r.y0,r.y1))}"/>`;
@@ -349,7 +359,11 @@ function raceLine(game,level,score){if(!LIVE)return '';const c=LIVE.cache[game+'
   if(pos===1)return `WORLD #1 PACE · ${others[0]?`AHEAD OF ${esc(others[0].name)} (${fmt(others[0].score)})`:'NOBODY CLOSE'}`;
   const tgt=ahead[ahead.length-1];return pos<=5?`WORLD #${pos} PACE · NEXT: ${esc(tgt.name)} ${fmt(tgt.score)} (+${fmt(tgt.score-score)})`:`TOP 5 NEEDS ${fmt(d[Math.min(4,d.length-1)].score)} · #1 ${esc(d[0].name)} ${fmt(d[0].score)}`;}
 function topbar(t,r=''){return `<div class="bar"><button class="back" data-home>‹ Home</button><span class="bar-t">${t}</span><span class="bar-r" id="barR">${r}</span></div>`;}
-main.addEventListener('click',e=>{if(e.target.closest('[data-home]'))go(home);const m=e.target.closest('.mapbox');if(m&&!e.target.closest('button,a,input'))m.classList.toggle('zoomed');});
+main.addEventListener('click',e=>{if(e.target.closest('[data-home]'))go(home);const m=e.target.closest('.mapbox');if(!m||e.target.closest('button,a,input'))return;
+  const svg=m.querySelector('svg'),r=(svg||m).getBoundingClientRect(),fx=(e.clientX-r.left)/r.width,fy=(e.clientY-r.top)/r.height;
+  // zoom in around the spot that was tapped, so the right-hand maps don't slide off screen
+  if(m.classList.toggle('zoomed')&&svg)requestAnimationFrame(()=>{const R=svg.getBoundingClientRect();m.scrollLeft=Math.max(0,fx*R.width-m.clientWidth/2);
+    window.scrollBy({top:R.top+fy*R.height-window.innerHeight/2});});});
 const mcKey=e=>{if(/^[1-4]$/.test(e.key)&&document.activeElement.tagName!=='INPUT'){const b=document.querySelectorAll('.opt')[+e.key-1];if(b)b.click();}};document.addEventListener('keydown',mcKey);
 function needSet(fn,min=3){return (...args)=>{if(SET().length<min){main.innerHTML=topbar('Pick codes first')+`<div class="panel"><p>This game needs at least ${min} codes picked. You have ${SET().length}.</p><button class="btn primary" id="toPick">Choose codes</button></div>`;$('#toPick').onclick=()=>go(picker);return;}fn(...args);};}
 function wireInput(onThree){const inp=$('#ans');inp.focus({preventScroll:true});
@@ -360,7 +374,7 @@ function shakeEl(el){el.classList.remove('shake');void el.offsetWidth;el.classLi
 
 /* ================= home ================= */
 const MODES=[
- {id:'school',name:'Flight School',tag:'Start here',desc:'Step-by-step lessons. 3 or 4 codes at a time.'},
+ {id:'school',name:'Flight School',tag:'Start here',desc:'Step-by-step lessons. A few codes at a time.'},
  {id:'recall',name:'Recall',tag:'Type it',desc:'See the city, type the code. The strongest practice.'},
  {id:'quick',name:'Quick Fire',tag:'60 seconds',desc:'Rapid multiple choice. Chain answers for combos.',best:()=>S.best.quick?`Best ${S.best.quick} pts`:''},
  {id:'match',name:'Match',tag:'Tap pairs',desc:'Pair cities with their codes against the clock.',best:()=>S.best.match?`Best ${fmtTime(S.best.match)}`:''},
@@ -374,7 +388,7 @@ function home(){
   const mastered=set.filter(a=>S.items[a.code].box>=4).length;
   const lessons=lessonsFor(),nextL=lessons.find(l=>!lessonDone(l)),doneN=lessons.filter(lessonDone).length;
   const decksUsed=ALLDECKS.filter(d=>d.airports.length&&d.airports.every(a=>selSet().has(a.code))).map(d=>d.name);
-  const topHS=Math.max(0,...['cadet','pilot','ace','doomsday'].map(k=>S.hs[k][0]?.s||0)),topTS=Math.max(0,...['trainee','controller','chief'].map(k=>S.ths[k][0]?.s||0));
+  const topHS=Math.max(0,...['cadet','pilot','ace'].map(k=>S.hs[k][0]?.s||0)),topTS=Math.max(0,...['trainee','controller','chief'].map(k=>S.ths[k][0]?.s||0));
   let cta,ctaFn;
   if(set.length<3){cta='Choose at least 3 codes';ctaFn=()=>go(picker);}
   else if(nextL){cta=doneN?`Continue Flight School: ${nextL.title}`:'Start Flight School, lesson 1';ctaFn=()=>go(lesson,nextL);}
@@ -404,7 +418,8 @@ function home(){
   <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="k">${m.tag}</span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
   <section class="panel board">
     <h2>Departures Board</h2>
-    <p class="note">Each code fills up to 5 bars as you learn it. Picking from choices fills up to 2 bars. Bars 3 to 5 only fill when you type the code from memory. Tap a row to review it.</p>
+    <p class="note">Each code has 5 bars. Flight School and picking from choices fill the first 2. Bars 3 to 5 fill when you type the code from memory <b>on later days</b>, so a perfect first day still shows 2 bars. That's spaced review working. Tap a row to review it.</p>
+    <p class="legend"><span class="g0"><i></i>Easy Three</span><span class="g1"><i></i>Hidden Letters</span><span class="g2"><i></i>Story Codes</span></p>
     ${set.map(a=>{const b=S.items[a.code].box;return `<button class="brow g${a.g}" data-card="${a.code}">${studied(a)?flaps(a.code):flaps('???')}<span class="city">${esc(a.place)}</span><span class="pips" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?'on':''}"></i>`).join('')}</span></button>`;}).join('')||'<p class="note">No codes picked yet.</p>'}
   </section>
   <details class="why"><summary>Why the games work this way</summary>
@@ -412,7 +427,7 @@ function home(){
       <li><b>Recall beats rereading.</b> Pulling an answer out of your head builds memory far better than staring at a list. That's why most games make you type the code.</li>
       <li><b>Short spaced sessions beat cramming.</b> Coming back after you've forgotten a little is what makes it stick. Missed codes come back sooner; known codes wait longer.</li>
       <li><b>Memory tricks speed up learning,</b> but they fade unless you keep reviewing. Flight School gives you the trick, the games keep it fresh.</li>
-      <li><b>Mixing it up helps.</b> Wrong choices are look-alike codes (CPR vs CYS) so you learn to tell them apart.</li>
+      <li><b>Mixing it up helps.</b> Wrong choices are look-alike codes${(()=>{const s=selSet();for(const a of AP){if(!s.has(a.code))continue;const t=twins(a).find(o=>s.has(o.code));if(t)return ` (${a.code} vs ${t.code})`;}return '';})()} so you learn to tell them apart.</li>
     </ul>
   </details>
   <div class="foot"><span id="sync">${syncText}</span><button class="link" id="reset">Reset progress</button></div>
@@ -480,7 +495,7 @@ function school(){
   const lessons=lessonsFor(),nextL=lessons.find(l=>!lessonDone(l));
   main.innerHTML=topbar('Flight School')+`
   <section class="panel"><h2>How this works</h2>
-    <p class="lead">Every airport has a three-letter code. Most codes are built from the city's name in one of three ways, so each lesson teaches one way with 3 or 4 codes.</p>
+    <p class="lead">Every airport has a three-letter code. Most codes are built from the city's name in one of three ways, so each lesson teaches one way, up to 4 codes at a time.</p>
     <p class="lead">For each code you'll <b>see it</b>, <b>type it once</b> while it's on screen, then <b>type it from memory</b>. Anything you miss comes back until you get it.</p></section>
   ${lessons.length?lessons.map((L,i)=>{const done=lessonDone(L),isNext=L===nextL;return `<button class="lrow g${L.g}${done?' done':''}${isNext?' next':''}" data-l="${i}"><span class="num">${i+1}</span><span><span class="lt">${esc(L.title)}</span><br><span class="ls">${esc(L.deck.name)} · ${L.codes.map(c=>esc(BY[c].city)).join(', ')}</span></span><span class="st">${done?'Done ✓':isNext?'Next':'Start'}</span></button>`;}).join(''):'<p class="note">Pick some codes first.</p>'}
   <div class="row"><button class="btn" id="cheatB">Open the cheat sheet</button><button class="btn" id="pickB">Choose codes</button></div>`;
@@ -489,7 +504,8 @@ function school(){
 }
 function lesson(L){
   const steps=[];L.codes.forEach((c,idx)=>{steps.push({t:'meet',c,n:idx+1});steps.push({t:'copy',c});});
-  shuffle(L.codes.slice()).forEach(c=>steps.push({t:'quiz',c}));
+  const sel0=selSet(),olds=shuffle(L.deck.airports.filter(a=>sel0.has(a.code)&&!L.codes.includes(a.code)&&S.items[a.code]?.learned).map(a=>a.code)).slice(0,2);
+  const qz=shuffle(L.codes.slice());if(olds[0])steps.push({t:'quiz',c:olds[0],review:true});qz.forEach((c,k)=>{steps.push({t:'quiz',c});if(k===1&&olds[1])steps.push({t:'quiz',c:olds[1],review:true});});
   let i=0,timer=null;const missed=new Set(),extra={};
   function render(){
     const s=steps[i],a=L.deck.airports.find(x=>x.code===s.c)||BY[s.c],deck=DECKMAP[a.deck];
@@ -500,15 +516,15 @@ function lesson(L){
       <div class="prompt">${esc(a.place)}</div>
       <div>${flaps(a.code,true,'huge')}</div>
       ${a.g<2?`<p><span class="k">See it in the name</span><br><span style="font-size:1.4rem;font-weight:700">${hl(a)}</span></p>`:'<p><span class="k">The trick</span></p>'}
-      ${twins(a).length?`<p class="careful">Careful, look-alike: ${twins(a).map(o=>`<b>${o.code}</b> is ${esc(o.place)}`).join(' · ')}</p>`:''}
+      ${(()=>{const sel=selSet(),T=twins(a).filter(o=>sel.has(o.code)).slice(0,3);return T.length?`<p class="careful">Careful, look-alike: ${T.map(o=>`<b>${o.code}</b> is ${esc(o.place)}`).join(' · ')}</p>`:'';})()}
       <p class="lead">${esc(a.tip)}</p>
       <button class="btn primary big" id="nx">Got it</button>
-      ${deck.region?`<div class="mapbox">${mapSVG(deck,{target:a.code,codes:new Set([a.code]),all:true})}</div>`:''}`;
+      ${deck.region?`<div class="mapbox">${mapSVG(regionOf(deck,a.code),{target:a.code,codes:new Set([a.code]),all:true})}</div>`:''}`;
     }else if(s.t==='copy'){
       h+=`<span class="k">Your turn · copy it</span><div class="prompt">${esc(a.place)}</div>
       <p class="lead">Type <b class="ghost" style="font-size:1.3rem">${a.code}</b> to lock it in.</p>${ANSWER('Enter')}<div class="fb" id="fb"></div>`;
     }else{
-      h+=`<span class="k">Memory check · no peeking</span><div class="prompt">${esc(a.place)}</div>${ANSWER()}
+      h+=`<span class="k">${s.review?'From an earlier lesson · no peeking':'Memory check · no peeking'}</span><div class="prompt">${esc(a.place)}</div>${ANSWER()}
       <div class="fb" id="fb" aria-live="polite"></div><div class="row"><button class="btn" type="button" id="idk">I don't remember</button></div>`;
     }
     main.innerHTML=h+`</div>`;
@@ -521,7 +537,7 @@ function lesson(L){
         else{inp.value='';shakeEl(inp);$('#fb').innerHTML=`<span class="tipline">Copy it exactly: <b>${a.code}</b></span>`;}
         return;}
       if(v===a.code){mode='lock';inp.disabled=true;if(!missed.has(a.code))grade(a.code,true,'recall');
-        $('#fb').innerHTML=`<span class="ok">Correct: ${a.code} · ${esc(a.place)}</span>`;timer=setTimeout(next,650);}
+        $('#fb').innerHTML=`<span class="ok">Right! ${a.code} · ${esc(a.place)}</span>`;timer=setTimeout(next,900);}
       else miss(v);});
     const miss=v=>{mode='fix';missed.add(a.code);grade(a.code,false,'recall');
       extra[a.code]=(extra[a.code]||0)+1;if(extra[a.code]<=3)steps.push({t:'quiz',c:a.code});
@@ -536,9 +552,9 @@ function lesson(L){
     const ls=lessonsFor(),nl=ls.find(x=>!lessonDone(x));
     main.innerHTML=topbar(L.title)+`<div class="result"><span class="k">Lesson complete · +40 XP</span><div class="big">${L.codes.length} new</div><p>${missed.size?`You needed a second look at ${missed.size}. That's normal; they'll show up more in practice.`:'Perfect from memory on the first try.'}</p></div>
       ${L.codes.map(c=>{const a=BY[c];return `<div class="mrow g${a.g}">${flaps(a.code)}<div><div class="c">${placeHL(a)}</div><div class="t">${esc(a.tip)}</div></div></div>`;}).join('')}
-      ${nl?`<button class="btn primary big" id="nl">Next lesson: ${esc(nl.title)}</button>`:`<div class="panel"><b>All lessons done.</b><p class="note">Now drill them: Recall daily, Air Defender for fun, then the Mock Test.</p></div><button class="btn primary big" id="ad">Play Air Defender</button>`}
+      ${nl?`<button class="btn primary big" id="nl">Next lesson: ${esc(nl.title)}</button>`:`<div class="panel"><b>All lessons done.</b><p class="note">Now drill them: Recall daily, Air Defender for fun, then the Mock Test.</p></div><button class="btn primary big" id="rc">Mixed review: all ${SET().length} codes</button><div class="row"><button class="btn big" id="mk">Mock Test</button><button class="btn big" id="ad">Air Defender</button></div>`}
       <div class="row"><button class="btn" id="sch">All lessons</button><button class="btn" data-home>Home</button></div>`;
-    const b=$('#nl');if(b)b.onclick=()=>go(lesson,nl);const ad=$('#ad');if(ad)ad.onclick=()=>go(VIEWS.defender);$('#sch').onclick=()=>go(school);
+    const b=$('#nl');if(b)b.onclick=()=>go(lesson,nl);const ad=$('#ad');if(ad)ad.onclick=()=>go(VIEWS.defender);const rc=$('#rc');if(rc)rc.onclick=()=>go(recall,{list:shuffle(SET().map(a=>a.code)),title:'Mixed Review'});const mk=$('#mk');if(mk)mk.onclick=()=>go(VIEWS.mock);$('#sch').onclick=()=>go(school);
   }
   cleanup=()=>clearTimeout(timer);render();
 }
@@ -567,8 +583,8 @@ function cheat(focus){
 /* ================= recall ================= */
 function recall(opts={}){
   const queue=opts.list?opts.list.slice():pickQueue(Math.min(10,Math.max(6,SET().length*2)));
-  let i=0,firstTry=0,xp=0,hints=0,mode='ask',timer=null;const missed=new Set(),reins=new Set();
-  const title=opts.list?'Your Misses':'Recall';
+  let i=0,firstTry=0,xp=0,hints=0,mode='ask',timer=null;const missed=new Set(),reins=new Set(),hinted=new Set();
+  const title=opts.title||(opts.list?'Your Misses':'Recall');
   function render(){
     const a=homeOf(queue[i]),deck=DECKMAP[a.deck];mode='ask';hints=0;
     main.innerHTML=topbar(title,`${i+1}/${queue.length}`)+`
@@ -578,7 +594,7 @@ function recall(opts={}){
       <div class="prompt">${esc(a.place)}</div>${ANSWER()}
       <div class="fb" id="fb" aria-live="polite"></div>
       <div class="row"><button class="btn" type="button" id="hint">Hint</button><button class="btn" type="button" id="skip">I don't know</button></div>
-      ${deck.region?`<div class="mapbox">${mapSVG(deck,{target:a.code,dim:true})}</div>`:''}
+      ${deck.region?`<div class="mapbox">${mapSVG(regionOf(deck,a.code),{target:a.code,dim:true})}</div>`:''}
     </div>`;
     const inp=wireInput(v=>check(v));
     $('#hint').onclick=()=>{if(mode!=='ask')return;hints++;const g=GROUPS[a.g];
@@ -596,9 +612,9 @@ function recall(opts={}){
   function check(v){
     const a=BY[queue[i]],inp=$('#ans');if(mode==='lock')return;
     if(mode==='ask'){
-      if(v===a.code){grade(a.code,true,hints?'hint':'recall');if(!missed.has(a.code))firstTry++;
+      if(v===a.code){grade(a.code,true,hints?'hint':'recall');if(hints)hinted.add(a.code);if(!missed.has(a.code)&&!hints)firstTry++;
         const g=hints?5:15;xp+=g;addXP(g);mode='lock';inp.disabled=true;
-        $('#fb').innerHTML=`<span class="ok">Correct: ${a.code} · ${esc(a.place)} · +${g} XP</span>`;timer=setTimeout(next,750);}
+        $('#fb').innerHTML=`<span class="ok">Right! ${a.code} · ${esc(a.place)} · +${g} XP</span>`;timer=setTimeout(next,900);}
       else miss(a,v);
     }else if(mode==='fix'){
       if(v===a.code){mode='lock';inp.disabled=true;$('#fb').insertAdjacentHTML('beforeend','<span class="ok">Locked in.</span>');timer=setTimeout(next,600);}
@@ -606,8 +622,8 @@ function recall(opts={}){
     }
   }
   function next(){i++;if(i>=queue.length)return done();render();}
-  function done(){const bonus=missed.size===0?25:0;addXP(bonus);
-    summary({title,big:`${firstTry}/${queue.length-reins.size}`,sub:`right on the first try · +${xp+bonus} XP${bonus?' (includes a 25 XP perfect-round bonus)':''}`,missed:[...missed],again:()=>go(recall,opts)});}
+  function done(){const bonus=missed.size===0&&!hinted.size?25:0;addXP(bonus);
+    summary({title,big:`${firstTry}/${queue.length-reins.size}`,sub:`right on the first try with no hints${hinted.size?` · ${hinted.size} needed a hint`:''} · +${xp+bonus} XP${bonus?' (includes a 25 XP perfect-round bonus)':''}`,missed:[...new Set([...missed,...hinted])],again:()=>go(recall,opts)});}
   cleanup=()=>clearTimeout(timer);render();
 }
 
@@ -629,7 +645,7 @@ function quick(){
   function tick(){const left=Math.max(0,end-performance.now());$('#tb').style.width=(left/DUR*100)+'%';$('#secs').textContent=Math.ceil(left/1000)+'s';$('#tm').classList.toggle('low',left<10000);if(left<=0)finish();}
   function finish(){if(over)return;over=true;clearInterval(iv);clearTimeout(t2);
     const xp=Math.round(score/10);addXP(xp);const isBest=score>S.best.quick;if(isBest){S.best.quick=score;save();}
-    summary({title:'Quick Fire',big:score,sub:`points · ${correct}/${answered} correct · best combo ${topStreak} in a row · +${xp} XP${isBest?' · new best!':''}`,missed:[...missed],again:()=>go(quick)});}
+    summary({title:'Quick Fire',big:score,sub:`points · ${correct}/${answered} correct · longest streak ${topStreak} in a row · +${xp} XP${isBest?' · new best!':''}`,missed:[...missed],again:()=>go(quick)});}
   iv=setInterval(tick,100);cleanup=()=>{over=true;clearInterval(iv);clearTimeout(t2);};newQ();
 }
 
@@ -675,7 +691,7 @@ function mapRun(deck){
   let i=0,ok=0,t=null,busy=false;const labeled=new Set(),missed=new Set();
   function render(){busy=false;const a=BY[order[i]];
     main.innerHTML=topbar('Map Run',`${i+1}/${order.length}`)+`<div class="stage"><span class="k">Which airport is lit up?</span>
-      <div class="mapbox">${mapSVG(deck,{target:a.code,labeled,dim:true})}</div>
+      ${deck.sub?`<p class="note">Region: <b>${esc(regionOf(deck,a.code).name)}</b></p>`:''}<div class="mapbox">${mapSVG(regionOf(deck,a.code),{target:a.code,labeled,dim:true,plain:true})}</div>
       <div class="opts">${options(a,pool.length>=4?pool:deck.airports).map(o=>`<button class="opt" data-c="${o.code}">${flaps(o.code)}</button>`).join('')}</div>
       <div class="fb" id="fb" aria-live="polite"></div></div>`;
     main.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(busy)return;busy=true;const good=b.dataset.c===a.code;
@@ -690,8 +706,8 @@ function mapRun(deck){
 /* ================= mock test ================= */
 function mock(){
   const pool=SET();
-  let qs=shuffle([...pool.map(a=>({t:'type',c:a.code})),...pickDistinct(Math.min(10,pool.length),pool).map(a=>({t:'mc',c:a.code}))]);
-  for(let k=1;k<qs.length;k++)if(qs[k].c===qs[k-1].c){const j=(k+2)%qs.length;[qs[k],qs[j]]=[qs[j],qs[k]];}
+  // every typed question comes first, then the multiple choice, so no code is shown before you have to type it
+  let qs=[...shuffle(pool.map(a=>({t:'type',c:a.code}))),...shuffle(pickDistinct(Math.min(10,pool.length),pool).map(a=>({t:'mc',c:a.code})))];
   let i=0;const ans=[],T=qs.length;
   function render(){const q=qs[i],a=BY[q.c];
     main.innerHTML=topbar('Mock Test',`${i+1}/${T}`)+`<div class="progress"><i style="width:${i/T*100}%"></i></div><div class="stage">`+
@@ -753,7 +769,7 @@ function defender(){
         <li>Type that city's <b>3-letter code</b> to fire an interceptor. Hints still show up as a warhead gets close.</li>
         <li>A warhead that lands <b>wipes the city off the map for good</b>. Its code shows in red so you learn it.</li>
         <li>The fewer cities left, the more often warheads <b>split</b>, into as many as <b>four</b> at the end.</li>
-        <li>No shields. The game ends when the <b>last city falls</b>.</li>
+        <li>No shields. The game ends when the <b>last city falls</b>. DEFCON 5 to 1 shows how bad it is: at DEFCON 1 almost every city is gone.</li>
       </ol>`:`<ol>
         <li>Bombs fall toward cities on the map. The city under attack <b>blinks</b>.</li>
         <li>Type that city's <b>3-letter code</b> to fire an interceptor.</li>
@@ -787,7 +803,7 @@ function defenderRun(root,diffKey){
   const SECS=root.sub?root.sub.filter(sd=>sd.airports.some(a=>s.has(a.code))):null;
   const STATE={};for(const a of root.airports)if(s.has(a.code))STATE[a.code]={a,x:a.x,y:a.y,dmg:0,flash:0,reveal:0,dead:false,deadAt:0};
   const allCities=Object.values(STATE),NC=allCities.length;
-  let deck=SECS?SECS[Math.floor(Math.random()*SECS.length)]:root,cities=[],LBL=null,BASES=[],DS=1,secQ=[],sectorFell=false;
+  let deck=SECS?SECS[Math.floor(Math.random()*SECS.length)]:root,cities=[],LBL=null,BASES=[],DS=1,secQ=[],sectorFell=false,secAt=-9;
   const alive=()=>allCities.filter(c=>!c.dead),secAlive=()=>cities.filter(c=>!c.dead),lost=()=>1-alive().length/NC;
   // Doomsday scales with the map: a big map means more warheads, more at once, shorter gaps
   const ACT=w=>D.act(w)+Math.round((DS-1)*3)+(DOOM?Math.floor(lost()*4):0);
@@ -810,15 +826,15 @@ function defenderRun(root,diffKey){
   const MONO=getFamily('mono');
   let clouds=[],defcon=5,bombs=[],missiles=[],booms=[],pops=[],buf='',score=0,wave=0,shields=5,combo=0,toSpawn=0,spawnT=0,phase='intro',phaseT=0,paused=false,over=false,
       hitsThisWave=0,kills=0,shots=0,misfires=0,splits=0,clean=0,last=performance.now(),raf=0,clock=0,initials=null,initBuf='',endXP=0,lastX=350;
-  const missedCodes=new Set(),ovl=$('#ovl'),lastHit={};
-  function enterSector(sd){deck=sd;setWorld(deck);BASES=[{x:W*.17,y:H-6},{x:W/2,y:H-6},{x:W*.83,y:H-6}];fitCanvas(cv);size();
+  const missedCodes=new Set(),ovl=$('#ovl'),lastHit={},lateT={};
+  function enterSector(sd){deck=sd;secAt=typeof clock==='number'?clock:0;setWorld(deck);BASES=[{x:W*.17,y:H-6},{x:W/2,y:H-6},{x:W*.83,y:H-6}];fitCanvas(cv);size();
     cities=deck.airports.filter(a=>STATE[a.code]).map(a=>{const c=STATE[a.code];c.a=a;c.x=a.x;c.y=a.y;return c;});
     LBL=canvasLabeler(ctx,deck,cities,MONO);DS=DOOM?Math.sqrt(Math.max(1,cities.length/12)):1;clouds=[];booms=[];pops=[];lastX=W/2;
     const m=$('#msg');if(m&&!over){m.textContent=idleMsg();m.className='msg';}}
   function nextSector(){const ok=SECS.filter(sd=>sd.airports.some(a=>STATE[a.code]&&!STATE[a.code].dead));if(!ok.length)return deck;if(ok.length===1)return ok[0];
     secQ=secQ.filter(x=>ok.includes(x)&&x!==deck);if(!secQ.length)secQ=ok.filter(x=>x!==deck).sort(()=>Math.random()-.5);return secQ.shift();}
   enterSector(deck);
-  let reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'defender',level:diffKey,levelName:DIFFS[diffKey].name,score,wave,map:root.name});}
+  let initAt=0,reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'defender',level:diffKey,levelName:DIFFS[diffKey].name,score,wave,map:root.name});}
   function showOvl(big,sub,btns=''){ovl.innerHTML=`<div class="big">${big}</div>${sub?`<div class="sub">${sub}</div>`:''}${btns}`;ovl.hidden=false;}
   const mult=()=>1+Math.min(2,Math.floor(combo/4)*.5);
   function hud(){$('#dScore').textContent=score;$('#dWave').textContent=wave;$('#dCombo').textContent='×'+String(mult());{const r=$('#race');if(r)r.innerHTML=raceLine('defender',diffKey,score);}
@@ -832,9 +848,9 @@ function defenderRun(root,diffKey){
   function makeBomb(sx,sy,c,speed,child){const dx=c.x-sx,dy=c.y-sy,dist=Math.hypot(dx,dy);
     return{c,sx,sy,x:sx,y:sy,ux:dx/dist,uy:dy/dist,dist,trav:0,prog:progOf(sy,c),speed,locked:false,hl:0,child:!!child,splitAt:null,split:false};}
   function pickCity(pool){const ws=pool.map(c=>weight(c.a));let r=Math.random()*ws.reduce((x,y)=>x+y,0);for(let j=0;j<pool.length;j++){r-=ws[j];if(r<=0)return pool[j];}return pool[pool.length-1];}
-  function splitChance(){return DOOM?Math.min(.92,D.split(wave)+lost()*.75):D.split(wave);}
+  function splitChance(){return DOOM?Math.min(.9,D.split(wave)+lost()*(NC<15?.5:.75)):D.split(wave);}
   function startWave(){wave++;sectorFell=false;if(SECS&&wave>1)enterSector(nextSector());
-    toSpawn=DOOM?Math.round((5+3*wave)*DS):4+2*wave;spawnT=.9;hitsThisWave=0;phase='intro';phaseT=SECS?2.8:2.2;sfx(SECS&&wave>1?'siren':'wave');
+    toSpawn=DOOM?Math.round((5+3*wave)*DS):4+2*wave;spawnT=wave===1?1.8:.9;hitsThisWave=0;phase='intro';phaseT=SECS?2.8:2.2;sfx(SECS&&wave>1?'siren':'wave');
     const sp=D.split(wave),tip=DOOM?(wave===1?`${NC} cities. Every hit is permanent.`:`${toSpawn} warheads inbound · ${alive().length} cities left`):wave===1?'Type the code of the city under attack':sp>0&&D.split(wave-1)===0?'Warning: warheads can split from this wave on':`${toSpawn} bombs incoming`;
     if(SECS)showOvl(`WAVE ${wave}`,`${DOOM?'WARHEADS':'MISSILES'} INBOUND · ${esc(deck.name.toUpperCase())}`,locatorSVG(root,deck)+`<div class="sub">${tip}</div>`);
     else showOvl(`WAVE ${wave}`,tip);hud();}
@@ -850,23 +866,23 @@ function defenderRun(root,diffKey){
       const c=pickCity(pool),k=makeBomb(b.x,b.y,c,b.speed*(1.05+i*.06),true);k.parent=b;bombs.push(k);splits++;hit.push(c);}
     if(!hit.length)return;
     booms.push({x:b.x,y:b.y,t:0,R:14+hit.length*4,col:COL.amb});sfx('split');
-    msg(hit.length>1?`MIRV! ${hit.length+1} warheads: ${hit.map(c=>c.a.city).join(', ')} are targets too.`:`Warhead split! ${hit[0].a.place} is now a target too.`,'warn');}
+    msg(hit.length>1?`Split into ${hit.length+1} warheads! New targets: ${hit.map(c=>c.a.city).join(', ')}.`:`Warhead split! ${hit[0].a.place} is now a target too.`,'warn');}
   function retarget(dead){for(const b of bombs){if(b.c!==dead)continue;const live=secAlive();if(!live.length)return;
     const c=live.reduce((p,q)=>Math.hypot(q.x-b.x,q.y-b.y)<Math.hypot(p.x-b.x,p.y-b.y)&&q.y>b.y?q:p,live[0]);
     const nb=makeBomb(b.x,b.y,c,b.speed,b.child);Object.assign(b,{c,sx:nb.sx,sy:nb.sy,ux:nb.ux,uy:nb.uy,dist:nb.dist,trav:0,hl:0,prog:progOf(b.y,c),splitAt:null});}}
   function nukeFx(c,big){clouds.push({x:c.x,y:c.y,t:0,big});const f=$('#flx');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');}
   function impact(b){lastHit[b.c.a.code]=clock;bombs=bombs.filter(x=>x!==b);hitsThisWave++;combo=0;b.c.dmg++;b.c.flash=1;b.c.reveal=3.2;
-    missedCodes.add(b.c.a.code);grade(b.c.a.code,false,'recog');sfx('nuke');nukeFx(b.c,DOOM);
+    missedCodes.add(b.c.a.code);{const code=b.c.a.code;clearTimeout(lateT[code]);lateT[code]=setTimeout(()=>{delete lateT[code];grade(code,false,'recog');},2000);}sfx('nuke');nukeFx(b.c,DOOM);
     const scr=$('#scr');scr.classList.remove('jolt');void scr.offsetWidth;scr.classList.add('jolt');
     if(DOOM){const c=b.c;if(!c.dead){c.dead=true;c.deadAt=clock;c.reveal=4.5;}retarget(c);
       const n=alive().length,dc=defconOf();
-      msg(n?`${c.a.place} is gone. Its code was ${c.a.code}. ${n} ${n===1?'city':'cities'} left.`:`${c.a.place} was the last city.`,'bad');
+      msg(n?`${c.a.place} (${c.a.code}) is gone. ${n} left.`:`${c.a.place} (${c.a.code}) was the last city.`,'bad');
       if(dc<defcon){defcon=dc;setTimeout(()=>{if(!over){sfx('siren');pops.push({x:W/2,y:H*.42,t:0,text:`DEFCON ${dc}`,big:true});}},350);}
       if(n&&SECS&&!secAlive().length){sectorFell=true;bombs=[];missiles=[];toSpawn=0;msg(`${deck.name} has fallen. ${n} ${n===1?'city':'cities'} left elsewhere.`,'bad');}
       hud();if(!n)gameOver();return;}
     shields--;msg(`${b.c.a.place} was hit. Its code is ${b.c.a.code}.`,'bad');hud();if(shields<=0)gameOver();}
   function kill(b){bombs=bombs.filter(x=>x!==b);
-    const pts=Math.round((50+120*(1-b.prog))*wave*mult()*HINT_PTS[b.hl]);score+=pts;combo++;kills++;if(b.hl===0)clean++;
+    const pts=Math.round((50+120*(1-b.prog))*wave*mult()*HINT_PTS[b.hl]);score+=pts;combo++;kills++;if(b.hl<=1)clean++;
     booms.push({x:b.x,y:b.y,t:0,R:26,col:COL.hi});pops.push({x:b.x,y:b.y-10,t:0,text:'+'+pts+(b.hl===0?' CLEAN':'')});
     grade(b.c.a.code,true,b.hl<=1?'recall':'hint');sfx('boom');
     msg(`+${pts}  ${b.c.a.code} ${b.c.a.place} saved${b.hl===0?' with no hints':b.hl===4?' (full code was showing)':''}`,'ok');hud();}
@@ -876,14 +892,15 @@ function defenderRun(root,diffKey){
       missiles.push({x:base.x,y:base.y,sx:base.x,sy:base.y,b});sfx('fire');drawBuf('ok');return;}
     const c=cities.find(c=>c.a.code===code),cs=STATE[code];
     if(cs&&cs.dead){shots--;drawBuf('bad');msg(`${code} was ${cs.a.place}. It's already gone.`,'warn');return;}
-    if(c&&clock-(lastHit[code]??-9)<2){shots--;drawBuf('bad');msg(`Right code, just too late: ${c.a.place} was already hit.`,'warn');return;}
+    if(c&&clock-(lastHit[code]??-9)<2){shots--;drawBuf('bad');if(lateT[code]){clearTimeout(lateT[code]);delete lateT[code];}msg(`Right code, just too late: ${c.a.place} was already hit. No mastery lost.`,'warn');return;}
+    if(cs&&!c&&SECS&&clock-secAt<3){shots--;drawBuf('bad');msg(`The attack moved to ${deck.name}. ${code} is ${cs.a.place}, not here. No penalty.`,'warn');return;}
     misfires++;combo=0;score=Math.max(0,score-25);sfx('bad');drawBuf('bad');hud();
     if(c)msg(`${code} is ${c.a.place}, but nothing is falling there. −25`,'warn');
     else if(cs)msg(`${code} is ${cs.a.place}. That's not in ${deck.name}. −25`,'warn');
     else if(BY[code])msg(`${code} is ${BY[code].place}. Not on this map. −25`,'warn');
     else msg(`${code} isn't one of your codes. −25`,'bad');}
   function press(k){
-    if(initials!==null){if(k==='DEL')initBuf=initBuf.slice(0,-1);else if(initBuf.length<3)initBuf+=k;drawBuf();if(initBuf.length===3)saveInitials();return;}
+    if(initials!==null){if(performance.now()<initAt)return;if(k==='DEL')initBuf=initBuf.slice(0,-1);else if(initBuf.length<3)initBuf+=k;drawBuf();if(initBuf.length===3)saveInitials();return;}
     if(over||paused||phase==='clear')return;
     if(k==='DEL'){buf=buf.slice(0,-1);drawBuf();return;}
     buf+=k;drawBuf();
@@ -896,7 +913,7 @@ function defenderRun(root,diffKey){
     else if(e.key==='Escape'||(e.key===' '&&initials===null)){e.preventDefault();togglePause();}};
   document.addEventListener('keydown',onKey);
   function togglePause(){if(over)return;paused=!paused;
-    if(paused){showOvl('PAUSED','Your codes are waiting.',`<div class="row"><button class="crt-btn primary" id="res">RESUME</button><button class="crt-btn" id="quit">QUIT</button></div>`);$('#res').onclick=togglePause;$('#quit').onclick=()=>go(defender);}
+    if(paused){showOvl('PAUSED','Your codes are waiting.',`<div class="row"><button class="crt-btn primary" id="res">RESUME</button><button class="crt-btn" id="quit">QUIT</button></div>`);$('#res').onclick=togglePause;$('#quit').onclick=()=>{if(score>0){paused=false;ovl.hidden=true;gameOver();}else go(defender);};}
     else{ovl.hidden=true;if(phase==='intro')showOvl(`WAVE ${wave}`,'');last=performance.now();}}
   $('#pz').onclick=togglePause;
   const onVis=()=>{if(document.hidden&&!paused&&!over)togglePause();};document.addEventListener('visibilitychange',onVis);
@@ -906,7 +923,7 @@ function defenderRun(root,diffKey){
       else showOvl(`WAVE ${wave} SURVIVED`,`${n} of ${NC} cities standing · bonus +${bonus}${hitsThisWave===0?' (no city lost)':''}`);hud();return;}
     const bonus=shields*20*wave;score+=bonus;let extra='';
     if(hitsThisWave===0&&shields<5){shields++;extra=' · Perfect wave: shield restored';}else if(hitsThisWave===0)extra=' · Perfect wave';
-    sfx('wave');showOvl(`WAVE ${wave} CLEARED`,`Shield bonus +${bonus}${extra}`);hud();}
+    sfx('wave');showOvl(`WAVE ${wave} CLEARED`,`Wave bonus +${bonus} (for the shields you kept)${extra}`);hud();}
   function update(dt){
     clock+=dt;
     if(phase==='intro'){phaseT-=dt;if(phaseT<=0){phase='play';ovl.hidden=true;}}
@@ -1007,14 +1024,14 @@ function defenderRun(root,diffKey){
     showOvl(DOOM?'THE LAST CITY HAS FALLEN':'DEFENSES DOWN',`Score ${score} · ${DOOM?'survived to':'reached'} wave ${wave}`);const u=bridge.user&&bridge.user();if(qualifies&&u){initBuf=u.slice(0,16);saveInitials();}else renderEnd(qualifies,-1);}
   function renderEnd(entering,hlIdx){
     const e=$('#endP');e.hidden=false;
-    if(entering){initials='';initBuf='';drawBuf();$('#kb').hidden=false;
+    if(entering){initials='';initBuf='';initAt=performance.now()+1500;drawBuf();$('#kb').hidden=false;
       e.innerHTML=`<h2 style="font-size:1.3rem">NEW HIGH SCORE</h2><p>Type 3-letter initials for this device's list. You can post to the world leaderboard right after.</p><div class="row"><button class="crt-btn" id="skipI">SKIP</button></div>`;
       $('#msg').textContent='Enter initials';$('#msg').className='msg warn';$('#skipI').onclick=()=>{initials=null;renderEnd(false,-1);};return;}
     initials=null;$('#kb').hidden=true;$('.crt-row').hidden=true;
     const acc=shots?Math.round((shots-misfires)/shots*100)+'%':'—';
     const miss=[...missedCodes].map(c=>`<span class="chip">${c} · ${esc(BY[c].place)}</span>`).join('');
-    e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>WAVE <b>${wave}</b></span><span>STOPPED <b>${kills}</b></span><span>NO-HINT KILLS <b>${clean}</b></span><span>ACCURACY <b>${acc}</b></span><span>SPLITS <b>${splits}</b></span>${DOOM?`<span>CITIES LOST <b>${NC-alive().length}/${NC}</b></span>`:''}<span>XP <b>+${endXP}</b></span></div>
-      ${miss?`<p>Cities you lost, with their codes. Lock these in:</p><div class="chips">${miss}</div>`:'<p>You never lost a city. Try a harder level.</p>'}
+    e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>WAVE <b>${wave}</b></span><span>STOPPED <b>${kills}</b></span><span>BEFORE ANY LETTERS <b>${clean}</b></span><span>ACCURACY <b>${acc}</b></span><span>WARHEADS SPLIT <b>${splits}</b></span>${DOOM?`<span>CITIES LOST <b>${NC-alive().length}/${NC}</b></span>`:''}<span>XP <b>+${endXP}</b></span></div>
+      ${miss?(DOOM&&missedCodes.size>12?`<p>The first cities to fall, with their codes. Lock these in:</p><div class="chips">${[...missedCodes].slice(0,12).map(c=>`<span class="chip">${c} · ${esc(BY[c].place)}</span>`).join('')}</div>`:`<p>Cities you lost, with their codes. Lock these in:</p><div class="chips">${miss}</div>`):'<p>You never lost a city. Try a harder level.</p>'}
       ${liveTopHTML('defender',diffKey,{crt:true})}
       <h2 style="font-size:1.2rem">HIGH SCORES · ${DIFFS[diffKey].name.toUpperCase()}</h2>${hsTable(diffKey,hlIdx)}
       <div class="row"><button class="crt-btn primary" id="again" style="flex:2">PLAY AGAIN</button><button class="crt-btn" id="setup">SETTINGS</button></div>
@@ -1043,7 +1060,7 @@ function hsTableFor(L,label,hlIdx=-1){if(!L.length)return `<p>No scores yet on $
 function kbHTML(){return `<div class="kb auto" id="kb">${['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].map((r,ri)=>`<div class="r">${[...r].map(ch=>`<button class="key" data-k="${ch}">${ch}</button>`).join('')}${ri===2?'<button class="key wide" data-k="DEL" aria-label="Delete">DEL</button>':''}</div>`).join('')}</div>`;}
 function tower(){
   let decks=homeDecks();if(!decks.length){const s=selSet();decks=ALLDECKS.filter(d=>d.airports.filter(a=>s.has(a.code)).length>=3);}
-  {const s=selSet();decks=decks.flatMap(d=>d.sub?d.sub.filter(sd=>sd.airports.filter(a=>s.has(a.code)).length>=3):[d]);}
+  {const s=selSet();decks=decks.flatMap(d=>d.sub?[d,...d.sub.filter(sd=>sd.airports.filter(a=>s.has(a.code)).length>=3)]:[d]);}
   if(!decks.length){main.innerHTML=topbar('Tower Control')+`<div class="panel"><p>Tower Control needs at least 3 picked codes from one deck.</p><button class="btn primary" id="toPick">Choose codes</button></div>`;$('#toPick').onclick=()=>go(picker);return;}
   let deckId=decks[0].id,diff=S.tdiff;
   function render(){
@@ -1057,8 +1074,8 @@ function tower(){
         <li>The longer a pilot waits, the more help you get: <b>1</b> a clue, <b>2</b> the first letter, <b>3</b> two letters, <b>4</b> the whole code.</li>
         <li>A plane that runs out of fuel or lands at the wrong airport costs a safety bar. Lose all 5 and your shift is over.</li>
       </ol>
-      <p>With more than one plane, tap a <b>flight strip</b> or a plane on the radar to choose which one you're talking to. The plane lowest on fuel is picked for you.</p>
-      ${decks.length>1?`<div class="row">${decks.map(d=>`<button class="crt-btn ${d.id===deckId?'on':''}" data-deck="${d.id}">${esc(d.name.toUpperCase())}</button>`).join('')}</div>`:''}
+      <p>With more than one plane, tap a <b>flight strip</b> (the card for each plane, under the radar) or the plane itself to choose which one you're talking to. The plane lowest on fuel is picked for you.</p>
+      ${decks.length>1?`<div class="row">${decks.map(d=>`<button class="crt-btn ${d.id===deckId?'on':''}" data-deck="${d.id}">${esc(d.sub?'ALL REGIONS · NEW ONE EACH SHIFT':d.name.toUpperCase())}</button>`).join('')}</div>`:''}
       <div class="choices">${Object.entries(TDIFFS).map(([k,d])=>`<button class="choice" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div>
       <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">START SHIFT</button><button class="crt-btn ${S.mute?'':'on'}" id="snd">SOUND ${S.mute?'OFF':'ON'}</button></div>
       ${liveTopHTML('tower',diff,{crt:true})}
@@ -1073,10 +1090,12 @@ function tower(){
   }
   render();
 }
-function towerRun(deck,dk){
+function towerRun(R0,dk){
   $('#app').classList.add('wide');
   const D=TDIFFS[dk],s=selSet();
-  const ports=deck.airports.filter(a=>s.has(a.code)).map(a=>({a,x:a.x,y:a.y,reveal:0,rcol:''}));
+  // a set split into regions moves to a new region each shift (the sky is empty between shifts)
+  const SECS=R0.sub?R0.sub.filter(sd=>sd.airports.filter(a=>s.has(a.code)).length>=3):null;
+  let deck=SECS?SECS[Math.floor(Math.random()*SECS.length)]:R0,ports=[],secQ=[];
   setWorld(deck);
   main.innerHTML=topbar('Tower Control',TDIFFS[dk].name)+`<div class="defender"><div class="crt radar" id="tc">
     <div class="hud"><span>SCORE <b id="tScore">0</b></span><span>SHIFT <b id="tShift">1</b></span><span>LANDED <b id="tLand">0</b></span><span class="sh" id="tSafe"></span></div>${LIVE?'<div class="race" id="race" aria-live="off"></div>':''}
@@ -1092,12 +1111,16 @@ function towerRun(deck,dk){
   fitCanvas(cv);const ro=new ResizeObserver(size);ro.observe(cv);size();
   const cs=getComputedStyle(root),V=n=>cs.getPropertyValue(n).trim();
   const COL={bg:V('--crt-bg'),hi:V('--crt-hi'),mid:V('--crt-mid'),lo:V('--crt-lo'),amb:V('--crt-amber'),red:V('--crt-red'),good:V('--rad-good'),water:V('--crt-water'),sea:V('--crt-sea'),land:V('--crt-land')};
-  const LBL=canvasLabeler(ctx,deck,ports,getFamily('mono'));
+  let LBL=null;
   const MONO=getFamily('mono'),reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let planes=[],marks=[],pops=[],buf='',score=0,shift=0,safety=5,combo=0,toSpawn=0,spawnT=0,phase='intro',phaseT=0,paused=false,over=false,
       landed=0,legs=0,wrongs=0,emerg=0,clean=0,issues=0,sel=null,clock=0,nextId=1,initials=null,initBuf='',endXP=0,last=performance.now(),raf=0,stripT=0;
+  function enterSector(sd){deck=sd;setWorld(deck);fitCanvas(cv);size();
+    ports=deck.airports.filter(a=>s.has(a.code)).map(a=>({a,x:a.x,y:a.y,reveal:0,rcol:''}));LBL=canvasLabeler(ctx,deck,ports,MONO);marks=[];pops=[];}
+  function nextSector(){if(SECS.length===1)return SECS[0];secQ=secQ.filter(x=>x!==deck);if(!secQ.length)secQ=SECS.filter(x=>x!==deck).sort(()=>Math.random()-.5);return secQ.shift();}
+  enterSector(deck);
   const lostCodes=new Set(),ovl=$('#ovl');
-  let reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'tower',level:dk,levelName:TDIFFS[dk].name,score,wave:shift,map:deck.name});}
+  let initAt=0,reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'tower',level:dk,levelName:TDIFFS[dk].name,score,wave:shift,map:R0.name});}
   const mult=()=>1+Math.min(2,Math.floor(combo/3)*.5);
   function showOvl(big,sub,btns=''){ovl.innerHTML=`<div class="big">${big}</div>${sub?`<div class="sub">${sub}</div>`:''}${btns}`;ovl.hidden=false;}
   function hud(){$('#tScore').textContent=score;$('#tShift').textContent=shift;$('#tLand').textContent=landed;{const r=$('#race');if(r)r.innerHTML=raceLine('tower',dk,score);}
@@ -1152,8 +1175,10 @@ function towerRun(deck,dk){
   function emergency(p){p.state='gone';safety--;issues++;emerg++;combo=0;p.need.reveal=3.2;p.need.rcol=COL.amb;lostCodes.add(p.need.a.code);grade(p.need.a.code,false,'recall');
     marks.push({x:p.x,y:p.y,t:0});sfx('hit');radio(`${p.call} ran out of fuel and made an emergency landing in a field. Everyone is OK. ${p.need.a.place} was ${p.need.a.code}.`,'bad');
     autoSel();hud();if(safety<=0)gameOver();}
-  function startShift(){shift++;toSpawn=3+2*shift;spawnT=1.2;issues=0;phase='intro';phaseT=2.4;sfx('wave');
-    showOvl(`SHIFT ${shift}`,shift===1?'Pilots will radio in. Type the code of the city they ask for.':`${toSpawn} flights on the schedule${D.fuelStop(shift)>0&&D.fuelStop(shift-1)===0?' · fuel stops start now':''}`);hud();}
+  function startShift(){shift++;if(SECS&&shift>1)enterSector(nextSector());toSpawn=3+2*shift;spawnT=1.2;issues=0;phase='intro';phaseT=SECS?3:2.4;sfx('wave');
+    const sub=shift===1?'Pilots will radio in. Type the code of the city they ask for.':`${toSpawn} flights on the schedule${D.fuelStop(shift)>0&&D.fuelStop(shift-1)===0?' · fuel stops start now':''}`;
+    if(SECS)showOvl(`SHIFT ${shift}`,`YOUR SECTOR · ${esc(deck.name.toUpperCase())}`,locatorSVG(R0,deck)+`<div class="sub">${sub}</div>`);
+    else showOvl(`SHIFT ${shift}`,sub);hud();}
   function shiftClear(){phase='clear';phaseT=2.8;buf='';drawBuf();const bonus=safety*25*shift;score+=bonus;let extra='';
     if(issues===0&&safety<5){safety++;extra=' · Perfect shift: safety bar restored';}else if(issues===0)extra=' · Perfect shift';
     sfx('wave');showOvl(`SHIFT ${shift} COMPLETE`,`Safety bonus +${bonus}${extra}`);hud();}
@@ -1245,7 +1270,7 @@ function towerRun(deck,dk){
     let best=null,bd=40;for(const p of active()){const d=Math.hypot(p.x-x,p.y-y);if(d<bd){bd=d;best=p;}}if(best){sel=best;who();strips();}});
   function cycle(dir){const a=active();if(!a.length)return;const i=a.indexOf(sel);sel=a[(i+dir+a.length)%a.length];who();strips();}
   function press(k){
-    if(initials!==null){if(k==='DEL')initBuf=initBuf.slice(0,-1);else if(initBuf.length<3)initBuf+=k;drawBuf();if(initBuf.length===3)saveInitials();return;}
+    if(initials!==null){if(performance.now()<initAt)return;if(k==='DEL')initBuf=initBuf.slice(0,-1);else if(initBuf.length<3)initBuf+=k;drawBuf();if(initBuf.length===3)saveInitials();return;}
     if(over||paused||phase!=='play')return;
     if(k==='DEL'){buf=buf.slice(0,-1);drawBuf();return;}
     buf+=k;drawBuf();if(buf.length===3){const c=buf;buf='';route(c);strips();who();}}
@@ -1258,7 +1283,7 @@ function towerRun(deck,dk){
     else if(e.key==='Escape'||(e.key===' '&&initials===null)){e.preventDefault();togglePause();}};
   document.addEventListener('keydown',onKey);
   function togglePause(){if(over)return;paused=!paused;
-    if(paused){showOvl('PAUSED','Planes are holding.',`<div class="row"><button class="crt-btn primary" id="res">RESUME</button><button class="crt-btn" id="quit">QUIT</button></div>`);$('#res').onclick=togglePause;$('#quit').onclick=()=>go(tower);}
+    if(paused){showOvl('PAUSED','Planes are holding.',`<div class="row"><button class="crt-btn primary" id="res">RESUME</button><button class="crt-btn" id="quit">QUIT</button></div>`);$('#res').onclick=togglePause;$('#quit').onclick=()=>{if(score>0){paused=false;ovl.hidden=true;gameOver();}else go(tower);};}
     else{ovl.hidden=true;if(phase==='intro')showOvl(`SHIFT ${shift}`,'');last=performance.now();}}
   $('#pz').onclick=togglePause;
   const onVis=()=>{if(document.hidden&&!paused&&!over)togglePause();};document.addEventListener('visibilitychange',onVis);
@@ -1267,7 +1292,7 @@ function towerRun(deck,dk){
   function gameOver(){over=true;phase='over';planes=[];sel=null;endXP=Math.round(score/40);addXP(endXP);const L=S.ths[dk];const q=score>0&&(L.length<10||score>L[L.length-1].s);
     showOvl('SHIFT OVER',`Score ${score} · ${landed} planes landed · reached shift ${shift}`);$('#strips').innerHTML='';const u=bridge.user&&bridge.user();if(q&&u){initBuf=u.slice(0,16);saveInitials();}else renderEnd(q,-1);}
   function renderEnd(entering,hlIdx){const e=$('#endP');e.hidden=false;
-    if(entering){initials='';initBuf='';drawBuf();$('#kb').hidden=false;$('#who').textContent='Enter initials';
+    if(entering){initials='';initBuf='';initAt=performance.now()+1500;drawBuf();$('#kb').hidden=false;$('#who').textContent='Enter initials';
       e.innerHTML=`<h2 style="font-size:1.3rem">NEW HIGH SCORE</h2><p>Type 3-letter initials for this device's list. You can post to the world leaderboard right after.</p><div class="row"><button class="crt-btn" id="skipI">SKIP</button></div>`;
       $('#skipI').onclick=()=>{initials=null;renderEnd(false,-1);};return;}
     initials=null;$('#kb').hidden=true;root.querySelector('.crt-row').hidden=true;$('#radio').hidden=true;
@@ -1279,14 +1304,14 @@ function towerRun(deck,dk){
       <div class="row"><button class="crt-btn primary" id="again" style="flex:2">NEW SHIFT</button><button class="crt-btn" id="setup">SETTINGS</button></div>
       ${bridge.online?'<button class="crt-btn" id="wlb">WORLD LEADERBOARD</button>':''}
       ${miss?`<button class="crt-btn" id="drill">PRACTICE THOSE CITIES</button>`:''}`;
-    $('#again').onclick=()=>{sfx('wave');go(towerRun,deck,dk);};$('#setup').onclick=()=>go(tower);
+    $('#again').onclick=()=>{sfx('wave');go(towerRun,R0,dk);};$('#setup').onclick=()=>go(tower);
     const d=$('#drill');if(d)d.onclick=()=>go(recall,{list:groupQueue([...lostCodes])});
     const wl=$('#wlb');if(wl)wl.onclick=()=>bridge.openLeaderboard('tower',dk);
     e.scrollIntoView({block:'nearest'});report();}
-  function saveInitials(){const n=initBuf;initials=null;const L=S.ths[dk];const entry={n,s:score,w:shift,m:deck.name,d:today()};
+  function saveInitials(){const n=initBuf;initials=null;const L=S.ths[dk];const entry={n,s:score,w:shift,m:R0.name,d:today()};
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.ths[dk]=L.slice(0,10);save();renderEnd(false,S.ths[dk].indexOf(entry));}
   if(bridge.debug)window.__TC={planes:()=>planes.map(p=>({id:p.id,call:p.call,need:p.need.a.code,leg:p.leg,state:p.state,fuel:Math.round(p.fuel),hl:p.hl,target:p.target?.a.code||null,sel:p===sel})),
-    st:()=>({shift,safety,score,phase,over,landed,legs,wrongs,emerg,toSpawn}),select:id=>{const p=planes.find(x=>x.id===id);if(p){sel=p;who();}},initials:()=>initials};
+    st:()=>({shift,safety,score,phase,over,landed,legs,wrongs,emerg,toSpawn,sector:deck.name,ports:ports.length}),select:id=>{const p=planes.find(x=>x.id===id);if(p){sel=p;who();}},initials:()=>initials};
   cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(bufT);};
   hud();startShift();strips();raf=requestAnimationFrame(t=>{last=t;frame(t);});if(LIVE)liveFetch('tower/'+dk,true).then(()=>{if(!over)hud();});
 }
