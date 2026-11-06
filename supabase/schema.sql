@@ -1,4 +1,4 @@
--- Wyoming Airport Codes · world leaderboard
+-- Airport Code Trainer · world leaderboard (tables are prefixed act_ so they never clash with other apps in the same project)
 -- Paste this whole file into Supabase → SQL Editor → New query → Run.
 -- Safe to run again: it replaces the functions and keeps your data.
 --
@@ -13,7 +13,7 @@
 
 create extension if not exists pgcrypto with schema extensions;
 
-create table if not exists public.players (
+create table if not exists public.act_players (
   id          uuid primary key default gen_random_uuid(),
   name        text not null check (name ~ '^[A-Za-z0-9_]{3,16}$'),
   name_key    text generated always as (lower(name)) stored unique,
@@ -22,8 +22,8 @@ create table if not exists public.players (
   last_submit timestamptz
 );
 
-create table if not exists public.scores (
-  player_id  uuid not null references public.players(id) on delete cascade,
+create table if not exists public.act_scores (
+  player_id  uuid not null references public.act_players(id) on delete cascade,
   game       text not null check (game in ('defender','tower')),
   level      text not null,
   score      integer not null check (score between 1 and 50000000),
@@ -32,11 +32,11 @@ create table if not exists public.scores (
   updated_at timestamptz not null default now(),
   primary key (player_id, game, level)
 );
-create index if not exists scores_board on public.scores (game, level, score desc);
+create index if not exists act_scores_board on public.act_scores (game, level, score desc);
 
-create table if not exists public.notices (
+create table if not exists public.act_notices (
   id          bigint generated always as identity primary key,
-  player_id   uuid not null references public.players(id) on delete cascade,
+  player_id   uuid not null references public.act_players(id) on delete cascade,
   by_name     text not null,
   game        text not null,
   level       text not null,
@@ -47,19 +47,19 @@ create table if not exists public.notices (
   seen        boolean not null default false,
   created_at  timestamptz not null default now()
 );
-create index if not exists notices_player on public.notices (player_id, seen);
+create index if not exists act_notices_player on public.act_notices (player_id, seen);
 
-alter table public.players enable row level security;
-alter table public.scores  enable row level security;
-alter table public.notices enable row level security;
-revoke all on public.players, public.scores, public.notices from anon, authenticated;
+alter table public.act_players enable row level security;
+alter table public.act_scores  enable row level security;
+alter table public.act_notices enable row level security;
+revoke all on public.act_players, public.act_scores, public.act_notices from anon, authenticated;
 
 -- internal: check a name + account code, return the player id
 create or replace function public._verify(p_name text, p_code text)
 returns uuid language plpgsql security definer set search_path = public, extensions as $$
 declare pid uuid;
 begin
-  select id into pid from players
+  select id into pid from act_players
    where name_key = lower(p_name)
      and code_hash = encode(digest(upper(regexp_replace(coalesce(p_code,''), '[^A-Za-z0-9]', '', 'g')), 'sha256'), 'hex');
   if pid is null then raise exception 'bad_login'; end if;
@@ -77,9 +77,9 @@ declare
   i int;
 begin
   if p_name is null or p_name !~ '^[A-Za-z0-9_]{3,16}$' then raise exception 'bad_name'; end if;
-  if exists (select 1 from players where name_key = lower(p_name)) then raise exception 'name_taken'; end if;
+  if exists (select 1 from act_players where name_key = lower(p_name)) then raise exception 'name_taken'; end if;
   for i in 0..11 loop c := c || substr(alphabet, (get_byte(b, i) % 32) + 1, 1); end loop;
-  insert into players (name, code_hash) values (p_name, encode(digest(c, 'sha256'), 'hex'));
+  insert into act_players (name, code_hash) values (p_name, encode(digest(c, 'sha256'), 'hex'));
   return json_build_object('name', p_name, 'code', c);
 exception when unique_violation then raise exception 'name_taken';
 end $$;
@@ -90,7 +90,7 @@ returns json language plpgsql security definer set search_path = public, extensi
 declare pid uuid; n text;
 begin
   pid := _verify(p_name, p_code);
-  select name into n from players where id = pid;
+  select name into n from act_players where id = pid;
   return json_build_object('name', n);
 end $$;
 
@@ -109,13 +109,13 @@ begin
     raise exception 'bad_score';
   end if;
 
-  select name, last_submit into pname, prev_submit from players where id = pid for update;
+  select name, last_submit into pname, prev_submit from act_players where id = pid for update;
   if prev_submit is not null and prev_submit > now() - interval '3 seconds' then raise exception 'slow_down'; end if;
-  update players set last_submit = now() where id = pid;
+  update act_players set last_submit = now() where id = pid;
 
-  select s.score into old_best from scores s where s.player_id = pid and s.game = p_game and s.level = p_level;
+  select s.score into old_best from act_scores s where s.player_id = pid and s.game = p_game and s.level = p_level;
   if old_best is not null and p_score <= old_best then
-    select count(*) + 1 into my_rank from scores s where s.game = p_game and s.level = p_level and s.score > old_best;
+    select count(*) + 1 into my_rank from act_scores s where s.game = p_game and s.level = p_level and s.score > old_best;
     return json_build_object('improved', false, 'best', old_best, 'rank', my_rank);
   end if;
 
@@ -123,27 +123,27 @@ begin
   for r in
     with top as (
       select s.player_id, s.score, rank() over (order by s.score desc) as rk
-        from scores s where s.game = p_game and s.level = p_level and s.player_id <> pid)
+        from act_scores s where s.game = p_game and s.level = p_level and s.player_id <> pid)
     select t.player_id, t.score from top t
      where t.rk <= 10 and t.score < p_score and t.score >= coalesce(old_best, 0)
   loop
-    insert into notices (player_id, by_name, game, level, their_score, new_score)
+    insert into act_notices (player_id, by_name, game, level, their_score, new_score)
     values (r.player_id, pname, p_game, p_level, r.score, p_score);
   end loop;
 
-  insert into scores (player_id, game, level, score, wave, map, updated_at)
+  insert into act_scores (player_id, game, level, score, wave, map, updated_at)
   values (pid, p_game, p_level, p_score, p_wave, left(coalesce(nullif(p_map, ''), 'Wyoming'), 40), now())
   on conflict (player_id, game, level)
   do update set score = excluded.score, wave = excluded.wave, map = excluded.map, updated_at = now();
 
-  update notices n
+  update act_notices n
      set new_rank = q.rk, dropped_off = q.rk > 10
-    from (select n2.id, (select count(*) + 1 from scores s
+    from (select n2.id, (select count(*) + 1 from act_scores s
                           where s.game = n2.game and s.level = n2.level and s.score > n2.their_score) as rk
-            from notices n2 where n2.new_rank is null and n2.game = p_game and n2.level = p_level) q
+            from act_notices n2 where n2.new_rank is null and n2.game = p_game and n2.level = p_level) q
    where n.id = q.id;
 
-  select count(*) + 1 into my_rank from scores s where s.game = p_game and s.level = p_level and s.score > p_score;
+  select count(*) + 1 into my_rank from act_scores s where s.game = p_game and s.level = p_level and s.score > p_score;
   return json_build_object('improved', true, 'best', p_score, 'rank', my_rank, 'previous', old_best);
 end $$;
 
@@ -152,13 +152,13 @@ create or replace function public.get_leaderboard(p_game text, p_level text, p_l
 returns table (rank bigint, name text, score integer, wave integer, map text, updated_at timestamptz)
 language sql stable security definer set search_path = public as $$
   select rank() over (order by s.score desc, s.updated_at asc), p.name, s.score, s.wave, s.map, s.updated_at
-    from scores s join players p on p.id = s.player_id
+    from act_scores s join act_players p on p.id = s.player_id
    where s.game = p_game and s.level = p_level
    order by s.score desc, s.updated_at asc
    limit least(greatest(coalesce(p_limit, 25), 1), 100);
 $$;
 
--- unseen "someone beat you" notices
+-- unseen "someone beat you" act_notices
 create or replace function public.my_notices(p_name text, p_code text)
 returns table (id bigint, by_name text, game text, level text, their_score integer, new_score integer,
                new_rank integer, dropped_off boolean, created_at timestamptz)
@@ -169,7 +169,7 @@ begin
   pid := _verify(p_name, p_code);
   return query
     select n.id, n.by_name, n.game, n.level, n.their_score, n.new_score, n.new_rank, n.dropped_off, n.created_at
-      from notices n where n.player_id = pid and not n.seen
+      from act_notices n where n.player_id = pid and not n.seen
      order by n.created_at desc limit 20;
 end $$;
 
@@ -178,7 +178,7 @@ returns void language plpgsql security definer set search_path = public, extensi
 declare pid uuid;
 begin
   pid := _verify(p_name, p_code);
-  update notices set seen = true where player_id = pid and not seen;
+  update act_notices set seen = true where player_id = pid and not seen;
 end $$;
 
 -- this player's bests with their current rank
@@ -191,8 +191,8 @@ begin
   pid := _verify(p_name, p_code);
   return query
     select s.game, s.level, s.score, s.wave,
-           (select count(*) + 1 from scores t where t.game = s.game and t.level = s.level and t.score > s.score)
-      from scores s where s.player_id = pid order by s.game, s.level;
+           (select count(*) + 1 from act_scores t where t.game = s.game and t.level = s.level and t.score > s.score)
+      from act_scores s where s.player_id = pid order by s.game, s.level;
 end $$;
 
 grant execute on function public.claim_name(text)                                         to anon, authenticated;

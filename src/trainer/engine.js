@@ -36,7 +36,7 @@ function merge(o){const b=blank();if(!o||typeof o!=='object')return b;
   if(o.hs)for(const k of ['cadet','pilot','ace','doomsday'])if(Array.isArray(o.hs[k]))b.hs[k]=o.hs[k].slice(0,10);
   if(o.ths)for(const k of ['trainee','controller','chief'])if(Array.isArray(o.ths[k]))b.ths[k]=o.ths[k].slice(0,10);
   if(['trainee','controller','chief'].includes(o.tdiff))b.tdiff=o.tdiff;
-  b.mute=!!o.mute;if(['cadet','pilot','ace'].includes(o.diff))b.diff=o.diff;b.t=+o.t||0;return b;}
+  b.mute=!!o.mute;if(['cadet','pilot','ace','doomsday'].includes(o.diff))b.diff=o.diff;b.ltab=[0,1,2].includes(o.ltab)?o.ltab:0;b.t=+o.t||0;return b;}
 let S=(()=>{try{const r=localStorage.getItem(KEY)||localStorage.getItem(OLDKEY);if(r)return merge(JSON.parse(r));}catch(e){}return blank();})();
 let remote=null,syncText='Progress saves in this browser',saveTimer=null;
 function save(){S.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}clearTimeout(saveTimer);saveTimer=setTimeout(remoteSave,1200);}
@@ -309,6 +309,45 @@ function mapSVG(deck,o={}){
 /* ================= router ================= */
 const main=$('#main');let cleanup=null,onHome=false;
 function go(fn,...args){if(cleanup){cleanup();cleanup=null;}onHome=fn===home;$('#app').classList.remove('wide');window.scrollTo(0,0);fn(...args);}
+/* ================= live world top 5 =================
+   Any element with class "livetop" fills itself from the world board. A new best
+   anywhere pings every open app (Supabase Realtime), and boards re-check every 20 s. */
+const LIVE=bridge.online&&bridge.topScores?{cache:{},prev:{},busy:{}}:null;
+const BOARD_NAMES={defender:{cadet:'Air Defender · Cadet',pilot:'Air Defender · Pilot',ace:'Air Defender · Ace',doomsday:'Doomsday'},tower:{trainee:'Tower · Trainee',controller:'Tower · Controller',chief:'Tower · Chief'}};
+function liveTopHTML(game,level,opts={}){if(!LIVE)return '';
+  return `<section class="livetop${opts.crt?' crtlt':''}" data-lt-game="${game}" data-lt-level="${level}" aria-live="polite">
+    <div class="lt-h"><span class="lt-dot" aria-hidden="true"></span><b>WORLD TOP 5</b><span class="lt-b">${esc(BOARD_NAMES[game]?.[level]||level)}</span><button class="lt-all" data-lt-open type="button">See all</button></div>
+    <ol class="lt-list"><li class="lt-msg">Loading the world board…</li></ol></section>`;}
+async function liveFetch(k,force){if(!LIVE)return null;const [g,l]=k.split('/'),c=LIVE.cache[k];
+  if(!force&&c&&Date.now()-c.t<15000)return c;if(LIVE.busy[k])return LIVE.busy[k];
+  LIVE.busy[k]=(async()=>{try{const d=await bridge.topScores(g,l,5);LIVE.cache[k]={t:Date.now(),d:d||[]};}catch(e){LIVE.cache[k]={t:Date.now(),d:LIVE.cache[k]?.d||null,err:true};}delete LIVE.busy[k];return LIVE.cache[k];})();
+  return LIVE.busy[k];}
+function liveRender(el,c,k){const ol=el.querySelector('.lt-list');if(!ol)return;if(c)el.dataset.ltDone='1';const me=(bridge.user&&bridge.user()||'').toLowerCase();
+  if(!c||!c.d){ol.innerHTML=`<li class="lt-msg">${c&&c.err?'Can\'t reach the world board right now.':'Loading the world board…'}</li>`;return;}
+  if(!c.d.length){ol.innerHTML='<li class="lt-msg">No scores yet. Be the first on the board.</li>';return;}
+  const before=LIVE.prev[k]||{};const now={};
+  ol.innerHTML=c.d.map(r=>{const id=r.name.toLowerCase();now[id]=r.score;const fresh=before[id]!==undefined&&before[id]!==r.score||(Object.keys(before).length&&before[id]===undefined);
+    return `<li class="${id===me?'me ':''}${fresh?'fresh':''}"><span class="rk">#${r.rank}</span><span class="nm">${esc(r.name)}${id===me?' <i>YOU</i>':''}</span><span class="mp">${esc(r.map||'')}</span><span class="sc">${Number(r.score).toLocaleString('en-US')}</span></li>`;}).join('');
+  LIVE.prev[k]=now;}
+async function liveRefresh(force,only){if(!LIVE)return;const els=[...root.querySelectorAll('.livetop')];
+  const keys=[...new Set(els.map(el=>el.dataset.ltGame+'/'+el.dataset.ltLevel))].filter(k=>!only||k===only);
+  for(const k of keys){const c=await liveFetch(k,force);for(const el of root.querySelectorAll('.livetop')){if(el.dataset.ltGame+'/'+el.dataset.ltLevel===k)liveRender(el,c,k);}}}
+let liveTimer=0,liveUnsub=null,liveMO=null;
+if(LIVE){
+  root.addEventListener('click',e=>{const b=e.target.closest('[data-lt-open]');if(!b)return;const el=b.closest('.livetop');bridge.openLeaderboard(el.dataset.ltGame,el.dataset.ltLevel);});
+  // a board that just appeared (new screen) fills itself; filled boards are left to the timer and the live ping
+  let moQ=0;liveMO=new MutationObserver(()=>{if(moQ)return;moQ=requestAnimationFrame(()=>{moQ=0;if(root.querySelector('.livetop:not([data-lt-done])'))liveRefresh(false);});});
+  liveMO.observe(root,{childList:true,subtree:true});
+  liveTimer=setInterval(()=>{if(document.visibilityState==='visible'&&root.querySelector('.livetop'))liveRefresh(true);},20000);
+  if(bridge.onBoardChange)liveUnsub=bridge.onBoardChange(p=>{const k=(p.game||'')+'/'+(p.level||'');delete LIVE.cache[k];liveRefresh(true,k);});
+}
+/* in-game: who you're chasing on the world board */
+function raceLine(game,level,score){if(!LIVE)return '';const c=LIVE.cache[game+'/'+level];if(!c||!c.d)return '';const d=c.d;
+  if(!d.length)return `WORLD BOARD EMPTY · ANY SCORE TAKES #1`;
+  const me=(bridge.user&&bridge.user()||'').toLowerCase(),others=d.filter(r=>r.name.toLowerCase()!==me);
+  const ahead=others.filter(r=>r.score>score),pos=ahead.length+1,fmt=n=>Number(n).toLocaleString('en-US');
+  if(pos===1)return `WORLD #1 PACE · ${others[0]?`AHEAD OF ${esc(others[0].name)} (${fmt(others[0].score)})`:'NOBODY CLOSE'}`;
+  const tgt=ahead[ahead.length-1];return pos<=5?`WORLD #${pos} PACE · NEXT: ${esc(tgt.name)} ${fmt(tgt.score)} (+${fmt(tgt.score-score)})`:`TOP 5 NEEDS ${fmt(d[Math.min(4,d.length-1)].score)} · #1 ${esc(d[0].name)} ${fmt(d[0].score)}`;}
 function topbar(t,r=''){return `<div class="bar"><button class="back" data-home>‹ Home</button><span class="bar-t">${t}</span><span class="bar-r" id="barR">${r}</span></div>`;}
 main.addEventListener('click',e=>{if(e.target.closest('[data-home]'))go(home);const m=e.target.closest('.mapbox');if(m&&!e.target.closest('button,a,input'))m.classList.toggle('zoomed');});
 const mcKey=e=>{if(/^[1-4]$/.test(e.key)&&document.activeElement.tagName!=='INPUT'){const b=document.querySelectorAll('.opt')[+e.key-1];if(b)b.click();}};document.addEventListener('keydown',mcKey);
@@ -359,6 +398,8 @@ function home(){
   </section>
   <button class="feature" id="feat"><span class="t">AIR DEFENDER</span><span class="d">Bombs are falling on the map. Type a city's code to shoot them down.</span><span class="b">${topHS?`HIGH SCORE<br>${topHS}`:'NEW GAME'}</span></button>
   ${set.length>=3?`<button class="feature doom" id="feat3"><span class="t">DOOMSDAY</span><span class="d">Real nukes. A city that gets hit is gone for good, and fewer cities means more warheads split. Hold out until the last city falls.</span><span class="b">${S.hs.doomsday[0]?`BEST<br>${S.hs.doomsday[0].s}`:'☢ ARMED'}</span></button>`:''}
+  ${LIVE?`<section class="livehome"><div class="lt-tabs" role="tablist">${[['defender','doomsday','Doomsday'],['defender',DIFFS[S.diff]&&!DIFFS[S.diff].doom?S.diff:'cadet','Air Defender'],['tower',S.tdiff||'trainee','Tower']].map(([g,l,t],i)=>`<button role="tab" class="lt-tab${i===(S.ltab||0)?' on':''}" data-ltab="${i}" data-g="${g}" data-l="${l}">${t}</button>`).join('')}</div>
+    ${(()=>{const T=[['defender','doomsday'],['defender',DIFFS[S.diff]&&!DIFFS[S.diff].doom?S.diff:'cadet'],['tower',S.tdiff||'trainee']][S.ltab||0];return liveTopHTML(T[0],T[1]);})()}</section>`:''}
   <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">You run the control tower. Pilots don't know the codes: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<br>${topTS}`:'NEW GAME'}</span></button>
   <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="k">${m.tag}</span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
   <section class="panel board">
@@ -376,7 +417,9 @@ function home(){
   </details>
   <div class="foot"><span id="sync">${syncText}</span><button class="link" id="reset">Reset progress</button></div>
   <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div>`;
-  $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);const f3=$('#feat3');if(f3)f3.onclick=()=>{S.diff='doomsday';save();go(VIEWS.defender);};
+  $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);
+  main.querySelectorAll('[data-ltab]').forEach(b=>b.onclick=()=>{S.ltab=+b.dataset.ltab;save();main.querySelectorAll('[data-ltab]').forEach(x=>x.classList.toggle('on',x===b));
+    const el=main.querySelector('.livehome .livetop');el.outerHTML=liveTopHTML(b.dataset.g,b.dataset.l);liveRefresh(false);});const f3=$('#feat3');if(f3)f3.onclick=()=>{S.diff='doomsday';save();go(VIEWS.defender);};
   main.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>go(VIEWS[b.dataset.mode]));
   main.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>go(cheat,b.dataset.card));
   $('#reset').onclick=()=>{$('#rc').hidden=false;$('#rc').scrollIntoView({block:'center'});};
@@ -723,6 +766,7 @@ function defender(){
         <p class="regnote">${sec==='all'?'Each wave hits a different region, zoomed in so every city has room. A mini map shows where the attack is.':'Practice one region on its own.'}</p>`:''}
       <div class="choices">${Object.entries(DIFFS).map(([k,d])=>`<button class="choice${d.doom?' doom':''}" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.doom?'☢ ':''}${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div>
       <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">LAUNCH</button><button class="crt-btn ${S.mute?'':'on'}" id="snd">SOUND ${S.mute?'OFF':'ON'}</button></div>
+      ${liveTopHTML('defender',diff,{crt:true})}
       ${bridge.online?`<button class="crt-btn" id="wlb">WORLD LEADERBOARD · ${DIFFS[diff].name.toUpperCase()}</button>`:''}
       <h2 style="font-size:1.2rem">THIS DEVICE · ${DIFFS[diff].name.toUpperCase()}</h2>${hsTable(diff)}
       <p>${DIFFS[diff].doom?'Doomsday works on any map. On the 50 Busiest the attack moves region to region until every one of the 50 cities is gone.':'New to the codes? Start on Cadet. Every city you lose shows its code, and you can practice those right after.'}</p>
@@ -752,7 +796,7 @@ function defenderRun(root,diffKey){
   const idleMsg=()=>SECS?`${deck.name}: type the code of the blinking city`:'Type the code of the blinking city';
   setWorld(deck);
   main.innerHTML=topbar('Air Defender',DIFFS[diffKey].name)+`<div class="defender"><div class="crt${DOOM?' doomcrt':''}" id="crt">
-    <div class="hud"><span>SCORE <b id="dScore">0</b></span><span>WAVE <b id="dWave">1</b></span><span>COMBO <b id="dCombo">×1</b></span><span class="sh" id="dSh" aria-label="Shields"></span></div>
+    <div class="hud"><span>SCORE <b id="dScore">0</b></span><span>WAVE <b id="dWave">1</b></span><span>COMBO <b id="dCombo">×1</b></span><span class="sh" id="dSh" aria-label="Shields"></span></div>${LIVE?'<div class="race" id="race" aria-live="off"></div>':''}
     <div class="crt-screen" id="scr"><canvas id="cv" aria-label="Air Defender map"></canvas><div class="flashfx" id="flx" aria-hidden="true"></div><div class="ovl" id="ovl" hidden></div></div>
     <div class="crt-row"><div class="buf" id="buf" aria-label="Typed code"><span></span><span></span><span></span></div><div class="msg" id="msg" aria-live="polite">Type the code of the blinking city</div><button class="crt-btn" id="pz" aria-label="Pause">II</button></div>
     <div class="kb auto" id="kb">${['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].map((r,ri)=>`<div class="r">${[...r].map(ch=>`<button class="key" data-k="${ch}">${ch}</button>`).join('')}${ri===2?'<button class="key wide" data-k="DEL" aria-label="Delete">DEL</button>':''}</div>`).join('')}</div>
@@ -777,7 +821,7 @@ function defenderRun(root,diffKey){
   let reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'defender',level:diffKey,levelName:DIFFS[diffKey].name,score,wave,map:root.name});}
   function showOvl(big,sub,btns=''){ovl.innerHTML=`<div class="big">${big}</div>${sub?`<div class="sub">${sub}</div>`:''}${btns}`;ovl.hidden=false;}
   const mult=()=>1+Math.min(2,Math.floor(combo/4)*.5);
-  function hud(){$('#dScore').textContent=score;$('#dWave').textContent=wave;$('#dCombo').textContent='×'+String(mult());
+  function hud(){$('#dScore').textContent=score;$('#dWave').textContent=wave;$('#dCombo').textContent='×'+String(mult());{const r=$('#race');if(r)r.innerHTML=raceLine('defender',diffKey,score);}
     if(DOOM){const n=alive().length;$('#dSh').innerHTML=`CITIES <b>${n}/${NC}</b> <span class="defcon d${defcon}">DEFCON ${defcon}</span>`;$('#dSh').setAttribute('aria-label',`${n} of ${NC} cities left, DEFCON ${defcon}`);
       $('#crt').classList.toggle('redalert',defcon<=2);return;}
     $('#dSh').innerHTML='SHIELDS '+[0,1,2,3,4].map(k=>`<i class="${k<shields?'on':''}"></i>`).join('');$('#dSh').setAttribute('aria-label',`Shields: ${Math.max(0,shields)} of 5`);}
@@ -971,6 +1015,7 @@ function defenderRun(root,diffKey){
     const miss=[...missedCodes].map(c=>`<span class="chip">${c} · ${esc(BY[c].place)}</span>`).join('');
     e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>WAVE <b>${wave}</b></span><span>STOPPED <b>${kills}</b></span><span>NO-HINT KILLS <b>${clean}</b></span><span>ACCURACY <b>${acc}</b></span><span>SPLITS <b>${splits}</b></span>${DOOM?`<span>CITIES LOST <b>${NC-alive().length}/${NC}</b></span>`:''}<span>XP <b>+${endXP}</b></span></div>
       ${miss?`<p>Cities you lost, with their codes. Lock these in:</p><div class="chips">${miss}</div>`:'<p>You never lost a city. Try a harder level.</p>'}
+      ${liveTopHTML('defender',diffKey,{crt:true})}
       <h2 style="font-size:1.2rem">HIGH SCORES · ${DIFFS[diffKey].name.toUpperCase()}</h2>${hsTable(diffKey,hlIdx)}
       <div class="row"><button class="crt-btn primary" id="again" style="flex:2">PLAY AGAIN</button><button class="crt-btn" id="setup">SETTINGS</button></div>
       ${bridge.online?'<button class="crt-btn" id="wlb">WORLD LEADERBOARD</button>':''}
@@ -983,7 +1028,7 @@ function defenderRun(root,diffKey){
     L.push(entry);L.sort((a,b)=>b.s-a.s);S.hs[diffKey]=L.slice(0,10);save();renderEnd(false,S.hs[diffKey].indexOf(entry));}
   if(bridge.debug)window.__AD={bombs:()=>bombs.map(b=>({code:b.c.a.code,prog:+b.prog.toFixed(2),hl:b.hl,locked:b.locked,child:b.child})),st:()=>({wave,shields,score,phase,over,splits,kills,clean,toSpawn,alive:alive().length,defcon,sector:deck.name,secAlive:secAlive().length}),initials:()=>initials};
   cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(msgT);clearTimeout(bufT);};
-  hud();startWave();raf=requestAnimationFrame(t=>{last=t;frame(t);});
+  hud();startWave();raf=requestAnimationFrame(t=>{last=t;frame(t);});if(LIVE)liveFetch('defender/'+diffKey,true).then(()=>{if(!over)hud();});
 }
 /* ================= TOWER CONTROL ================= */
 /* hints: seconds a pilot has been waiting before clue / 1 letter / 2 letters / full code appear */
@@ -1016,6 +1061,7 @@ function tower(){
       ${decks.length>1?`<div class="row">${decks.map(d=>`<button class="crt-btn ${d.id===deckId?'on':''}" data-deck="${d.id}">${esc(d.name.toUpperCase())}</button>`).join('')}</div>`:''}
       <div class="choices">${Object.entries(TDIFFS).map(([k,d])=>`<button class="choice" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div>
       <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">START SHIFT</button><button class="crt-btn ${S.mute?'':'on'}" id="snd">SOUND ${S.mute?'OFF':'ON'}</button></div>
+      ${liveTopHTML('tower',diff,{crt:true})}
       ${bridge.online?`<button class="crt-btn" id="wlb">WORLD LEADERBOARD · ${TDIFFS[diff].name.toUpperCase()}</button>`:''}
       <h2 style="font-size:1.2rem">THIS DEVICE · ${TDIFFS[diff].name.toUpperCase()}</h2>${hsTableFor(S.ths[diff],TDIFFS[diff].name)}
     </div></div>`;
@@ -1033,7 +1079,7 @@ function towerRun(deck,dk){
   const ports=deck.airports.filter(a=>s.has(a.code)).map(a=>({a,x:a.x,y:a.y,reveal:0,rcol:''}));
   setWorld(deck);
   main.innerHTML=topbar('Tower Control',TDIFFS[dk].name)+`<div class="defender"><div class="crt radar" id="tc">
-    <div class="hud"><span>SCORE <b id="tScore">0</b></span><span>SHIFT <b id="tShift">1</b></span><span>LANDED <b id="tLand">0</b></span><span class="sh" id="tSafe"></span></div>
+    <div class="hud"><span>SCORE <b id="tScore">0</b></span><span>SHIFT <b id="tShift">1</b></span><span>LANDED <b id="tLand">0</b></span><span class="sh" id="tSafe"></span></div>${LIVE?'<div class="race" id="race" aria-live="off"></div>':''}
     <div class="crt-screen"><canvas id="cv" aria-label="Radar map"></canvas><div class="ovl" id="ovl" hidden></div></div>
     <div class="radio" id="radio" aria-live="polite">Radio is quiet. Traffic incoming.</div>
     <div class="crt-row"><div class="buf" id="buf" aria-label="Typed code"><span></span><span></span><span></span></div><div class="msg" id="who">No plane selected</div><button class="crt-btn" id="pz" aria-label="Pause">II</button></div>
@@ -1054,7 +1100,7 @@ function towerRun(deck,dk){
   let reported=false;function report(){if(reported||score<=0)return;reported=true;bridge.onGameOver&&bridge.onGameOver({game:'tower',level:dk,levelName:TDIFFS[dk].name,score,wave:shift,map:deck.name});}
   const mult=()=>1+Math.min(2,Math.floor(combo/3)*.5);
   function showOvl(big,sub,btns=''){ovl.innerHTML=`<div class="big">${big}</div>${sub?`<div class="sub">${sub}</div>`:''}${btns}`;ovl.hidden=false;}
-  function hud(){$('#tScore').textContent=score;$('#tShift').textContent=shift;$('#tLand').textContent=landed;
+  function hud(){$('#tScore').textContent=score;$('#tShift').textContent=shift;$('#tLand').textContent=landed;{const r=$('#race');if(r)r.innerHTML=raceLine('tower',dk,score);}
     $('#tSafe').innerHTML='SAFETY '+[0,1,2,3,4].map(k=>`<i class="${k<safety?'on':''}"></i>`).join('');$('#tSafe').setAttribute('aria-label',`Safety: ${Math.max(0,safety)} of 5`);}
   function radio(t,cls=''){const r=$('#radio');r.textContent=t;r.className='radio'+(cls?' '+cls:'');}
   let bufT;function drawBuf(state){const b=$('#buf'),src=initials!==null?initBuf:buf;b.querySelectorAll('span').forEach((sp,k)=>sp.textContent=src[k]||'');b.className='buf'+(state?' '+state:'');
@@ -1228,6 +1274,7 @@ function towerRun(deck,dk){
     const miss=[...lostCodes].map(c=>`<span class="chip">${c} · ${esc(BY[c].place)}</span>`).join('');
     e.innerHTML=`<div class="hud"><span>SCORE <b>${score}</b></span><span>SHIFT <b>${shift}</b></span><span>LANDED <b>${landed}</b></span><span>LEGS FLOWN <b>${legs}</b></span><span>NO-HINT ROUTES <b>${clean}</b></span><span>WRONG CODES <b>${wrongs}</b></span><span>XP <b>+${endXP}</b></span></div>
       ${miss?`<p>Cities pilots needed that went wrong. Lock these in:</p><div class="chips">${miss}</div>`:'<p>Every plane made it. Try a harder level.</p>'}
+      ${liveTopHTML('tower',dk,{crt:true})}
       <h2 style="font-size:1.2rem">HIGH SCORES · ${TDIFFS[dk].name.toUpperCase()}</h2>${hsTableFor(S.ths[dk],TDIFFS[dk].name,hlIdx)}
       <div class="row"><button class="crt-btn primary" id="again" style="flex:2">NEW SHIFT</button><button class="crt-btn" id="setup">SETTINGS</button></div>
       ${bridge.online?'<button class="crt-btn" id="wlb">WORLD LEADERBOARD</button>':''}
@@ -1241,12 +1288,12 @@ function towerRun(deck,dk){
   if(bridge.debug)window.__TC={planes:()=>planes.map(p=>({id:p.id,call:p.call,need:p.need.a.code,leg:p.leg,state:p.state,fuel:Math.round(p.fuel),hl:p.hl,target:p.target?.a.code||null,sel:p===sel})),
     st:()=>({shift,safety,score,phase,over,landed,legs,wrongs,emerg,toSpawn}),select:id=>{const p=planes.find(x=>x.id===id);if(p){sel=p;who();}},initials:()=>initials};
   cleanup=()=>{cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener('keydown',onKey);document.removeEventListener('visibilitychange',onVis);clearTimeout(bufT);};
-  hud();startShift();strips();raf=requestAnimationFrame(t=>{last=t;frame(t);});
+  hud();startShift();strips();raf=requestAnimationFrame(t=>{last=t;frame(t);});if(LIVE)liveFetch('tower/'+dk,true).then(()=>{if(!over)hud();});
 }
 
 function getFamily(k){return k==='display'?'"Big Shoulders Display", Impact, sans-serif':'"IBM Plex Mono", ui-monospace, monospace';}
 
 rebuild();
 go(home);
-return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);document.removeEventListener('keydown',mcKey);root.innerHTML='';};
+return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);clearInterval(liveTimer);if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
 }

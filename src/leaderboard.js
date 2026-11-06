@@ -54,8 +54,8 @@ async function rpc(fn, args) {
 
 export const claimName = (name) => rpc('claim_name', { p_name: name });
 export const signIn = (name, code) => rpc('sign_in', { p_name: name, p_code: cleanCode(code) });
-export const submitScore = (acc, r) =>
-  rpc('submit_score', {
+export const submitScore = async (acc, r) => {
+  const data = await rpc('submit_score', {
     p_name: acc.name,
     p_code: acc.code,
     p_game: r.game,
@@ -64,6 +64,41 @@ export const submitScore = (acc, r) =>
     p_wave: Math.max(1, Math.round(r.wave || 1)),
     p_map: r.map || 'Wyoming',
   });
+  if (data?.improved) announce(r.game, r.level);
+  return data;
+};
+
+// ---- live updates -------------------------------------------------------
+// A new best is announced on a Supabase Realtime broadcast channel, so every
+// open copy of the app refreshes its top 5 within a second. Broadcast needs no
+// table access, so the tables stay locked. Boards also re-check on a timer, so
+// they still stay fresh if Realtime is ever unreachable.
+const listeners = new Set();
+let channel = null;
+function liveChannel() {
+  if (!supabase) return null;
+  if (!channel) {
+    channel = supabase.channel('act-board', { config: { broadcast: { self: true } } });
+    channel.on('broadcast', { event: 'score' }, ({ payload }) => listeners.forEach((fn) => fn(payload || {})));
+    channel.subscribe();
+  }
+  return channel;
+}
+function announce(game, level) {
+  const c = liveChannel();
+  // tell this tab right away too, in case the socket is still connecting
+  listeners.forEach((fn) => fn({ game, level, local: true }));
+  try {
+    c?.send({ type: 'broadcast', event: 'score', payload: { game, level } });
+  } catch {
+    /* the timer refresh covers it */
+  }
+}
+export function onBoardChange(fn) {
+  listeners.add(fn);
+  liveChannel();
+  return () => listeners.delete(fn);
+}
 export const getLeaderboard = (game, level, limit = 25) => rpc('get_leaderboard', { p_game: game, p_level: level, p_limit: limit });
 export const getNotices = (acc) => rpc('my_notices', { p_name: acc.name, p_code: acc.code });
 export const dismissNotices = (acc) => rpc('dismiss_notices', { p_name: acc.name, p_code: acc.code });

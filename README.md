@@ -4,6 +4,7 @@ Study app for airport codes (all 30 course sets, 484 airports, including the **5
 
 - No email, no password. Players pick a name like `cortes` or `mango`.
 - You can play as a guest. When a run ends with a score, you're offered a spot on the world board.
+- A **live world top 5** sits on the home screen and the game screens. When anyone posts a new best, every open copy updates within a second (Supabase Realtime broadcast, with a 20-second refresh as backup). During a game, a chase line shows who you're about to pass.
 - When someone passes your score, you get a notice the next time you open the app, for example: *"cortes, your high score was beaten by mango… You're now #4."*
 
 ## 1. Run it in VS Code
@@ -39,7 +40,7 @@ The account bar at the top will show **Leaderboard** and **Sign in** buttons.
 - Typing a new name claims it. The database makes a random 12-character **account code** and stores only a hash of it. Your browser remembers the name and code, so you're never asked again on that device.
 - Typing a name that's taken asks for its account code. That's what stops someone from posting as you.
 - To use your name on another phone or browser, open **Account → Show my code** on the first device.
-- The tables are locked (row level security, no direct access). The browser can only call the functions in `schema.sql`, which check the name and code before saving anything.
+- The tables are named `act_players`, `act_scores` and `act_notices`, so they never clash with other apps' tables in the same Supabase project. They're locked (row level security, no direct access). The browser can only call the functions in `schema.sql`, which check the name and code before saving anything.
 
 **Limits worth knowing**
 - Scores come from the browser, so a determined cheater could fake one. The database caps scores and rate-limits posts, but it can't replay the game to prove a score. To clean up the board, use **Table Editor → scores** in Supabase.

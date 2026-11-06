@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabase';
-import { boardName, dismissNotices, fmt, getNotices, loadAccount, saveAccount, submitScore } from './leaderboard';
+import { boardName, dismissNotices, fmt, getLeaderboard, getNotices, loadAccount, onBoardChange, saveAccount, submitScore } from './leaderboard';
 import Trainer from './components/Trainer';
 import AccountBar from './components/AccountBar';
 import Notices from './components/Notices';
@@ -71,6 +71,8 @@ export default function App() {
       user: () => accountRef.current?.name ?? null,
       onGameOver: (r) => gameOverRef.current(r),
       openLeaderboard: (game, level) => openBoard(game, level),
+      topScores: (game, level, n = 5) => getLeaderboard(game, level, n),
+      onBoardChange: (fn) => onBoardChange(fn),
       debug: import.meta.env.DEV,
     }),
     [openBoard],
