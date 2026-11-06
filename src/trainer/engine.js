@@ -954,7 +954,7 @@ function defenderRun(root,diffKey){
       const hl=threats.reduce((m,b)=>Math.max(m,b.hl),0);
       const hy=P.y+fs*.45;
       if(c.reveal>0){ctx.globalAlpha=Math.min(1,c.reveal);boxes(c.a.code,3,tx,hy,P.al,fs*.95,COL.red);ctx.globalAlpha=1;}
-      else if(hl===1){const PP=deck.P[c.a.pi]||{x0:4,x1:W-4},t='CLUE: '+c.a.clue.toUpperCase();let fz=fs*.8;ctx.font=`600 ${fz}px ${MONO}`;let cw=ctx.measureText(t).width;
+      else if(hl===1){const PP=deck.P[c.a.pi]||{x0:4,x1:W-4},t='CLUE: '+c.a.clue;let fz=fs*.8;ctx.font=`600 ${fz}px ${MONO}`;let cw=ctx.measureText(t).width;
         if(cw>PP.x1-PP.x0-8){fz*=(PP.x1-PP.x0-8)/cw;ctx.font=`600 ${fz}px ${MONO}`;cw=ctx.measureText(t).width;}
         let cx=Math.min(Math.max(tx,PP.x0+4),PP.x1-4-cw);ctx.textAlign='left';
         ctx.fillStyle=COL.bg;ctx.globalAlpha=.8;ctx.fillRect(cx-3,hy+fs*.05,cw+6,fs*1.15);ctx.globalAlpha=1;ctx.fillStyle=COL.amb;ctx.fillText(t,cx,hy+fs*.9);}

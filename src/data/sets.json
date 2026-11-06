@@ -1569,8 +1569,8 @@
    "st": "SD",
    "lat": 44.3048,
    "lon": -96.8169,
-   "tip": "B-K from BrooKings, then X.",
-   "clue": "BrooKings + X"
+   "tip": "B-K from BrooKings, then X marks the spot.",
+   "clue": "BrooKings + X marks the spot"
   },
   "BLF": {
    "city": "Bluefield/Princeton",
@@ -1729,7 +1729,7 @@
    "lat": 39.1754,
    "lon": -76.6683,
    "tip": "Baltimore/Washington International: B-W-I.",
-   "clue": "Baltimore Washington Intl"
+   "clue": "Baltimore Washington International"
   },
   "BZN": {
    "city": "Bozeman",
@@ -1818,8 +1818,8 @@
    "lat": 41.8586,
    "lon": -87.608,
    "label": "Meigs",
-   "tip": "C-G from ChicaGo, then X. Meigs Field closed in 2003.",
-   "clue": "ChicaGo + X"
+   "tip": "C-G from ChicaGo, then X: Meigs Field is crossed out with an X because it closed in 2003.",
+   "clue": "ChicaGo, crossed out with an X"
   },
   "CHA": {
    "city": "Chattanooga",
@@ -1916,8 +1916,8 @@
    "st": "OH",
    "lat": 39.998,
    "lon": -82.8919,
-   "tip": "C-M from CoLuMbus, then H: “ColuMbus Hub.”",
-   "clue": "ColuMbus Hub"
+   "tip": "C-M from CoLuMbus, then H from oHio.",
+   "clue": "CoLuMbus, oHio"
   },
   "CMI": {
    "city": "Champaign/Urbana",
@@ -2027,7 +2027,7 @@
    "st": "KY",
    "lat": 39.0488,
    "lon": -84.6678,
-   "label": "Covington/Cinci"
+   "label": "Cincinnati (KY)"
   },
   "CVN": {
    "city": "Clovis",
@@ -3748,7 +3748,7 @@
    "lon": -156.4318,
    "label": "Kahului",
    "tip": "Named for pilot Bertram Hogg: h-O-G-G.",
-   "clue": "hOGG (Bertram Hogg)"
+   "clue": "Pilot Bertram Hogg's last name"
   },
   "OGS": {
    "city": "Ogdensburg",
@@ -3990,7 +3990,7 @@
    "lon": -82.6874,
    "label": "Clearwater",
    "tip": "St. Pete-Clearwater is in Pinellas County: P-I from PInellas, easy as PIE.",
-   "clue": "PInellas, easy as PIE"
+   "clue": "Pinellas County + a dessert"
   },
   "PIH": {
    "city": "Pocatello",
@@ -4757,7 +4757,7 @@
    "lat": 35.811,
    "lon": -83.994,
    "tip": "Knoxville's airport is McGhee Tyson: T-Y-S from TYSon.",
-   "clue": "TYSon"
+   "clue": "McGhee Tyson Airport (the second name)"
   },
   "UCA": {
    "city": "Utica",
@@ -4856,8 +4856,8 @@
    "st": "WA",
    "lat": 48.618,
    "lon": -122.953,
-   "tip": "W-S from WestSound, then X.",
-   "clue": "WestSound + X"
+   "tip": "W-S from WestSound, then X: “WestSound eXpress,” like its ferries.",
+   "clue": "WestSound eXpress"
   },
   "WYS": {
    "city": "West Yellowstone",
