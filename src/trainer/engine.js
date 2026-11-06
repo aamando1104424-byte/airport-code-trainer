@@ -467,10 +467,10 @@ function home(){
   </section>
   </div><div class="hside">
   <button class="feature" id="feat"><span class="t">AIR DEFENDER</span><span class="d">Bombs are falling on the map. Type a city's code to shoot them down.</span><span class="b">${topHS?`HIGH SCORE<br>${topHS}`:'NEW GAME'}</span></button>
+  <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">You run the control tower. Pilots don't know the codes: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<br>${topTS}`:'NEW GAME'}</span></button>
   ${challengeHTML()}
   ${LIVE?`<section class="livehome"><div class="lt-tabs" role="tablist">${[['defender',DIFFS[S.diff]?S.diff:'cadet','Air Defender'],['tower',S.tdiff||'trainee','Tower']].map(([g,l,t])=>`<button role="tab" class="lt-tab${g===S.ltab?' on':''}" data-ltab="${g}" data-g="${g}" data-l="${l}">${t}</button>`).join('')}</div>
     ${S.ltab==='tower'?liveTopHTML('tower',S.tdiff||'trainee'):liveTopHTML('defender',DIFFS[S.diff]?S.diff:'cadet')}</section>`:''}
-  <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">You run the control tower. Pilots don't know the codes: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<br>${topTS}`:'NEW GAME'}</span></button>
   </div><div class="hmain2">
   <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="k">${m.tag}</span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
   <section class="panel board">

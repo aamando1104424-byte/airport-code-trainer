@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { THEMES, getTheme, setTheme } from '../themes';
 
 // A small picture of the front page in one color mode: title, clock tile,
-// study column, and the game cards on the right (Air Defender with a skyline, Challenge, Tower).
+// study column, and the game cards on the right (Air Defender with a skyline, Tower, Challenge).
 function MiniPage({ id }) {
   return (
     <div className="tp-page" data-crt-prev={id} aria-hidden="true">
@@ -22,8 +22,8 @@ function MiniPage({ id }) {
               <path className="tp-city" d="M4 22V15h4v-4h3v4h3V9h4v13zM24 22v-6h3v-3h4v3h2v6zM40 22V12h3V8h1v4h3v10zM50 22v-5h6v5z" />
             </svg>
           </div>
-          <div className="tp-feat chal"><b>50 BUSIEST</b><span className="tp-chips"><i /><i /><i /></span></div>
           <div className="tp-feat radar"><b>TOWER</b><span className="tp-ring" /></div>
+          <div className="tp-feat chal"><b>50 BUSIEST</b><span className="tp-chips"><i /><i /><i /></span></div>
         </div>
       </div>
     </div>
