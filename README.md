@@ -1,8 +1,8 @@
 # Airport Code Trainer
 
-Study app for airport codes (all 30 course sets, 484 airports, including the **50 Busiest Airports** split into six regional maps): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** and **Tower Control** (both also playable as the **50 Busiest Challenge**: one region or all 50), local-time clocks for every set, color modes that repaint the whole page, and a **world leaderboard** on Supabase.
+Study app for airport codes (all 30 course sets, 481 airports, including the **50 Busiest Airports** split into six regional maps): Flight School lessons, Recall, Quick Fire, Match, Map Run, Mock Test, **Air Defender** and **Tower Control** (both also playable as the **50 Busiest Challenge**: one region or all 50), local-time clocks for every set, color modes that repaint the whole page, and a **world leaderboard** on Supabase.
 
-Every one of the 484 cities has its own picture in Air Defender, based on what it's known for (the Space Needle, Carhenge, Cheyenne's bucking horse, Bubblegum Alley...). The same facts show up on the cheat sheet, in Flight School and on a City Spotlight card after each game.
+Every one of the 481 cities has its own picture in Air Defender, based on what it's known for (the Space Needle, Carhenge, Cheyenne's bucking horse, Bubblegum Alley...). The same facts show up on the cheat sheet, in Flight School and on a City Spotlight card after each game.
 
 - No email, no password. Players pick a name like `cortes` or `mango`.
 - You can play as a guest. When a run ends with a score, you're offered a spot on the world board.

@@ -960,7 +960,6 @@
       "BMI",
       "MDH",
       "CMI",
-      "CGX",
       "MDW",
       "ORD",
       "DEC",
@@ -968,8 +967,6 @@
       "MLI",
       "PIA",
       "UIN",
-      "ZRF",
-      "ZRK",
       "SPI"
      ]
     },
@@ -1900,17 +1897,6 @@
    "lon": -89.5708,
    "tz": "America/Chicago"
   },
-  "CGX": {
-   "city": "Chicago - Meigs",
-   "place": "Chicago - Meigs, IL",
-   "st": "IL",
-   "lat": 41.8586,
-   "lon": -87.608,
-   "label": "Meigs",
-   "tip": "C-G from ChicaGo, then X: Meigs Field is crossed out with an X because it closed in 2003.",
-   "clue": "ChicaGo, crossed out with an X",
-   "tz": "America/Chicago"
-  },
   "CHA": {
    "city": "Chattanooga",
    "place": "Chattanooga, TN",
@@ -2029,7 +2015,10 @@
    "lat": 40.0398,
    "lon": -88.2762,
    "label": "Champaign",
-   "tz": "America/Chicago"
+   "tz": "America/Chicago",
+   "alts": [
+    "Urbana/Champaign, IL"
+   ]
   },
   "CMX": {
    "city": "Hancock",
@@ -5406,28 +5395,6 @@
    "lat": 32.6509,
    "lon": -114.6094,
    "tz": "America/Phoenix"
-  },
-  "ZRF": {
-   "city": "Rockford - Park & Ride Bus",
-   "place": "Rockford - Park & Ride Bus, IL",
-   "st": "IL",
-   "lat": 42.2711,
-   "lon": -89.094,
-   "label": "Rockford P&R Bus",
-   "tip": "Bus and train stops get Z codes: Z, then R-F from RockFord.",
-   "clue": "Z + RockFord",
-   "tz": "America/Chicago"
-  },
-  "ZRK": {
-   "city": "Rockford - Van Galder Bus",
-   "place": "Rockford - Van Galder Bus, IL",
-   "st": "IL",
-   "lat": 42.295,
-   "lon": -89.04,
-   "label": "Rockford VG Bus",
-   "tip": "Z for bus, then R-K from RocKford (the Van Galder bus).",
-   "clue": "Z + RocKford",
-   "tz": "America/Chicago"
   }
  }
 }
