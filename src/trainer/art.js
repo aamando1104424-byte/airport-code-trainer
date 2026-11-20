@@ -6,7 +6,7 @@
 import { MOTIFS } from './motifs.js';
 import LANDMARKS from '../data/landmarks.json';
 
-const MONO = '"IBM Plex Mono", ui-monospace, monospace';
+const MONO = '"JetBrains Mono", ui-monospace, monospace';
 const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla","EmojiOne Color",sans-serif';
 
 export function knownFor(code) { return LANDMARKS[code] ? LANDMARKS[code][1] : ''; }

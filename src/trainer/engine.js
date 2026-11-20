@@ -28,7 +28,7 @@ const DEFAULT_SET='wy';
 
 /* ================= state ================= */
 function blank(){return{v:2,items:{},sel:(DECKS.find(d=>d.id===DEFAULT_SET)||DECKS[0]).panels.flatMap(p=>p.codes),custom:[],xp:0,streak:{n:0,last:''},
-  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',hlv:{defender:'cadet',tower:'trainee'},area:'all',t:0};}
+  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',hlv:{defender:'cadet',tower:'trainee'},area:'all',gmap:{defender:'',tower:''},intro:false,t:0};}
 function merge(o){const b=blank();if(!o||typeof o!=='object')return b;
   if(o.items&&typeof o.items==='object')for(const c in o.items){const it=o.items[c];if(it&&typeof it==='object')b.items[c]={box:+it.box||0,due:+it.due||0,r:+it.r||0,w:+it.w||0,learned:!!it.learned};}
   if(Array.isArray(o.sel))b.sel=o.sel.filter(x=>typeof x==='string');
@@ -40,6 +40,8 @@ function merge(o){const b=blank();if(!o||typeof o!=='object')return b;
   b.mute=!!o.mute;if(['cadet','pilot','ace'].includes(o.diff))b.diff=o.diff;
   // the home top-3 boards start on the level you last played
   b.hlv={defender:b.diff,tower:b.tdiff};if(o.hlv){if(['cadet','pilot','ace'].includes(o.hlv.defender))b.hlv.defender=o.hlv.defender;if(['trainee','controller','chief'].includes(o.hlv.tower))b.hlv.tower=o.hlv.tower;}
+  if(o.gmap&&typeof o.gmap==='object')for(const g of ['defender','tower'])if(typeof o.gmap[g]==='string'&&/^[\w~-]{1,40}$/.test(o.gmap[g]))b.gmap[g]=o.gmap[g];
+  b.intro=!!o.intro;
   b.area=/^(all|\d)$/.test(String(o.area))?String(o.area):'all';b.t=+o.t||0;return b;}
 let S=(()=>{try{const r=localStorage.getItem(KEY)||localStorage.getItem(OLDKEY);if(r)return merge(JSON.parse(r));}catch(e){}return blank();})();
 let remote=null,syncText='Progress saves in this browser',saveTimer=null;
@@ -437,7 +439,9 @@ const onKonami=e=>{const key=e.key||'';if(!key||document.querySelector('#app.pla
 document.addEventListener('keydown',onKonami);
 /* ================= router ================= */
 const main=$('#main');let cleanup=null,onHome=false;
-function go(fn,...args){if(cleanup){cleanup();cleanup=null;}onHome=fn===home;const ap=$('#app');ap.classList.remove('wide','playing');ap.classList.toggle('homewide',fn===home);window.scrollTo(0,0);fn(...args);}
+// the name in the top bar goes home
+const onActHome=()=>go(home);window.addEventListener('act-home',onActHome);
+function go(fn,...args){if(cleanup){cleanup();cleanup=null;}onHome=fn===home;const ap=$('#app');closeMapDlg();ap.classList.remove('wide','playing','lessonwide');ap.classList.toggle('homewide',fn===home);window.scrollTo(0,0);fn(...args);}
 let fitT=0;const onFit=()=>{clearTimeout(fitT);fitT=setTimeout(fitAll,80);};
 window.addEventListener('resize',onFit);window.addEventListener('orientationchange',onFit);window.visualViewport?.addEventListener('resize',onFit);
 // the page itself can change width without the window changing (layout switch, side panel, zoom): re-fit then too
@@ -453,12 +457,20 @@ const BOARD_NAMES={defender:{cadet:'Air Defender · Cadet',pilot:'Air Defender �
 // opts: crt (game-screen look), n (rows to show, 5 by default), title/sub (header text), chips (extra markup under the header)
 function liveTopHTML(game,level,opts={}){if(!LIVE)return '';const n=opts.n||5;
   return `<section class="livetop${opts.crt?' crtlt':''}${opts.cls?' '+opts.cls:''}" data-lt-game="${game}" data-lt-level="${level}" data-lt-n="${n}" aria-live="polite">
-    <div class="lt-h"><span class="lt-dot" aria-hidden="true"></span><b>${esc(opts.title||`WORLD TOP ${n}`)}</b>${opts.sub===''?'':`<span class="lt-b">${esc(opts.sub||BOARD_NAMES[game]?.[level]||level)}</span>`}<button class="lt-all" data-lt-open type="button">See all</button></div>
+    <div class="lt-h"><span class="lt-dot">LIVE</span><b>${esc(opts.title||`WORLD TOP ${n}`)}</b>${opts.sub===''?'':`<span class="lt-b">${esc(opts.sub||BOARD_NAMES[game]?.[level]||level)}</span>`}<button class="lt-all" data-lt-open type="button">See all</button></div>
     ${opts.chips||''}<ol class="lt-list"><li class="lt-msg">Loading the world board…</li></ol></section>`;}
-async function liveFetch(k,force){if(!LIVE)return null;const [g,l]=k.split('/'),c=LIVE.cache[k];
-  if(!force&&c&&Date.now()-c.t<15000)return c;if(LIVE.busy[k])return LIVE.busy[k];
-  LIVE.busy[k]=(async()=>{try{const d=await bridge.topScores(g,l,5);LIVE.cache[k]={t:Date.now(),d:d||[]};}catch(e){LIVE.cache[k]={t:Date.now(),d:LIVE.cache[k]?.d||null,err:true};}delete LIVE.busy[k];return LIVE.cache[k];})();
-  return LIVE.busy[k];}
+// One request for every board on screen (the home page shows two). A board fetched in the last 15 s is reused.
+async function liveFetchAll(keys,force){if(!LIVE)return {};const out={},need=[];
+  for(const k of keys){const c=LIVE.cache[k];if(!force&&c&&Date.now()-c.t<15000)out[k]=c;else need.push(k);}
+  if(need.length){const id=need.join(',');
+    const job=LIVE.busy[id]||(LIVE.busy[id]=(async()=>{
+      try{const d=bridge.topBoards?await bridge.topBoards(need,5):Object.fromEntries(await Promise.all(need.map(async k=>[k,await bridge.topScores(...k.split('/'),5)])));
+        for(const k of need)LIVE.cache[k]={t:Date.now(),d:(d&&d[k])||[]};LIVE.fail=0;}
+      catch(e){LIVE.fail=(LIVE.fail||0)+1;for(const k of need)LIVE.cache[k]={t:Date.now(),d:LIVE.cache[k]?.d||null,err:true};}
+      finally{delete LIVE.busy[id];}})());
+    await job;for(const k of need)out[k]=LIVE.cache[k];}
+  return out;}
+const liveFetch=async(k,force)=>(await liveFetchAll([k],force))[k];
 // before = the scores this board showed last time, so rows that changed can flash
 function liveRender(el,c,before){const ol=el.querySelector('.lt-list');if(!ol)return;if(c)el.dataset.ltDone='1';const me=(bridge.user&&bridge.user()||'').toLowerCase(),n=+el.dataset.ltN||5;
   if(!c||!c.d){ol.innerHTML=`<li class="lt-msg">${c&&c.err?'Can\'t reach the world board right now.':'Loading the world board…'}</li>`;return;}
@@ -467,20 +479,37 @@ function liveRender(el,c,before){const ol=el.querySelector('.lt-list');if(!ol)re
   ol.innerHTML=c.d.slice(0,n).map(r=>{const id=r.name.toLowerCase(),fresh=seen&&before[id]!==r.score;
     return `<li class="${id===me?'me ':''}${fresh?'fresh ':''}${r.rank<=3?'m'+r.rank:''}"><span class="rk">#${r.rank}</span><span class="nm">${esc(r.name)}${id===me?' <i>YOU</i>':''}</span><span class="mp">${esc(r.map||'')}</span><span class="sc">${Number(r.score).toLocaleString('en-US')}</span></li>`;}).join('');}
 async function liveRefresh(force,only){if(!LIVE)return;const els=[...root.querySelectorAll('.livetop')];
-  const keys=[...new Set(els.map(el=>el.dataset.ltGame+'/'+el.dataset.ltLevel))].filter(k=>!only||k===only);
-  for(const k of keys){const c=await liveFetch(k,force),before=LIVE.prev[k]||{};
+  const keys=[...new Set(els.map(el=>el.dataset.ltGame+'/'+el.dataset.ltLevel))].filter(k=>!only||k===only);if(!keys.length)return;
+  const got=await liveFetchAll(keys,force);
+  for(const k of keys){const c=got[k],before=LIVE.prev[k]||{};
     const sig=c&&c.d?JSON.stringify(c.d.map(r=>[r.name,r.score,r.map])):(c&&c.err?'err':'');
     for(const el of root.querySelectorAll('.livetop')){if(el.dataset.ltGame+'/'+el.dataset.ltLevel!==k||(sig&&el.dataset.ltSig===sig))continue;el.dataset.ltSig=sig;liveRender(el,c,before);}
     if(c&&c.d)LIVE.prev[k]=Object.fromEntries(c.d.map(r=>[r.name.toLowerCase(),r.score]));}}
-let liveTimer=0,liveUnsub=null,liveMO=null;
+// Boards re-check about once a minute, only while someone is looking: not in a hidden tab, not after 5 minutes
+// with no input, and less often after errors. That keeps a classroom of open tabs inside the free database plan.
+let liveTimer=0,liveUnsub=null,liveMO=null,lastInput=Date.now(),liveDead=false,moQ=0;
+const LIVE_KEYS=new Set(['defender/cadet','defender/pilot','defender/ace','tower/trainee','tower/controller','tower/chief']);
+const onInput=()=>{const was=Date.now()-lastInput>300000;lastInput=Date.now();if(was&&LIVE&&root.querySelector('.livetop'))liveRefresh(false);};
+const INPUTS=['pointerdown','keydown','wheel','touchstart'];
+const onLtOpen=e=>{const b=e.target.closest('[data-lt-open]');if(!b)return;const el=b.closest('.livetop');bridge.openLeaderboard(el.dataset.ltGame,el.dataset.ltLevel);};
+// true when a batch of DOM changes added elements (a new screen or panel), not just text (a HUD number ticking)
+const addsElements=muts=>muts.some(m=>{for(const n of m.addedNodes)if(n.nodeType===1)return true;return false;});
 if(LIVE){
-  root.addEventListener('click',e=>{const b=e.target.closest('[data-lt-open]');if(!b)return;const el=b.closest('.livetop');bridge.openLeaderboard(el.dataset.ltGame,el.dataset.ltLevel);});
-  // a board that just appeared (new screen) fills itself; filled boards are left to the timer and the live ping
-  let moQ=0;liveMO=new MutationObserver(()=>{if(moQ)return;moQ=requestAnimationFrame(()=>{moQ=0;if(root.querySelector('.livetop:not([data-lt-done])'))liveRefresh(false);});});
+  INPUTS.forEach(t=>window.addEventListener(t,onInput,{passive:true}));
+  root.addEventListener('click',onLtOpen);
+  // a board that just appeared (new screen) fills itself; the live connection is only open while a board is showing.
+  // During a game the HUD changes every frame, so text-only changes are skipped.
+  liveMO=new MutationObserver(muts=>{if(moQ||!addsElements(muts))return;moQ=requestAnimationFrame(()=>{moQ=0;bridge.liveWanted?.(!!root.querySelector('.livetop'));if(root.querySelector('.livetop:not([data-lt-done])'))liveRefresh(false);});});
   liveMO.observe(root,{childList:true,subtree:true});
-  liveTimer=setInterval(()=>{if(document.visibilityState==='visible'&&root.querySelector('.livetop'))liveRefresh(true);},20000);
-  // a ping from another player: wait a random moment first, so a whole classroom doesn't hit the board in the same instant
-  if(bridge.onBoardChange)liveUnsub=bridge.onBoardChange(p=>{const k=(p.game||'')+'/'+(p.level||'');delete LIVE.cache[k];setTimeout(()=>liveRefresh(true,k),p.local?0:200+Math.random()*1800);});
+  const tick=()=>{if(liveDead)return;const wait=60000*Math.min(8,2**(LIVE.fail||0))*(0.8+Math.random()*0.4);
+    liveTimer=setTimeout(()=>{if(liveDead)return;if(document.visibilityState==='visible'&&Date.now()-lastInput<300000&&root.querySelector('.livetop'))liveRefresh(true).finally(tick);else tick();},wait);};
+  tick();
+  // a ping from another player: real boards only, at most once per 15 s per board, after a random wait
+  // so a whole classroom doesn't hit the database in the same instant
+  const lastPing={};
+  if(bridge.onBoardChange)liveUnsub=bridge.onBoardChange(p=>{const k=(p.game||'')+'/'+(p.level||'');if(!LIVE_KEYS.has(k))return;
+    if(!p.local&&Date.now()-(lastPing[k]||0)<15000)return;lastPing[k]=Date.now();delete LIVE.cache[k];
+    setTimeout(()=>liveRefresh(true,k),p.local?0:1000+Math.random()*5000);});
 }
 /* in-game: who you're chasing on the world board */
 function raceLine(game,level,score){if(!LIVE)return '';const c=LIVE.cache[game+'/'+level];if(!c||!c.d)return '';const d=c.d;
@@ -493,8 +522,9 @@ function raceLine(game,level,score){if(!LIVE)return '';const c=LIVE.cache[game+'
 function homeBoard(g){const L=LEVELS[g],lv=L[S.hlv[g]]?S.hlv[g]:Object.keys(L)[0];
   const chips=`<div class="lt-lv" role="group" aria-label="${GAME_NAMES[g]} level">${Object.entries(L).map(([k,n])=>`<button type="button" class="lt-lvb${k===lv?' on':''}" data-hlv="${g}" data-l="${k}" aria-pressed="${k===lv}">${n}</button>`).join('')}</div>`;
   return liveTopHTML(g,lv,{n:3,title:GAME_NAMES[g].toUpperCase(),sub:'',chips,cls:'lt-home lt-'+g+(g==='tower'?' radar':'')});}
-function topbar(t,r='',zones=null){const z=zones||zonesOf(SET());
-  return `<div class="bar"><button class="back" data-home>‹ Home</button><span class="bar-t">${t}</span>${z.length?`<span class="bar-c" aria-label="Local time">${clockHTML(z,{short:z.length>2})}</span>`:''}<span class="bar-r" id="barR">${r}</span></div>`;}
+// every screen's top bar: back to home, the title, and a counter. Local clocks only where they matter (the games).
+function topbar(t,r='',zones=null){const z=zones||[];
+  return `<div class="bar"><button class="back" data-home><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Home</button><span class="bar-t">${t}</span>${z.length?`<span class="bar-c" aria-label="Local time">${clockHTML(z,{short:z.length>2})}</span>`:''}<span class="bar-r" id="barR">${r}</span></div>`;}
 main.addEventListener('click',e=>{if(e.target.closest('[data-home]'))go(home);
   // level chips on each home board swap just that board
   const hb=e.target.closest('[data-hlv]');if(hb){const g=hb.dataset.hlv;S.hlv[g]=hb.dataset.l;save();const el=main.querySelector(`.livehome .livetop[data-lt-game="${g}"]`);if(el){el.outerHTML=homeBoard(g);liveRefresh(false);}return;}
@@ -520,6 +550,15 @@ const onThemeAll=()=>requestAnimationFrame(()=>paintLandmarks());window.addEvent
 function shakeEl(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
 
 /* ================= home ================= */
+// study modes, each with an airport-style pictogram
+const PICT={
+ school:'<path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.6V16c3.3 2.2 7.7 2.2 11 0v-4.4M21.5 9.5v5"/>',
+ recall:'<rect x="2.5" y="6" width="19" height="12.5" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7 14.5h10"/>',
+ quick:'<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9.5 2.5h5M12 2.5V6M18.5 6.5l1.5-1.5"/>',
+ match:'<path d="M4 7.5h12.5M13 4l3.5 3.5L13 11M20 16.5H7.5M11 13l-3.5 3.5L11 20"/>',
+ map:'<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+ mock:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 12.5l2.5 2.5 4.5-4.5"/>',
+};
 const MODES=[
  {id:'school',name:'Flight School',tag:'Start here',desc:'Step-by-step lessons. A few codes at a time.'},
  {id:'recall',name:'Recall',tag:'Type it',desc:'See the city, type the code. Best way to make it stick.'},
@@ -528,54 +567,72 @@ const MODES=[
  {id:'map',name:'Map Run',tag:'Locate',desc:'An airport lights up on the map. Name its code.'},
  {id:'mock',name:'Mock Test',tag:'Test mode',desc:'No hints. You see your score at the end.',best:()=>S.best.mock?`Best ${S.best.mock}%`:''},
 ];
-const VIEWS={school:()=>school(),recall:needSet(()=>recall()),quick:needSet(()=>quick()),match:needSet(()=>match()),map:needSet(()=>mapPick()),mock:needSet(()=>mock()),defender:needSet(()=>defender()),tower:needSet(()=>tower())};
+// the games pick their own map on their setup screen, so they open even before any codes are picked
+const VIEWS={school:()=>school(),recall:needSet(()=>recall()),quick:needSet(()=>quick()),match:needSet(()=>match()),map:needSet(()=>mapPick()),mock:needSet(()=>mock()),defender:()=>defender(),tower:()=>tower()};
 function challengeHTML(){const d=DECKMAP.top50;if(!d||!d.sub)return '';
   const areas=[['all',`All ${d.airports.length}`,d.airports],...d.sub.map((sd,i)=>[String(i),sd.name,sd.airports])],cur=areas.some(x=>x[0]===S.area)?S.area:'all';
   return `<section class="feature chal" aria-label="50 Busiest Challenge"><span class="t">50 BUSIEST CHALLENGE</span>
-    <span class="d">The 50 busiest airports in the U.S., split into six regions. Pick one region or play all 50. It doesn't matter which set you're studying.</span>
-    <div class="areas" role="radiogroup" aria-label="Area to cover">${areas.map(([k,n,ap])=>`<button type="button" class="area${k==='all'?' all':''}${k===cur?' on':''}" role="radio" aria-checked="${k===cur}" data-area="${k}"><b>${esc(n.toUpperCase())}</b><span class="ac">${k==='all'?`${zonesOf(ap).length} time zones · coast to coast`:`${ap.length} airports`}</span>${k==='all'?'':clockHTML(zonesOf(ap),{short:true})}</button>`).join('')}</div>
+    <span class="d">The 50 busiest U.S. airports in six regions. Pick one region or play all 50, whatever set you're studying.</span>
+    <div class="areas" role="radiogroup" aria-label="Area to cover">${areas.map(([k,n,ap])=>`<button type="button" class="area${k==='all'?' all':''}${k===cur?' on':''}" role="radio" aria-checked="${k===cur}" data-area="${k}"><b>${esc(n.toUpperCase())}</b><span class="ac">${k==='all'?`${zonesOf(ap).length} time zones · coast to coast`:`${ap.length} airports`}</span></button>`).join('')}</div>
     <div class="chgo"><button type="button" class="cbtn" id="chAD">AIR DEFENDER</button><button type="button" class="cbtn" id="chTC">TOWER CONTROL</button></div></section>`;}
+const PLANE_D='M10 0C10-.9 9.2-1.3 8-1.3H-7.4L-10-.5V.5L-7.4 1.3H8C9.2 1.3 10 .9 10 0ZM1.8-1.2L-5.2-9.4H-6.6L-3.4-1.2ZM1.8 1.2L-5.2 9.4H-6.6L-3.4 1.2ZM-7.2-1L-9.6-4.4H-10.4L-9.2-.8ZM-7.2 1L-9.6 4.4H-10.4L-9.2.8Z';
+const PLAY_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
+const BOARD_ROWS=12;
 function home(){
   const now=Date.now(),L=levelInfo(S.xp),st=streakNow(),set=SET();
-  const due=set.filter(a=>S.items[a.code].due<=now).length;
+  const due=set.filter(a=>S.items[a.code].due<=now&&studied(a)).length;
   const mastered=set.filter(a=>S.items[a.code].box>=4).length;
+  const learning=set.filter(a=>studied(a)&&S.items[a.code].box<4).length,fresh=set.length-mastered-learning;
   const lessons=lessonsFor(),nextL=lessons.find(l=>!lessonDone(l)),doneN=lessons.filter(lessonDone).length;
   const decksUsed=ALLDECKS.filter(d=>d.airports.length&&d.airports.every(a=>selSet().has(a.code))).map(d=>d.name);
   const topHS=Math.max(0,...['cadet','pilot','ace'].map(k=>S.hs[k][0]?.s||0)),topTS=Math.max(0,...['trainee','controller','chief'].map(k=>S.ths[k][0]?.s||0));
-  let cta,ctaFn;
-  if(set.length<3){cta='Choose at least 3 codes';ctaFn=()=>go(picker);}
-  else if(nextL){cta=doneN?`Continue Flight School: ${nextL.title}`:'Start Flight School, lesson 1';ctaFn=()=>go(lesson,nextL);}
-  else{cta=`Practice now · ${due} ready to review`;ctaFn=()=>go(VIEWS.recall);}
-  main.innerHTML=`<div class="hgrid"><div class="hmain">
+  const hard=!!(DECKMAP.top50&&DECKMAP.top50.airports.every(a=>selSet().has(a.code)));
+  let cta,ctaFn,ctaK;
+  if(set.length<3){cta='Choose what to study';ctaFn=()=>go(picker);ctaK='Pick a set of at least 3 codes to start';}
+  else if(nextL){cta=doneN?`Continue: ${nextL.title}`:'Start lesson 1';ctaFn=()=>go(lesson,nextL);ctaK=doneN?`Flight School · ${doneN} of ${lessons.length} lessons done`:'Flight School · new codes with a memory trick for each';}
+  else{cta=due?`Review ${due} ${due===1?'code':'codes'} now`:'Practice with Recall';ctaFn=()=>go(VIEWS.recall);ctaK=`All ${lessons.length} lessons done · keep them fresh`;}
+  const zones=zonesOf(set),sample=set.find(studied)||set[0]||AP[0];
+  const pct=n=>set.length?(n/set.length*100).toFixed(2):0;
+  main.innerHTML=`<div class="hgrid">
   <header class="hero">
-    <span class="k">Airport code study deck</span>
-    <h1>Airport Code Trainer</h1>
-    ${(()=>{const z=zonesOf(set);return z.length?`<div class="clockrow" aria-label="Local time"><span class="k">Local time</span>${clockHTML(z)}</div>`:'';})()}
-    <div class="boarding" aria-hidden="true" style="cursor:default"><span class="k">Now boarding</span><span id="bf">${flaps(set.find(studied)?set.find(studied).code:'???')}</span><span class="city" id="bc">${esc((set.find(studied)||set[0]||AP[0]).place)}</span></div>
+    <svg class="hero-plane" viewBox="-12 -10 24 20" aria-hidden="true"><path fill="currentColor" d="${PLANE_D}"/></svg>
+    <div class="hero-main">
+      <div class="hero-top"><span class="k">Airport code study deck</span>${zones.length?`<div class="clockrow" aria-label="Local time">${clockHTML(zones,{short:zones.length>3})}</div>`:''}</div>
+      <h1>Airport Code <span class="h1b">Trainer</span></h1>
+      <div class="boarding" aria-hidden="true" style="cursor:default"><span class="k">Now boarding</span><span id="bf">${flaps(studied(sample)?sample.code:'???')}</span><span class="city" id="bc">${esc(sample.place)}</span></div>
+    </div>
+    <section class="nextup" aria-label="Next up">
+      <span class="k">Next departure</span>
+      <div class="nu-set"><span>Studying <b>${set.length}</b> ${set.length===1?'code':'codes'}${decksUsed.length===1?` · ${esc(decksUsed[0])}`:decksUsed.length>1?` · ${decksUsed.length} sets`:''}${hard?'<span class="tagb">Hardcore</span>':''}</span><button class="btn sm" id="toPick">Change set</button></div>
+      <button class="btn primary big" id="cta">${esc(cta)}</button>
+      <span class="nu-k">${esc(ctaK)}</span>
+    </section>
   </header>
-  ${doneN===0?`<section class="panel welcome"><h2>Never studied these before?</h2>
-    <p>Every airport has a three-letter code. It's on bag tags, tickets and departure boards. For your test you'll match each city to its code.</p>
-    <p>You don't need to know anything yet. <b>Flight School</b> shows you each code with a trick for remembering it, has you type it once while you can see it, then checks you from memory. After that, the games keep it fresh.</p></section>`:''}
-  ${DECKMAP.top50&&DECKMAP.top50.airports.every(a=>selSet().has(a.code))?`<section class="hardbar" aria-label="Hardcore set"><span class="hz" aria-hidden="true"></span><div><b>HARDCORE · 50 BUSIEST AIRPORTS</b><span>Six regional maps, coast to coast. In the games you move region to region.</span></div></section>`:''}
-  <div class="setbar"><span>Studying <b>${set.length}</b> ${set.length===1?'code':'codes'}${decksUsed.length===1?` · ${esc(decksUsed[0])}`:decksUsed.length>1?` · ${decksUsed.length} sets`:''}</span><button class="btn" id="toPick">Choose set</button></div>
-  <button class="btn primary big" id="cta">${esc(cta)}</button>
+  <div class="hmain">
+  ${doneN===0&&!S.intro?`<section class="panel welcome" id="intro"><span class="k">First time here?</span><h2>New to airport codes?</h2>
+    <p>Every airport has a three-letter code, like the ones on bag tags and departure boards. <b>Flight School</b> shows each one with a memory trick, has you type it once, then checks you from memory. The games keep it fresh after that.</p>
+    <button class="link welcome-x" id="introX">Got it, hide this</button></section>`:''}
   <section class="stats" aria-label="Your progress">
-    <div><span class="k">Rank · Lv ${L.lvl}</span><span class="v">${L.rank}</span><div class="xpbar"><i style="width:${L.pct}%"></i></div><span class="s">${S.xp} XP</span></div>
+    <div><span class="k">Rank · Lv ${L.lvl}</span><span class="v">${L.rank}</span><div class="xpbar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${L.pct}"><i style="width:${L.pct}%"></i></div><span class="s">${S.xp} XP</span></div>
     <div><span class="k">Streak</span><span class="v">${st}</span><span class="s">${st===1?'day':'days'}</span></div>
     <div><span class="k">Mastered</span><span class="v">${mastered}/${set.length}</span><span class="s">4+ bars of 5</span></div>
   </section>
   </div><div class="hside">
-  <button class="feature" id="feat"><span class="t">AIR DEFENDER</span><span class="d">Bombs are falling on the map. Type a city's code to shoot them down.</span><span class="b">${topHS?`HIGH SCORE<br>${topHS}`:'NEW GAME'}</span></button>
-  <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">You run the control tower. Pilots don't know the codes: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<br>${topTS}`:'NEW GAME'}</span></button>
+  <button class="feature" id="feat"><span class="t">AIR DEFENDER</span><span class="d">Bombs are falling on the map. Type a city's code to shoot them down.</span><span class="b">${topHS?`HIGH SCORE<b>${topHS.toLocaleString('en-US')}</b>`:`<span class="play">${PLAY_SVG}</span>`}</span></button>
+  <button class="feature radar" id="feat2"><span class="t">TOWER CONTROL</span><span class="d">Run the control tower. Pilots only know city names: guide every plane to refuel and land.</span><span class="b">${topTS?`HIGH SCORE<b>${topTS.toLocaleString('en-US')}</b>`:`<span class="play">${PLAY_SVG}</span>`}</span></button>
   ${challengeHTML()}
-  ${LIVE?`<section class="livehome" aria-label="World top 3 for both games"><h2 class="lh-t">World Top 3</h2>${homeBoard('defender')}${homeBoard('tower')}</section>`:''}
+  ${LIVE?`<section class="livehome" aria-label="World top 3 for both games"><h2 class="lh-t">World top 3</h2>${homeBoard('defender')}${homeBoard('tower')}</section>`:''}
   </div><div class="hmain2">
-  <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="k">${m.tag}</span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
-  <section class="panel board">
-    <h2>Departures Board</h2>
-    <p class="note">Each code has 5 bars. Lessons and multiple choice fill the first 2. The last 3 only fill when you type the code from memory <b>on a later day</b>, so even a perfect first day stops at 2. Tap a row to see its trick.</p>
+  <div class="modes">${MODES.map(m=>`<button class="mode" data-mode="${m.id}"><span class="mode-top"><span class="pict" aria-hidden="true"><svg viewBox="0 0 24 24">${PICT[m.id]}</svg></span><span class="k">${m.tag}</span></span><span class="name">${m.name}</span><span class="desc">${m.desc}</span><span class="best">${m.id==='school'&&lessons.length?`${doneN}/${lessons.length} lessons done`:m.best?m.best():''}</span></button>`).join('')}</div>
+  <section class="panel board${set.length<=BOARD_ROWS?' all':''}" id="board" aria-label="Departures Board">
+    <div class="board-h"><h2>Departures Board</h2><span class="k">${mastered} of ${set.length} mastered</span></div>
+    ${set.length?`<div class="bsum"><div class="bsum-bar" aria-hidden="true"><i class="m" style="width:${pct(mastered)}%"></i><i class="l" style="width:${pct(learning)}%"></i></div>
+    <div class="bsum-k"><span><i class="m"></i>${mastered} mastered</span><span><i class="l"></i>${learning} learning</span><span><i class="n"></i>${fresh} not started</span></div></div>`:''}
+    <p class="note">Each code has 5 bars. Lessons and multiple choice fill the first 2. The last 3 only fill when you type the code from memory <b>on a later day</b>. Tap a row to see its trick.</p>
     <p class="legend"><span class="g0"><i></i>Easy Three</span><span class="g1"><i></i>Hidden Letters</span><span class="g2"><i></i>Story Codes</span></p>
-    ${set.map(a=>{const b=S.items[a.code].box;return `<button class="brow g${a.g}" data-card="${a.code}">${studied(a)?flaps(a.code):flaps('???')}<span class="city">${esc(a.place)}</span><span class="pips" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?'on':''}"></i>`).join('')}</span></button>`;}).join('')||'<p class="note">No codes picked yet.</p>'}
+    ${set.length?'<div class="bhead" aria-hidden="true"><span>Code</span><span>City</span><span>Level</span></div>':''}
+    ${set.map((a,i)=>{const b=S.items[a.code].box;return `<button class="brow g${a.g}${i>=BOARD_ROWS?' more':''}" data-card="${a.code}">${studied(a)?flaps(a.code):flaps('???')}<span class="city">${esc(a.place)}</span><span class="pips" role="img" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?'on':''}"></i>`).join('')}</span></button>`;}).join('')||'<p class="note">No codes picked yet.</p>'}
+    ${set.length>BOARD_ROWS?`<button class="btn sm bmore" id="bmore" aria-expanded="false" aria-controls="board">Show all ${set.length}</button>`:''}
   </section>
   <details class="why"><summary>Why the games work this way</summary>
     <ul>
@@ -588,6 +645,8 @@ function home(){
   <div class="foot"><span id="sync">${syncText}</span><button class="link" id="reset">Reset progress</button></div>
   <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div></div></div>`;
   $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);
+  {const x=$('#introX');if(x)x.onclick=()=>{S.intro=true;save();$('#intro')?.remove();};}
+  {const m=$('#bmore');if(m)m.onclick=()=>{const b=$('#board'),on=b.classList.toggle('all');m.setAttribute('aria-expanded',on);m.textContent=on?'Show fewer':`Show all ${set.length}`;if(!on)b.scrollIntoView({block:'nearest'});};}
   // 50 Busiest Challenge: pick an area (or all 50), then a game. Plays the 50 Busiest whatever set is being studied.
   main.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>{S.area=b.dataset.area;save();main.querySelectorAll('[data-area]').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',on);});});
   {const a=$('#chAD'),t=$('#chTC');if(a)a.onclick=()=>go(defender,{ch:true,sec:S.area});if(t)t.onclick=()=>go(tower,{ch:true,sec:S.area});}
@@ -666,26 +725,30 @@ function lesson(L){
   const sel0=selSet(),olds=shuffle(L.deck.airports.filter(a=>sel0.has(a.code)&&!L.codes.includes(a.code)&&S.items[a.code]?.learned).map(a=>a.code)).slice(0,2);
   const qz=shuffle(L.codes.slice());if(olds[0])steps.push({t:'quiz',c:olds[0],review:true});qz.forEach((c,k)=>{steps.push({t:'quiz',c});if(k===1&&olds[1])steps.push({t:'quiz',c:olds[1],review:true});});
   let i=0,timer=null;const missed=new Set(),extra={};
+  // wide screens: the lesson on the left, its map on the right, always in view
+  $('#app').classList.add('lessonwide');
   function render(){
     const s=steps[i],a=L.deck.airports.find(x=>x.code===s.c)||BY[s.c],deck=DECKMAP[a.deck];
-    let h=topbar(L.title,`${Math.min(i+1,steps.length)}/${steps.length}`)+`<div class="progress"><i style="width:${i/steps.length*100}%"></i></div><div class="stage g${a.g}">`;
+    // the new code's map shows its label; the check steps show where the city is, never its code
+    const map=deck.region?`<div class="mapbox">${s.t==='meet'?mapSVG(regionOf(deck,a.code),{target:a.code,codes:new Set([a.code]),all:true}):mapSVG(regionOf(deck,a.code),{target:a.code,dim:true})}</div>`:'';
+    let h=topbar(L.title,`${Math.min(i+1,steps.length)}/${steps.length}`)+`<div class="progress" role="progressbar" aria-label="Lesson progress" aria-valuemin="0" aria-valuemax="${steps.length}" aria-valuenow="${i}"><i style="width:${i/steps.length*100}%"></i></div><div class="stage lesson g${a.g}">`;
     if(s.t==='meet'){
-      h+=`<span class="k">New code ${s.n} of ${L.codes.length}</span>
+      h+=`<div class="lesson-main"><span class="k">New code ${s.n} of ${L.codes.length}</span>
       ${s.n===1?`<div class="pattern g${L.g}"><b>This lesson's pattern: ${GROUPS[L.g].name}.</b> ${GROUPS[L.g].sub}</div>`:''}
       <div class="prompt">${esc(a.place)}</div>${alsoHTML(a)}
       <div>${flaps(a.code,true,'huge')}</div>
-      ${a.g<2?`<p><span class="k">See it in the name</span><br><span style="font-size:1.4rem;font-weight:700">${hl(a)}</span></p>`:'<p><span class="k">The trick</span></p>'}
+      ${a.g<2?`<p><span class="k">See it in the name</span><br><span class="see">${hl(a)}</span></p>`:'<p><span class="k">The trick</span></p>'}
       ${(()=>{const sel=selSet(),T=twins(a).filter(o=>sel.has(o.code)).slice(0,3);return T.length?`<p class="careful">Careful, look-alike: ${T.map(o=>`<b>${o.code}</b> is ${esc(o.place)}`).join(' · ')}</p>`:'';})()}
       <p class="lead">${esc(a.tip)}</p>
-      ${knownFor(a.code)?`<p class="kf">${lmkHTML(a.code,'--paper')}<span><b>Known for</b> ${esc(knownFor(a.code))}</span></p>`:''}
-      <button class="btn primary big" id="nx">Got it</button>
-      ${deck.region?`<div class="mapbox">${mapSVG(regionOf(deck,a.code),{target:a.code,codes:new Set([a.code]),all:true})}</div>`:''}`;
+      ${knownFor(a.code)?`<p class="kf">${lmkHTML(a.code,'--paper')}<span><b>Known for</b> ${esc(knownFor(a.code))}</span></p>`:''}</div>
+      ${map}
+      <div class="lesson-act"><button class="btn primary big" id="nx">Got it</button></div>`;
     }else if(s.t==='copy'){
-      h+=`<span class="k">Your turn · copy it</span><div class="prompt">${esc(a.place)}</div>
-      <p class="lead">Type <b class="ghost" style="font-size:1.3rem">${a.code}</b> to lock it in.</p>${ANSWER('Enter')}<div class="fb" id="fb"></div>`;
+      h+=`<div class="lesson-main"><span class="k">Your turn · copy it</span><div class="prompt">${esc(a.place)}</div>
+      <p class="lead">Type <b class="ghost" style="font-size:1.3rem">${a.code}</b> to lock it in.</p>${ANSWER('Enter')}<div class="fb" id="fb" aria-live="polite"></div></div>${map}`;
     }else{
-      h+=`<span class="k">${s.review?'From an earlier lesson · no peeking':'Memory check · no peeking'}</span><div class="prompt">${esc(s.nm||(s.nm=anyName(a)))}</div>${ANSWER()}
-      <div class="fb" id="fb" aria-live="polite"></div><div class="row"><button class="btn" type="button" id="idk">I don't remember</button></div>`;
+      h+=`<div class="lesson-main"><span class="k">${s.review?'From an earlier lesson · no peeking':'Memory check · no peeking'}</span><div class="prompt">${esc(s.nm||(s.nm=anyName(a)))}</div>${ANSWER()}
+      <div class="fb" id="fb" aria-live="polite"></div><div class="row"><button class="btn" type="button" id="idk">I don't remember</button></div></div>${map}`;
     }
     main.innerHTML=h+`</div>`;
     if(s.t==='meet'){paintLandmarks(main);$('#nx').onclick=next;$('#nx').focus({preventScroll:true});return;}
@@ -708,6 +771,7 @@ function lesson(L){
   }
   function next(){i++;if(i>=steps.length)return done();render();}
   function done(){
+    $('#app').classList.remove('lessonwide');
     L.codes.forEach(c=>S.items[c].learned=true);addXP(40);save();
     const ls=lessonsFor(),nl=ls.find(x=>!lessonDone(x));
     main.innerHTML=topbar(L.title)+`<div class="result"><span class="k">Lesson complete · +40 XP</span><div class="big">${L.codes.length} new</div><p>${missed.size?`You needed a second look at ${missed.size}. That's normal; they'll show up more in practice.`:'Perfect from memory on the first try.'}</p></div>
@@ -745,15 +809,16 @@ function recall(opts={}){
   const queue=opts.list?opts.list.slice():pickQueue(Math.min(10,Math.max(6,SET().length*2)));
   let i=0,firstTry=0,xp=0,hints=0,mode='ask',timer=null,asked='';const missed=new Set(),reins=new Set(),hinted=new Set();
   const title=opts.title||(opts.list?'Your Misses':'Recall');
+  $('#app').classList.add('lessonwide');
   function render(){
     const a=homeOf(queue[i]),deck=DECKMAP[a.deck];mode='ask';hints=0;asked=anyName(a);
     main.innerHTML=topbar(title,`${i+1}/${queue.length}`)+`
-    <div class="progress"><i style="width:${i/queue.length*100}%"></i></div>
-    <div class="stage">
-      <span class="k">Type the code for</span>
+    <div class="progress" role="progressbar" aria-label="Round progress" aria-valuemin="0" aria-valuemax="${queue.length}" aria-valuenow="${i}"><i style="width:${i/queue.length*100}%"></i></div>
+    <div class="stage lesson">
+      <div class="lesson-main"><span class="k">Type the code for</span>
       <div class="prompt">${esc(asked)}</div>${ANSWER()}
       <div class="fb" id="fb" aria-live="polite"></div>
-      <div class="row"><button class="btn" type="button" id="hint">Hint</button><button class="btn" type="button" id="skip">I don't know</button></div>
+      <div class="row"><button class="btn" type="button" id="hint">Hint</button><button class="btn" type="button" id="skip">I don't know</button></div></div>
       ${deck.region?`<div class="mapbox">${mapSVG(regionOf(deck,a.code),{target:a.code,dim:true})}</div>`:''}
     </div>`;
     const inp=wireInput(v=>check(v));
@@ -890,6 +955,7 @@ function mock(){
 
 /* ================= summary ================= */
 function summary({title,big,sub,missed,again,extra='',noMissNote=''}){
+  $('#app').classList.remove('lessonwide');
   main.innerHTML=topbar(title)+`<div class="result"><div class="big">${big}</div><p>${sub}</p></div>${extra}
     ${missed.length?`<span class="k">Review these</span>${missed.map(c=>{const a=BY[c];return `<div class="mrow g${a.g}">${flaps(a.code)}<div><div class="c">${placeHL(a)}</div><div class="t">${esc(a.tip)}</div></div></div>`;}).join('')}`:`<p class="k">${noMissNote||'No misses. Clean run.'}</p>`}
     <div class="row"><button class="btn primary" id="again">Play again</button><button class="btn" data-home>Home</button></div>
@@ -917,38 +983,77 @@ function spotlightHTML(code,counts,word='save'){const a=BY[code];if(!a||!knownFo
   return `<div class="spot">${lmkHTML(code,'',true)}<div><span class="k">CITY SPOTLIGHT${n?` · ${n} ${word}${n===1?'':'s'}`:''}</span><b>${code} · ${esc(a.place)}</b><span>${esc(knownFor(code))}</span></div></div>`;}
 function hsTable(diff,hlIdx=-1){const L=S.hs[diff];if(!L.length)return `<p>No scores yet on ${DIFFS[diff].name}.</p>`;
   return `<table class="hs"><thead><tr><th>#</th><th>NAME</th><th>MAP</th><th class="n">WAVE</th><th class="n">SCORE</th></tr></thead><tbody>${L.map((r,i)=>`<tr class="${i===hlIdx?'me':''}"><td>${i+1}</td><td>${esc(r.n)}</td><td>${esc(r.m||'')}</td><td class="n">${r.w}</td><td class="n">${r.s}</td></tr>`).join('')}</tbody></table>`;}
-// opts.ch: the 50 Busiest Challenge (all 50 codes, whatever set is being studied); opts.sec: 'all' or a region index
+/* ---------- the map a game is played on: any set, picked right on the setup screen ----------
+   Sets you're studying play with your picked codes; any other map plays all of its codes.
+   Each game remembers the last map you chose. */
+const gameDecks=()=>ALLDECKS.filter(d=>d.airports.length>=3);
+const mineDecks=()=>new Set(homeDecks(3).map(d=>d.id));
+function startMap(game){const ok=id=>DECKMAP[id]&&!DECKMAP[id].isSub&&DECKMAP[id].airports.length>=3;
+  if(ok(S.gmap[game]))return S.gmap[game];const h=homeDecks(3)[0];if(h)return h.id;
+  const s=selSet(),any=ALLDECKS.find(d=>d.airports.filter(a=>s.has(a.code)).length>=3);if(any)return any.id;
+  return ok(DEFAULT_SET)?DEFAULT_SET:gameDecks()[0].id;}
+function mapCodes(d,chal){return !chal&&mineDecks().has(d.id)?null:new Set(d.airports.map(a=>a.code));}
+function mapLabel(d,chal){const mine=!chal&&mineDecks().has(d.id),s=selSet(),n=mine?d.airports.filter(a=>s.has(a.code)).length:d.airports.length;
+  return `${n} ${n===1?'code':'codes'}${mine?' · your set':chal?' · challenge':''}${d.sub?` · ${d.sub.length} regions`:''}`;}
+// regions of a map that have enough cities in play to make a round
+function playRegions(d,codes){const s=codes||selSet();return (d.sub||[]).map((sd,i)=>[sd,i]).filter(([sd])=>sd.airports.filter(a=>s.has(a.code)).length>=3);}
+const PIN_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
+function mapBtnHTML(d,chal){return `<div class="field"><span class="k">Map</span><button type="button" class="mapbtn" id="mapBtn" aria-haspopup="dialog">${PIN_SVG}<span class="mn"><b>${esc(d.name)}</b><span>${mapLabel(d,chal)}</span></span><span class="chg">CHANGE</span></button></div>`;}
+let mapDlg=null;const closeMapDlg=()=>{if(mapDlg){const f=mapDlg;mapDlg=null;f();}};
+function chooseMap(cur,onPick,radar=false){closeMapDlg();const opener=document.activeElement,mine=mineDecks(),ds=gameDecks();
+  const groups=[['Your sets',ds.filter(d=>mine.has(d.id))],...[...REGIONS,'My Codes'].map(r=>[r,ds.filter(d=>d.region===r&&!mine.has(d.id))])].filter(g=>g[1].length);
+  const el=document.createElement('div');el.className='mapdlg'+(radar?' radar':'');
+  el.innerHTML=`<div class="mapdlg-box" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="mapdlg-h"><b id="mdT">CHOOSE A MAP</b><button type="button" class="mapdlg-x" aria-label="Close">×</button></div>
+    <input type="search" id="mdQ" placeholder="Find a state or set" aria-label="Find a map" autocomplete="off" spellcheck="false">
+    <div class="maplist">${groups.map(([g,list])=>`<div class="mapgrp"><span>${esc(g)}</span><div class="mapgrid">${list.map(d=>`<button type="button" class="mapopt" data-map="${d.id}" data-q="${esc([d.name,d.region||'',...(d.panels||[]).map(p=>(p.name||'')+' '+(p.st||''))].join(' ').toLowerCase())}" aria-current="${d.id===cur}"><b>${esc(d.name)}</b><span>${mine.has(d.id)?'<span class="mine">Studying</span> · ':''}${d.airports.length} codes${d.sub?` · ${d.sub.length} regions`:''}</span></button>`).join('')}</div></div>`).join('')}<p class="mapempty" hidden>No map matches that. Try a state name, like Texas.</p></div></div>`;
+  root.appendChild(el);
+  const q=el.querySelector('#mdQ'),box=el.querySelector('.mapdlg-box');
+  const onKey=e=>{if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();closeMapDlg();return;}
+    if(e.key!=='Tab')return;const f=[...box.querySelectorAll('button,input')].filter(x=>x.offsetParent);if(!f.length)return;const a=f[0],z=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}};
+  document.addEventListener('keydown',onKey,true);
+  mapDlg=()=>{document.removeEventListener('keydown',onKey,true);el.remove();if(opener&&document.contains(opener))opener.focus({preventScroll:true});};
+  el.addEventListener('mousedown',e=>{if(e.target===el)closeMapDlg();});
+  el.querySelector('.mapdlg-x').onclick=closeMapDlg;
+  el.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=b.dataset.map;closeMapDlg();onPick(id);});
+  q.oninput=()=>{const t=q.value.trim().toLowerCase();let any=false;
+    el.querySelectorAll('.mapgrp').forEach(g=>{let n=0;g.querySelectorAll('[data-map]').forEach(b=>{const on=!t||b.dataset.q.includes(t);b.hidden=!on;if(on)n++;});g.hidden=!n;if(n)any=true;});
+    el.querySelector('.mapempty').hidden=any;};
+  // a keyboard can start typing right away; on a touch screen don't pop the keyboard up
+  const curBtn=el.querySelector('[aria-current="true"]');
+  if(window.matchMedia('(pointer:coarse)').matches)(curBtn||el.querySelector('.mapdlg-x')).focus({preventScroll:true});else q.focus({preventScroll:true});
+  curBtn?.scrollIntoView({block:'nearest'});
+}
+// opts.ch: the 50 Busiest Challenge (all 50 codes, whatever set is being studied); opts.sec: 'all' or a region index; opts.map: a set id
 function defender(opts={}){
-  const CHD=opts.ch?DECKMAP.top50:null,codes=CHD?new Set(CHD.airports.map(a=>a.code)):null;
-  let decks=CHD?[CHD]:homeDecks();if(!decks.length){const s=selSet();decks=ALLDECKS.filter(d=>d.airports.filter(a=>s.has(a.code)).length>=3);}
-  if(!decks.length){main.innerHTML=topbar('Air Defender')+`<div class="panel"><p>Air Defender needs at least 3 picked codes from one deck.</p><button class="btn primary" id="toPick">Choose codes</button></div>`;$('#toPick').onclick=()=>go(picker);return;}
-  let deckId=decks[0].id,diff=DIFFS[S.diff]?S.diff:'cadet';
-  let sec=CHD&&CHD.sub[+opts.sec]?String(opts.sec):'all';
-  function render(){const cur=DECKMAP[deckId];
-    main.innerHTML=topbar('Air Defender','',CHD?zonesOf(cur.sub&&sec!=='all'?cur.sub[+sec].airports:cur.airports):null)+`<div class="defender"><div class="crt">
-      <div class="ttl">AIR DEFENDER${CHD?'<span class="ttl-sub">50 Busiest Challenge</span>':''}</div>
-      <ol>
+  let chal=!!(opts.ch&&DECKMAP.top50),mapId=chal?'top50':(opts.map&&DECKMAP[opts.map]&&!DECKMAP[opts.map].isSub?opts.map:startMap('defender'));
+  let diff=DIFFS[S.diff]?S.diff:'cadet',sec='all';
+  if(DECKMAP[mapId].sub&&DECKMAP[mapId].sub[+opts.sec])sec=String(opts.sec);
+  function render(){const cur=DECKMAP[mapId],codes=mapCodes(cur,chal),regs=playRegions(cur,codes);if(sec!=='all'&&!regs.some(([,i])=>String(i)===sec))sec='all';
+    const play=cur.sub&&sec!=='all'?cur.sub[+sec]:cur,firstTime=!S.hs.cadet.length&&!S.hs.pilot.length&&!S.hs.ace.length;
+    main.innerHTML=topbar('Air Defender','',zonesOf(play.airports))+`<div class="defender"><div class="crt setup">
+      <div class="setup-h"><div class="ttl">AIR DEFENDER${chal?'<span class="ttl-sub">50 Busiest Challenge</span>':''}</div><p class="pitch">Bombs fall toward cities on the map. Type the blinking city's 3-letter code to shoot them down.</p></div>
+      <div class="setup-grid">${mapBtnHTML(cur,chal)}
+        <div class="field"><span class="k">Difficulty</span><div class="choices">${Object.entries(DIFFS).map(([k,d])=>`<button class="choice" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div></div></div>
+      ${regs.length?`<div class="field"><span class="k">Region</span><div class="row">${[['all',chal?`ALL ${cur.airports.length} · NEW REGION EACH WAVE`:'ALL REGIONS · ROTATES EACH WAVE'],...regs.map(([sd,i])=>[String(i),sd.name.toUpperCase()])].map(([k,t])=>`<button class="crt-btn ${k===sec?'on':''}" data-sec="${k}" aria-pressed="${k===sec}">${esc(t)}</button>`).join('')}</div>
+        <p class="regnote">${sec==='all'?'Each wave moves to a different region, zoomed in so every city has room. A mini map shows where the action is.':'Practice one region on its own.'}</p></div>`:''}
+      <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">LAUNCH</button><button class="crt-btn ${S.mute?'':'on'}" id="snd" aria-pressed="${!S.mute}">SOUND ${S.mute?'OFF':'ON'}</button></div>
+      <details class="howto"${firstTime?' open':''}><summary>HOW TO PLAY</summary><ol>
         <li>Bombs fall toward cities on the map. The city under attack <b>blinks</b>.</li>
         <li>Type that city's <b>3-letter code</b> to fire an interceptor.</li>
         <li>The closer a bomb gets, the more help you get: <b>1</b> a clue, <b>2</b> the first letter, <b>3</b> two letters, <b>4</b> the whole code. Fewer hints, more points.</li>
         <li>A bomb that <b>flashes amber</b> is about to <b>split in two</b>, each half going for its own city.</li>
         <li>Every bomb that lands costs a shield. Lose all 5 and the game's over. Get through a wave with no hits and you get one back.</li>
-      </ol>
-      ${decks.length>1?`<p class="k" style="color:var(--crt-mid)">MAP</p><div class="row">${decks.map(d=>`<button class="crt-btn ${d.id===deckId?'on':''}" data-deck="${d.id}">${esc(d.name.toUpperCase())}</button>`).join('')}</div>`:''}
-      ${cur.sub?`<p class="k" style="color:var(--crt-mid)">REGION</p><div class="row">${[['all',CHD?`ALL ${cur.airports.length} · NEW REGION EACH WAVE`:'ALL REGIONS · ROTATES EACH WAVE'],...cur.sub.map((sd,i)=>[String(i),sd.name.toUpperCase()])].map(([k,t])=>`<button class="crt-btn ${k===sec?'on':''}" data-sec="${k}">${esc(t)}</button>`).join('')}</div>
-        <p class="regnote">${sec==='all'?'Each wave moves to a different region, zoomed in so every city has room. A mini map shows where the action is.':'Practice one region on its own.'}</p>`:''}
-      <div class="choices">${Object.entries(DIFFS).map(([k,d])=>`<button class="choice" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div>
-      <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">LAUNCH</button><button class="crt-btn ${S.mute?'':'on'}" id="snd">SOUND ${S.mute?'OFF':'ON'}</button></div>
+      </ol><p>New to the codes? Start on Cadet. When a city gets hit you'll see its code, and you can practice those cities right after.</p></details>
       ${liveTopHTML('defender',diff,{crt:true})}
       ${bridge.online?`<button class="crt-btn" id="wlb">WORLD LEADERBOARD · ${DIFFS[diff].name.toUpperCase()}</button>`:''}
       <h2 style="font-size:1.2rem">THIS DEVICE · ${DIFFS[diff].name.toUpperCase()}</h2>${hsTable(diff)}
-      <p>New to the codes? Start on Cadet. When a city gets hit you'll see its code, and you can practice those cities right after.</p>
     </div></div>`;
-    main.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>{deckId=b.dataset.deck;sec='all';render();});
-    main.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>{sec=b.dataset.sec;if(CHD){S.area=sec;save();}render();});
+    $('#mapBtn').onclick=()=>chooseMap(mapId,id=>{mapId=id;chal=false;sec='all';S.gmap.defender=id;save();render();$('#mapBtn')?.focus();});
+    main.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>{sec=b.dataset.sec;if(chal){S.area=sec;save();}render();});
     main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;S.diff=diff;S.hlv.defender=diff;save();render();});
     $('#snd').onclick=()=>{S.mute=!S.mute;save();render();};
-    $('#launch').onclick=()=>{sfx('wave');go(defenderRun,cur.sub&&sec!=='all'?cur.sub[+sec]:cur,diff,{codes,back:CHD?{ch:true,sec}:undefined});};
+    $('#launch').onclick=()=>{sfx('wave');go(defenderRun,play,diff,{codes,back:{ch:chal,sec,map:mapId}});};
     const wl=$('#wlb');if(wl)wl.onclick=()=>bridge.openLeaderboard('defender',diff);
   }
   render();
@@ -1208,38 +1313,36 @@ const CALLS=['SKY','PEAK','MESA','HAWK','TETON','BISON','SAGE','RANGER','ELK','B
 function hsTableFor(L,label,hlIdx=-1){if(!L.length)return `<p>No scores yet on ${label}.</p>`;
   return `<table class="hs"><thead><tr><th>#</th><th>NAME</th><th>MAP</th><th class="n">SHIFT</th><th class="n">SCORE</th></tr></thead><tbody>${L.map((r,i)=>`<tr class="${i===hlIdx?'me':''}"><td>${i+1}</td><td>${esc(r.n)}</td><td>${esc(r.m||'')}</td><td class="n">${r.w}</td><td class="n">${r.s}</td></tr>`).join('')}</tbody></table>`;}
 function kbHTML(){return `<div class="kb auto" id="kb">${['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].map((r,ri)=>`<div class="r">${[...r].map(ch=>`<button class="key" data-k="${ch}">${ch}</button>`).join('')}${ri===2?'<button class="key wide" data-k="DEL" aria-label="Delete">DEL</button>':''}</div>`).join('')}</div>`;}
-// opts.ch: the 50 Busiest Challenge (all 50 codes, whatever set is being studied); opts.sec: 'all' or a region index
+// opts.ch: the 50 Busiest Challenge (all 50 codes, whatever set is being studied); opts.sec: 'all' or a region index; opts.map: a set id
 function tower(opts={}){
-  const CHD=opts.ch?DECKMAP.top50:null,codes=CHD?new Set(CHD.airports.map(a=>a.code)):null;
-  let decks=CHD?[CHD]:homeDecks();if(!decks.length){const s=selSet();decks=ALLDECKS.filter(d=>d.airports.filter(a=>s.has(a.code)).length>=3);}
-  {const s=codes||selSet();decks=decks.flatMap(d=>d.sub?[d,...d.sub.filter(sd=>sd.airports.filter(a=>s.has(a.code)).length>=3)]:[d]);}
-  if(!decks.length){main.innerHTML=topbar('Tower Control')+`<div class="panel"><p>Tower Control needs at least 3 picked codes from one deck.</p><button class="btn primary" id="toPick">Choose codes</button></div>`;$('#toPick').onclick=()=>go(picker);return;}
-  let deckId=decks[0].id,diff=S.tdiff;
-  if(CHD&&CHD.sub[+opts.sec])deckId=CHD.sub[+opts.sec].id;
-  const secOf=id=>{const i=CHD?CHD.sub.findIndex(sd=>sd.id===id):-1;return i<0?'all':String(i);};
-  function render(){
-    main.innerHTML=topbar('Tower Control','',CHD?zonesOf(DECKMAP[deckId].airports):null)+`<div class="defender"><div class="crt radar">
-      <div class="ttl">TOWER CONTROL${CHD?'<span class="ttl-sub">50 Busiest Challenge</span>':''}</div>
-      <ol>
+  let chal=!!(opts.ch&&DECKMAP.top50),mapId=chal?'top50':(opts.map&&DECKMAP[opts.map]&&!DECKMAP[opts.map].isSub?opts.map:startMap('tower'));
+  let diff=TDIFFS[S.tdiff]?S.tdiff:'trainee',sec='all';
+  if(DECKMAP[mapId].sub&&DECKMAP[mapId].sub[+opts.sec])sec=String(opts.sec);
+  function render(){const cur=DECKMAP[mapId],codes=mapCodes(cur,chal),regs=playRegions(cur,codes);if(sec!=='all'&&!regs.some(([,i])=>String(i)===sec))sec='all';
+    const play=cur.sub&&sec!=='all'?cur.sub[+sec]:cur,firstTime=!S.ths.trainee.length&&!S.ths.controller.length&&!S.ths.chief.length;
+    main.innerHTML=topbar('Tower Control','',zonesOf(play.airports))+`<div class="defender"><div class="crt radar setup">
+      <div class="setup-h"><div class="ttl">TOWER CONTROL${chal?'<span class="ttl-sub">50 Busiest Challenge</span>':''}</div><p class="pitch">You run the tower. Pilots radio in a city; type its 3-letter code to send them there before their fuel runs out.</p></div>
+      <div class="setup-grid">${mapBtnHTML(cur,chal)}
+        <div class="field"><span class="k">Difficulty</span><div class="choices">${Object.entries(TDIFFS).map(([k,d])=>`<button class="choice" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div></div></div>
+      ${regs.length?`<div class="field"><span class="k">Region</span><div class="row">${[['all',chal?`ALL ${cur.airports.length} · NEW REGION EACH SHIFT`:'ALL REGIONS · NEW ONE EACH SHIFT'],...regs.map(([sd,i])=>[String(i),sd.name.toUpperCase()])].map(([k,t])=>`<button class="crt-btn ${k===sec?'on':''}" data-sec="${k}" aria-pressed="${k===sec}">${esc(t)}</button>`).join('')}</div></div>`:''}
+      <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">START SHIFT</button><button class="crt-btn ${S.mute?'':'on'}" id="snd" aria-pressed="${!S.mute}">SOUND ${S.mute?'OFF':'ON'}</button></div>
+      <details class="howto"${firstTime?' open':''}><summary>HOW TO PLAY</summary><ol>
         <li>You're the air traffic controller. Planes fly onto your radar and the pilots <b>only know city names</b>, not airport codes.</li>
         <li>Each pilot radios in a city. Type that city's <b>3-letter code</b> to send the plane there.</li>
         <li>Some planes need a <b>fuel stop</b> first. After they refuel, they radio in the city where they want to land.</li>
         <li>Type a wrong code and the plane heads the wrong way. Type the right code before it lands to turn it around.</li>
         <li>The longer a pilot waits, the more help you get: <b>1</b> a clue, <b>2</b> the first letter, <b>3</b> two letters, <b>4</b> the whole code.</li>
         <li>A plane that runs out of fuel or lands at the wrong airport costs a safety bar. Lose all 5 and your shift is over.</li>
-      </ol>
-      <p>With more than one plane, tap a <b>flight strip</b> (the card for each plane, under the radar) or the plane itself to choose which one you're talking to. The plane lowest on fuel is picked for you.</p>
-      ${decks.length>1?`<div class="row">${decks.map(d=>`<button class="crt-btn ${d.id===deckId?'on':''}" data-deck="${d.id}">${esc(d.sub?(CHD?`ALL ${d.airports.length} · NEW REGION EACH SHIFT`:'ALL REGIONS · NEW ONE EACH SHIFT'):d.name.toUpperCase())}</button>`).join('')}</div>`:''}
-      <div class="choices">${Object.entries(TDIFFS).map(([k,d])=>`<button class="choice" data-diff="${k}" aria-pressed="${k===diff}"><b>${d.name.toUpperCase()}</b>${d.desc}</button>`).join('')}</div>
-      <div class="row"><button class="crt-btn primary" id="launch" style="flex:2">START SHIFT</button><button class="crt-btn ${S.mute?'':'on'}" id="snd">SOUND ${S.mute?'OFF':'ON'}</button></div>
+      </ol><p>With more than one plane, tap its <b>flight strip</b> (the card for each plane, under the radar) or the plane itself to choose who you're talking to. The plane lowest on fuel is picked for you.</p></details>
       ${liveTopHTML('tower',diff,{crt:true})}
       ${bridge.online?`<button class="crt-btn" id="wlb">WORLD LEADERBOARD · ${TDIFFS[diff].name.toUpperCase()}</button>`:''}
       <h2 style="font-size:1.2rem">THIS DEVICE · ${TDIFFS[diff].name.toUpperCase()}</h2>${hsTableFor(S.ths[diff],TDIFFS[diff].name)}
     </div></div>`;
-    main.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>{deckId=b.dataset.deck;if(CHD){S.area=secOf(deckId);save();}render();});
+    $('#mapBtn').onclick=()=>chooseMap(mapId,id=>{mapId=id;chal=false;sec='all';S.gmap.tower=id;save();render();$('#mapBtn')?.focus();},true);
+    main.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>{sec=b.dataset.sec;if(chal){S.area=sec;save();}render();});
     main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;S.tdiff=diff;S.hlv.tower=diff;save();render();});
     $('#snd').onclick=()=>{S.mute=!S.mute;save();render();};
-    $('#launch').onclick=()=>{sfx('wave');go(towerRun,DECKMAP[deckId],diff,{codes,back:CHD?{ch:true,sec:secOf(deckId)}:undefined});};
+    $('#launch').onclick=()=>{sfx('wave');go(towerRun,play,diff,{codes,back:{ch:chal,sec,map:mapId}});};
     const wl=$('#wlb');if(wl)wl.onclick=()=>bridge.openLeaderboard('tower',diff);
   }
   render();
@@ -1486,9 +1589,9 @@ function towerRun(R0,dk,opt={}){
   hud();startShift();strips();raf=requestAnimationFrame(t=>{last=t;frame(t);fitAll();});if(LIVE)liveFetch('tower/'+dk,true).then(()=>{if(!over)hud();});
 }
 
-function getFamily(k){return k==='display'?'"Big Shoulders Display", Impact, sans-serif':'"IBM Plex Mono", ui-monospace, monospace';}
+function getFamily(k){return k==='display'?'"Barlow Condensed", "Arial Narrow", sans-serif':'"JetBrains Mono", ui-monospace, monospace';}
 
 rebuild();
 go(home);
-return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);window.removeEventListener('resize',onFit);window.removeEventListener('orientationchange',onFit);window.visualViewport?.removeEventListener('resize',onFit);if(fitRO)fitRO.disconnect();clearInterval(clockTimer);window.removeEventListener('act-theme',onThemeAll);document.removeEventListener('keydown',onKonami);clearInterval(liveTimer);if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
+return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);window.removeEventListener('resize',onFit);window.removeEventListener('orientationchange',onFit);window.visualViewport?.removeEventListener('resize',onFit);if(fitRO)fitRO.disconnect();clearInterval(clockTimer);window.removeEventListener('act-theme',onThemeAll);document.removeEventListener('keydown',onKonami);liveDead=true;clearTimeout(liveTimer);cancelAnimationFrame(moQ);root.removeEventListener('click',onLtOpen);INPUTS.forEach(t=>window.removeEventListener(t,onInput));window.removeEventListener('act-home',onActHome);closeMapDlg();if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
 }

@@ -4,10 +4,8 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "24"
 
-# Single-page app: send every path to index.html
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# No catch-all redirect: the app has no other pages, so unknown addresses get a small 404
+# instead of the whole app (bots probing for /wp-login.php and the like no longer cost bandwidth).
+# Response headers (security policy, caching) are written to dist/_headers by vite.config.js.

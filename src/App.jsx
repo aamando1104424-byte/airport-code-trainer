@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from './supabase';
-import { boardName, dismissNotices, fmt, getLeaderboard, getNotices, loadAccount, onBoardChange, saveAccount, startRun, submitScore } from './leaderboard';
+import {
+  boardName, dismissNotices, fmt, getBoards, getLeaderboard, getNotices, isBackedUp, loadAccount, onBoardChange,
+  online, saveAccount, setLiveWanted, startRun, submitScore,
+} from './leaderboard';
 import Trainer from './components/Trainer';
 import AccountBar from './components/AccountBar';
 import Notices from './components/Notices';
@@ -10,13 +12,14 @@ import LeaderboardDialog from './components/LeaderboardDialog';
 import AccountDialog from './components/AccountDialog';
 import SetupHelp from './components/SetupHelp';
 
-const online = !!supabase;
+const NOTICE_EVERY = 3 * 60 * 1000;
 
 export default function App() {
   const [account, setAccountState] = useState(loadAccount);
   const [dialog, setDialog] = useState(null); // { type: 'signin'|'submit'|'board'|'account'|'setup', ... }
   const [notices, setNotices] = useState([]);
   const [toast, setToast] = useState(null); // { text, action? }
+  const [backed, setBacked] = useState(() => !account || isBackedUp(account.name, account.shared));
 
   const accountRef = useRef(account);
   accountRef.current = account;
@@ -24,7 +27,12 @@ export default function App() {
   const setAccount = useCallback((a) => {
     saveAccount(a);
     setAccountState(a);
+    setBacked(!a || isBackedUp(a.name, a.shared));
     if (!a) setNotices([]);
+  }, []);
+  const refreshBackup = useCallback(() => {
+    const a = accountRef.current;
+    setBacked(!a || isBackedUp(a.name, a.shared));
   }, []);
 
   const showToast = useCallback((text, action) => {
@@ -32,13 +40,13 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), toast.action ? 6000 : 3200);
+    const t = setTimeout(() => setToast(null), toast.action ? 6000 : 3600);
     return () => clearTimeout(t);
   }, [toast]);
 
   const openBoard = useCallback((game, level) => setDialog({ type: 'board', game, level }), []);
 
-  // A run ended with a score. Signed in: post it right away. Guest: offer to post it.
+  // A round ended with a score. Signed in: post it right away. Guest: offer to post it.
   const onGameOver = useCallback(
     async (result) => {
       if (!online || !result || result.score <= 0) return;
@@ -72,6 +80,8 @@ export default function App() {
       onGameOver: (r) => gameOverRef.current(r),
       openLeaderboard: (game, level) => openBoard(game, level),
       topScores: (game, level, n = 5) => getLeaderboard(game, level, n),
+      topBoards: (keys, n = 5) => getBoards(keys, n),
+      liveWanted: (on) => setLiveWanted(on),
       startRun: (game, level) => (online ? startRun(game, level) : Promise.resolve(null)),
       onBoardChange: (fn) => onBoardChange(fn),
       debug: import.meta.env.DEV,
@@ -79,10 +89,13 @@ export default function App() {
     [openBoard],
   );
 
-  // "Someone beat your score" notices: on sign-in, every minute, and when the tab comes back
-  const refreshNotices = useCallback(async () => {
+  // "Someone passed your score" notices: on sign-in, every few minutes, and when the tab comes back
+  const lastCheck = useRef(0);
+  const refreshNotices = useCallback(async (force) => {
     const acc = accountRef.current;
     if (!online || !acc) return;
+    if (!force && Date.now() - lastCheck.current < 60000) return;
+    lastCheck.current = Date.now();
     try {
       setNotices((await getNotices(acc)) || []);
     } catch (x) {
@@ -93,10 +106,10 @@ export default function App() {
     }
   }, [setAccount, showToast]);
   useEffect(() => {
-    if (!account) return;
-    refreshNotices();
-    const iv = setInterval(refreshNotices, 60000);
-    const onVis = () => document.visibilityState === 'visible' && refreshNotices();
+    if (!account) return undefined;
+    refreshNotices(true);
+    const iv = setInterval(() => document.visibilityState === 'visible' && refreshNotices(true), NOTICE_EVERY);
+    const onVis = () => document.visibilityState === 'visible' && refreshNotices(false);
     document.addEventListener('visibilitychange', onVis);
     return () => {
       clearInterval(iv);
@@ -125,6 +138,7 @@ export default function App() {
         account={account}
         online={online}
         unread={notices.length}
+        needsBackup={!backed}
         onSignIn={() => setDialog({ type: 'signin' })}
         onBoard={() => openBoard('defender')}
         onAccount={() => setDialog({ type: 'account' })}
@@ -133,9 +147,9 @@ export default function App() {
       <Notices account={account} notices={notices} onOpenBoard={openBoard} onDismiss={dismiss} />
       <Trainer bridge={bridge} />
 
-      {dialog?.type === 'signin' && <SignInDialog onClose={close} onAccount={setAccount} />}
+      {dialog?.type === 'signin' && <SignInDialog onClose={close} onAccount={setAccount} onBackedUp={refreshBackup} />}
       {dialog?.type === 'submit' && (
-        <SubmitDialog result={dialog.result} onClose={close} onAccount={setAccount} onOpenBoard={openBoard} />
+        <SubmitDialog result={dialog.result} onClose={close} onAccount={setAccount} onOpenBoard={openBoard} onBackedUp={refreshBackup} />
       )}
       {dialog?.type === 'board' && (
         <LeaderboardDialog key={dialog.game + (dialog.level || '')} game={dialog.game} level={dialog.level} account={account} onClose={close} />
@@ -145,6 +159,7 @@ export default function App() {
           account={account}
           onClose={close}
           onOpenBoard={openBoard}
+          onBackedUp={refreshBackup}
           onSignOut={() => {
             setAccount(null);
             close('Signed out. You can keep playing as a guest.');
@@ -157,7 +172,7 @@ export default function App() {
         <div className="rtoast" role="status" key={toast.id}>
           <span>{toast.text}</span>
           {toast.action && (
-            <button className="link inv" onClick={() => { toast.action.run(); setToast(null); }}>{toast.action.label}</button>
+            <button type="button" className="link inv" onClick={() => { toast.action.run(); setToast(null); }}>{toast.action.label}</button>
           )}
         </div>
       )}

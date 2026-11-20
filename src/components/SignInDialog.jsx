@@ -1,29 +1,20 @@
 import { useState } from 'react';
 import Modal from './Modal';
-import NameForm from './NameForm';
-import NewAccount from './NewAccount';
+import AccountFlow from './AccountFlow';
 
-export default function SignInDialog({ onClose, onAccount }) {
-  const [created, setCreated] = useState(null);
+// "Pick a name" in the top bar
+export default function SignInDialog({ onClose, onAccount, onBackedUp }) {
+  const [locked, setLocked] = useState(false);
   return (
-    <Modal title={created ? 'Name saved' : 'Sign in'} onClose={onClose}>
-      {created ? (
-        <>
-          <NewAccount account={created} />
-          <button className="btn primary big" onClick={onClose}>Done</button>
-        </>
-      ) : (
-        <>
-          <p className="lead">Pick a name for the world leaderboard. You can keep playing without one.</p>
-          <NameForm
-            onSignedIn={(acc, isNew) => {
-              onAccount(acc);
-              if (isNew) setCreated(acc);
-              else onClose(`Welcome back, ${acc.name}.`);
-            }}
-          />
-        </>
-      )}
+    <Modal title="Get on the leaderboard" onClose={onClose} locked={locked}>
+      <AccountFlow
+        onAccount={onAccount}
+        onLock={setLocked}
+        onFinish={(acc, isNew) => {
+          if (isNew) onBackedUp?.();
+          onClose(isNew ? `You're ${acc.name}. Your scores can go on the world board now.` : `Welcome back, ${acc.name}.`);
+        }}
+      />
     </Modal>
   );
 }

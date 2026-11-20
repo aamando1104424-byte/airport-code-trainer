@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import Modal from './Modal';
-import NameForm from './NameForm';
-import NewAccount from './NewAccount';
+import AccountFlow from './AccountFlow';
 import { GAMES, boardName, fmt, submitScore } from '../leaderboard';
 
-// Shown to guests after a run with a score: pick a name, then the score posts
-export default function SubmitDialog({ result, onClose, onAccount, onOpenBoard }) {
-  const [phase, setPhase] = useState('name'); // name | posting | done
-  const [created, setCreated] = useState(null);
+// Shown to guests after a round with a score: get a name (new or returning), save the code, then the score posts.
+export default function SubmitDialog({ result, onClose, onAccount, onOpenBoard, onBackedUp }) {
+  const [phase, setPhase] = useState('name'); // name | posting | done | error
   const [outcome, setOutcome] = useState(null);
   const [err, setErr] = useState('');
+  const [locked, setLocked] = useState(false);
+  const [acc, setAcc] = useState(null);
 
-  async function post(acc) {
+  async function post(a) {
     setPhase('posting');
     setErr('');
     try {
-      setOutcome(await submitScore(acc, result));
+      setOutcome(await submitScore(a, result));
       setPhase('done');
     } catch (x) {
       setErr(x.message);
@@ -25,7 +25,7 @@ export default function SubmitDialog({ result, onClose, onAccount, onOpenBoard }
 
   const unit = GAMES[result.game]?.unit ?? 'Wave';
   return (
-    <Modal title="Post your score?" onClose={onClose}>
+    <Modal title="Post your score?" onClose={onClose} locked={locked || phase === 'posting'}>
       <div className="score-hero">
         <span className="k">{boardName(result.game, result.level)}</span>
         <span className="big">{fmt(result.score)}</span>
@@ -34,37 +34,36 @@ export default function SubmitDialog({ result, onClose, onAccount, onOpenBoard }
 
       {phase === 'name' && (
         <>
-          <p className="lead">Put it on the world leaderboard. Just pick a name.</p>
-          <NameForm
-            submitLabel="Post my score"
-            busyLabel="Posting…"
-            onSignedIn={(acc, isNew) => {
-              onAccount(acc);
-              if (isNew) setCreated(acc);
-              post(acc);
-            }}
+          <AccountFlow
+            intro={<p className="lead">Put it on the world leaderboard. You only need a name; no email, no password.</p>}
+            doneLabel="Post my score"
+            onLock={setLocked}
+            onAccount={(a) => { setAcc(a); onAccount(a); }}
+            onFinish={(a, isNew) => { if (isNew) onBackedUp?.(); post(a); }}
           />
-          <button className="link" onClick={() => onClose()}>Not now</button>
+          {!locked && <button type="button" className="link" onClick={() => onClose()}>Not now</button>}
         </>
       )}
-      {phase === 'posting' && <p className="lead">Posting…</p>}
+      {phase === 'posting' && <p className="lead" role="status">Posting your score…</p>}
       {phase === 'error' && (
         <>
-          <p className="err">{err}</p>
-          <button className="btn big" onClick={() => onClose()}>Close</button>
+          <p className="err" role="alert">{err}</p>
+          <div className="row">
+            {acc && <button type="button" className="btn primary" onClick={() => post(acc)}>Try again</button>}
+            <button type="button" className="btn" onClick={() => onClose()}>Close</button>
+          </div>
         </>
       )}
       {phase === 'done' && outcome && (
         <>
-          <p className="result-line">
+          <p className="result-line" role="status">
             {outcome.improved
               ? `You're #${outcome.rank} in the world on ${boardName(result.game, result.level)}.`
-              : `Your best is still ${fmt(outcome.best)} (#${outcome.rank}). This run didn't beat it.`}
+              : `Your best is still ${fmt(outcome.best)} (#${outcome.rank}). This round didn't beat it.`}
           </p>
-          {created && <NewAccount account={created} />}
           <div className="row">
-            <button className="btn primary" onClick={() => onOpenBoard(result.game, result.level)}>See leaderboard</button>
-            <button className="btn" onClick={() => onClose()}>Done</button>
+            <button type="button" className="btn primary" onClick={() => onOpenBoard(result.game, result.level)}>See the leaderboard</button>
+            <button type="button" className="btn" onClick={() => onClose()}>Done</button>
           </div>
         </>
       )}
