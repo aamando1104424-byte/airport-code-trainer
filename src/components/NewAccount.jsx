@@ -10,8 +10,8 @@ export default function NewAccount({ account, doneLabel = 'Done', onDone }) {
   return (
     <div className="stack-s new-acct">
       <p className="lead" ref={top} tabIndex={-1}>
-        You're <b>{account.name}</b>. This is your secret code. It's the only way to get <b>{account.name}</b> back on another
-        phone or computer, and nobody can reset it, not even us.
+        You're <b>{account.name}</b>, and your progress is saved to it. This is your secret code. It's the only way to get{' '}
+        <b>{account.name}</b> back on another phone or computer, and nobody can reset it, not even us.
       </p>
       <CodeBox account={account} onBackedUp={() => setSaved(true)} />
       <p className="note">

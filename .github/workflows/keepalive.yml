@@ -1,0 +1,49 @@
+# Supabase pauses a free project after about a week with no visitors (a school break, say), and the leaderboard
+# and saved progress stay off until someone restores it by hand. This asks the database for the home page's board
+# once a day, which keeps it awake. It costs nothing on GitHub or Supabase.
+#
+# It needs no setup: it reads the database address and public key from the live site (every visitor's browser gets
+# them anyway). To point it somewhere else, add repository secrets SUPABASE_URL and SUPABASE_ANON_KEY, or a
+# repository variable SITE_URL (Settings → Secrets and variables → Actions).
+#
+# GitHub stops scheduled jobs in a public repository after 60 days without a commit. It emails a warning first,
+# and one click on "Enable workflow" in the Actions tab starts it again.
+name: Keep the leaderboard awake
+
+on:
+  schedule:
+    - cron: '17 14 * * *' # every day at 14:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask the database for a leaderboard
+        env:
+          SB_URL: ${{ secrets.SUPABASE_URL }}
+          SB_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SITE: ${{ vars.SITE_URL || 'https://airportcodetrainer.netlify.app' }}
+        run: |
+          set -euo pipefail
+          URL="${SB_URL:-}"; KEY="${SB_KEY:-}"
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            # the address and the public (publishable) key are in the site's own script files
+            for js in $(curl -fsS --max-time 30 "$SITE/" | grep -oE '/assets/[A-Za-z0-9_.-]+\.js' | sort -u); do
+              body=$(curl -fsS --max-time 30 "$SITE$js")
+              [ -n "$URL" ] || URL=$(printf '%s' "$body" | grep -oE 'https://[a-z0-9]+\.supabase\.co' | head -n1 || true)
+              [ -n "$KEY" ] || KEY=$(printf '%s' "$body" | grep -oE 'sb_publishable_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+' | head -n1 || true)
+            done
+          fi
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::warning::Couldn't find the database address on $SITE. Add SUPABASE_URL and SUPABASE_ANON_KEY as repository secrets."
+            exit 1
+          fi
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 -X POST "${URL%/}/rest/v1/rpc/get_boards" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+            -d '{"p_keys":["defender/cadet"]}')
+          echo "The database answered with HTTP $code"
+          [ "$code" = "200" ]

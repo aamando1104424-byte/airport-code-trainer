@@ -171,3 +171,8 @@
   padding:11px 16px;border-radius:10px;font-weight:700;max-width:calc(100% - 32px);display:flex;gap:14px;align-items:center;box-shadow:0 12px 30px -12px var(--shadow)}
 .link.inv{color:var(--paper);font-weight:700}
 @media (prefers-reduced-motion:reduce){ .tp-panel,.modal,.mapdlg-box{animation:none} }
+
+/* ================= crash screen (ErrorBoundary) ================= */
+.crash{width:calc(100% - 32px);max-width:520px;margin:12vh auto;padding:24px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);color:var(--ink)}
+.crash h1{font-family:var(--f-display);font-size:1.9rem;line-height:1.05}

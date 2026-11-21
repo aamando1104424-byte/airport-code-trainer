@@ -216,6 +216,33 @@ begin
 end $$;
 revoke all on function public._rl(text, integer, integer, boolean) from public, anon, authenticated;
 
+-- study progress saved to the account (levels, XP, streak, high scores, own codes), so it follows a player to any
+-- computer or phone. One row per player. The site merges copies itself; v counts saves, so two devices saving at
+-- the same time never overwrite each other: a save made from an older copy is refused and handed the newer one.
+create table if not exists public.act_progress (
+  player_id  uuid primary key references public.act_players(id) on delete cascade,
+  data       jsonb not null,
+  v          integer not null default 1,
+  updated_at timestamptz not null default now()
+);
+
+-- errors the site hits in players' browsers: one row per distinct error, with a count. No names or codes are sent.
+-- See them in Supabase → Table Editor → act_errors (newest last_at first).
+create table if not exists public.act_errors (
+  k        text primary key,
+  msg      text not null,
+  src      text not null default '',
+  ua       text not null default '',
+  build    text not null default '',
+  n        integer not null default 1,
+  first_at timestamptz not null default now(),
+  last_at  timestamptz not null default now()
+);
+
+alter table public.act_progress enable row level security;
+alter table public.act_errors   enable row level security;
+revoke all on public.act_progress, public.act_errors from anon, authenticated;
+
 -- internal: housekeeping, run now and then by start_run so nothing piles up
 create or replace function public._cleanup()
 returns void language plpgsql security definer set search_path = public as $$
@@ -224,6 +251,7 @@ begin
   delete from act_rl where at < now() - interval '2 hours';
   delete from act_board_cache where at < now() - interval '1 hour';
   delete from act_notices where (seen and created_at < now() - interval '14 days') or created_at < now() - interval '90 days';
+  delete from act_errors where last_at < now() - interval '60 days';
 end $$;
 revoke all on function public._cleanup() from public, anon, authenticated;
 
@@ -428,6 +456,64 @@ begin
       from act_scores s where s.player_id = pid order by s.game, s.level;
 end $$;
 
+-- this player's saved progress. p_v is the version the browser already has: when it's still the newest, only
+-- {v} comes back (no data to download again). {v: 0} means nothing is saved yet.
+create or replace function public.load_progress(p_name text, p_code text, p_v integer default null)
+returns json language plpgsql security definer set search_path = public, extensions as $$
+declare pid uuid; r act_progress%rowtype;
+begin
+  pid := _verify(p_name, p_code);
+  perform _rl('pl:' || pid::text, 30, 60, true);   -- per player: 30 loads a minute
+  select * into r from act_progress where player_id = pid;
+  if not found then return json_build_object('v', 0); end if;
+  if p_v is not null and p_v = r.v then return json_build_object('v', r.v); end if;
+  return json_build_object('v', r.v, 'data', r.data);
+end $$;
+
+-- save progress. p_v is the version this copy was made from (0 when there was none). Returns {ok: true, v}, or
+-- {ok: false, v, data} when another device saved first: the browser merges that copy in and saves again.
+-- Each copy is capped at 64 KB (a player who studied every code is about 20 KB). New copies stop when the table
+-- reaches 150 MB, so the free plan's 500 MB can never fill up; players who already have one can still save.
+create or replace function public.save_progress(p_name text, p_code text, p_data jsonb, p_v integer)
+returns json language plpgsql security definer set search_path = public, extensions as $$
+declare pid uuid; r act_progress%rowtype;
+begin
+  pid := _verify(p_name, p_code);
+  if p_data is null or jsonb_typeof(p_data) <> 'object' or octet_length(p_data::text) > 65536 then raise exception 'too_big'; end if;
+  perform _rl('ps:' || pid::text, 20, 60, true);   -- per player: 20 saves a minute (the site saves about once a minute)
+  perform _rl('ps_all', 100000, 3600, true);       -- everyone together: 100,000 an hour
+  select * into r from act_progress where player_id = pid for update;
+  if not found then
+    if pg_total_relation_size('public.act_progress') > 150 * 1024 * 1024 then raise exception 'progress_full'; end if;
+    perform _rl('ps_new', 3000, 3600, true);       -- first saves, everyone together: 3,000 an hour
+    insert into act_progress (player_id, data) values (pid, p_data) on conflict (player_id) do nothing;
+    if found then return json_build_object('ok', true, 'v', 1); end if;
+    -- the same player's other device made the row a moment ago
+    select * into r from act_progress where player_id = pid for update;
+  end if;
+  if p_v is null or p_v <> r.v then
+    return json_build_object('ok', false, 'v', r.v, 'data', r.data);
+  end if;
+  update act_progress set data = p_data, v = r.v + 1, updated_at = now() where player_id = pid;
+  return json_build_object('ok', true, 'v', r.v + 1);
+end $$;
+
+-- the site reports an error it hit (at most a few per visit). Same error again just counts up.
+create or replace function public.log_error(p_msg text, p_src text default '', p_ua text default '', p_build text default '')
+returns void language plpgsql security definer set search_path = public, extensions as $$
+declare m text := left(trim(coalesce(p_msg, '')), 300); s text := left(trim(coalesce(p_src, '')), 200); key text;
+begin
+  if m = '' then return; end if;
+  perform _rl('err', 30, 600);                 -- per network: 30 reports in 10 minutes
+  perform _rl('err_all', 2000, 3600, true);    -- everyone together: 2,000 an hour
+  key := md5(m || '|' || s);
+  -- at most 1,000 different errors are kept; a known one still counts up
+  if not exists (select 1 from act_errors where k = key) and (select count(*) from act_errors) >= 1000 then return; end if;
+  insert into act_errors as e (k, msg, src, ua, build)
+  values (key, m, s, left(coalesce(p_ua, ''), 120), left(coalesce(p_build, ''), 40))
+  on conflict (k) do update set n = e.n + 1, last_at = now(), ua = excluded.ua, build = excluded.build;
+end $$;
+
 grant execute on function public.claim_name(text)                                         to anon, authenticated;
 grant execute on function public.sign_in(text, text)                                      to anon, authenticated;
 grant execute on function public.start_run(text, text)                                   to anon, authenticated;
@@ -437,3 +523,6 @@ grant execute on function public.get_boards(text[])                             
 grant execute on function public.my_notices(text, text)                                   to anon, authenticated;
 grant execute on function public.dismiss_notices(text, text)                              to anon, authenticated;
 grant execute on function public.my_scores(text, text)                                    to anon, authenticated;
+grant execute on function public.load_progress(text, text, integer)                       to anon, authenticated;
+grant execute on function public.save_progress(text, text, jsonb, integer)                to anon, authenticated;
+grant execute on function public.log_error(text, text, text, text)                        to anon, authenticated;

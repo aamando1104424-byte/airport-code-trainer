@@ -150,6 +150,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
     plugins: [geoPack(), react(), netlifyHeaders(env)],
+    // which version of the site an error report came from (Netlify sets COMMIT_REF while building)
+    define: { __BUILD__: JSON.stringify((process.env.COMMIT_REF || '').slice(0, 7) || 'local') },
     css: { postcss: { plugins: [colorMixFallback] } },
     server: { host: true, port: 5173 },
     preview: { host: true, port: 4173 },

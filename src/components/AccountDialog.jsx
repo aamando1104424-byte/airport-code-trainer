@@ -45,7 +45,7 @@ export default function AccountDialog({ account, onClose, onSignOut, onOpenBoard
         <button type="button" className="btn" onClick={() => setConfirm(true)}>Sign out</button>
       ) : (
         <div className="panel confirm">
-          <p>Signing out removes <b>{account.name}</b> from this device. The only way back in is the code{backed ? '.' : ', and you haven\'t backed it up yet.'}</p>
+          <p>Signing out removes <b>{account.name}</b> from this device. Its progress stays saved to the name, but the only way back in is the code{backed ? '.' : ', and you haven\'t backed it up yet.'}</p>
           {!backed && <CodeBox account={account} onBackedUp={refresh} />}
           <div className="row">
             <button type="button" className="btn primary" onClick={() => setConfirm(false)}>Stay signed in</button>

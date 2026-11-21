@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
+import ErrorBoundary from './components/ErrorBoundary';
+import { watchErrors } from './errors';
 import { applyMode, applyTheme, getModePref, getTheme } from './themes';
 import './trainer/tokens.css';
 import './trainer/styles.css';
@@ -11,4 +13,9 @@ import './app.css';
 applyTheme(getTheme());
 applyMode(getModePref());
 
-createRoot(document.getElementById('root')).render(<App />);
+watchErrors();
+createRoot(document.getElementById('root')).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>,
+);

@@ -1,10 +1,13 @@
 /* Trainer engine: lessons, practice games, Air Defender and Tower Control.
    React mounts it with mountTrainer(rootElement, bridge) and gets back an unmount function.
-   bridge = { user(): string|null, online: boolean, onGameOver(result), openLeaderboard(game, level), debug?: boolean }
+   bridge = { user(): string|null, online: boolean, onGameOver(result), openLeaderboard(game, level), debug?: boolean,
+              account(): {name, code, shared}|null, onAccount(fn(account, how)): unsubscribe,
+              progress: { load(account, v), save(account, data, v) } | null }
    result = { game: 'defender'|'tower', level, levelName, score, wave, map } */
 import DATA_SETS from '../data/sets.json';
 import DATA_GEO from '../data/geo.json';
 import { cityArt, drawCityArt, drawBombArt, drawRocketArt, drawLauncherArt, drawPlaneArt, drawLandmark, drawMotif, knownFor } from './art.js';
+import { pack, unpack, combine, sumXP } from './sync.js';
 
 export function mountTrainer(root, bridge = {}) {
 root.innerHTML = '<div class="app" id="app"><main id="main" class="stack"></main></div><div id="toast" role="status" hidden></div>';
@@ -27,27 +30,111 @@ const KEY='wyo-airport-codes-v2',OLDKEY='wyo-airport-codes-v1';
 const DEFAULT_SET='wy';
 
 /* ================= state ================= */
-function blank(){return{v:2,items:{},sel:(DECKS.find(d=>d.id===DEFAULT_SET)||DECKS[0]).panels.flatMap(p=>p.codes),custom:[],xp:0,streak:{n:0,last:''},
-  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',hlv:{defender:'cadet',tower:'trainee'},area:'all',gmap:{defender:'',tower:''},intro:false,t:0};}
+function blank(){return{v:2,items:{},sel:(DECKS.find(d=>d.id===DEFAULT_SET)||DECKS[0]).panels.flatMap(p=>p.codes),custom:[],cdel:{},xp:0,xpd:{},streak:{n:0,last:''},
+  best:{quick:0,match:0,mock:0},hs:{cadet:[],pilot:[],ace:[]},ths:{trainee:[],controller:[],chief:[]},mute:false,diff:'cadet',tdiff:'trainee',hlv:{defender:'cadet',tower:'trainee'},area:'all',gmap:{defender:'',tower:''},intro:false,t:0,rs:0};}
+// every field is checked, since a saved copy can come from another device or an older version of the site
 function merge(o){const b=blank();if(!o||typeof o!=='object')return b;
-  if(o.items&&typeof o.items==='object')for(const c in o.items){const it=o.items[c];if(it&&typeof it==='object')b.items[c]={box:+it.box||0,due:+it.due||0,r:+it.r||0,w:+it.w||0,learned:!!it.learned};}
-  if(Array.isArray(o.sel))b.sel=o.sel.filter(x=>typeof x==='string');
-  if(Array.isArray(o.custom))b.custom=o.custom.filter(c=>c&&/^[A-Z]{3}$/.test(c.code)&&typeof c.city==='string').map(c=>({code:c.code,city:c.city.slice(0,40),tip:typeof c.tip==='string'?c.tip.slice(0,160):''}));
-  b.xp=+o.xp||0;if(o.streak)Object.assign(b.streak,o.streak);if(o.best)Object.assign(b.best,o.best);
-  if(o.hs)for(const k of ['cadet','pilot','ace'])if(Array.isArray(o.hs[k]))b.hs[k]=o.hs[k].slice(0,10);
-  if(o.ths)for(const k of ['trainee','controller','chief'])if(Array.isArray(o.ths[k]))b.ths[k]=o.ths[k].slice(0,10);
+  const int=(x,lo,hi)=>Math.min(hi,Math.max(lo,Math.round(+x)||0));
+  if(o.items&&typeof o.items==='object')for(const c in o.items){const it=o.items[c];if(it&&typeof it==='object'&&/^[A-Z]{3}$/.test(c))b.items[c]={box:int(it.box,0,5),due:int(it.due,0,9e15),r:int(it.r,0,1e7),w:int(it.w,0,1e7),learned:!!it.learned};}
+  if(Array.isArray(o.sel))b.sel=o.sel.filter(x=>typeof x==='string'&&/^[A-Z]{3}$/.test(x));
+  if(Array.isArray(o.custom))b.custom=o.custom.filter(c=>c&&/^[A-Z]{3}$/.test(c.code)&&typeof c.city==='string').slice(0,200).map(c=>({code:c.code,city:c.city.slice(0,40),tip:typeof c.tip==='string'?c.tip.slice(0,160):'',at:int(c.at,0,9e15)}));
+  if(o.cdel&&typeof o.cdel==='object')for(const k of Object.keys(o.cdel).filter(k=>/^[A-Z]{3}$/.test(k)).slice(-200))b.cdel[k]=int(o.cdel[k],0,9e15);
+  // XP is kept per browser (see sync.js). A copy from before that has one total, filed under a name made from its save time,
+  // so the same old copy read twice is still counted once
+  if(o.xpd&&typeof o.xpd==='object'&&!Array.isArray(o.xpd)){for(const k of Object.keys(o.xpd).filter(k=>/^[\w-]{1,24}$/.test(k)).sort((x,y)=>(+o.xpd[y]||0)-(+o.xpd[x]||0)).slice(0,300))b.xpd[k]=int(o.xpd[k],0,1e9);}
+  else if(+o.xp>0)b.xpd['L'+Math.max(0,Math.round(+o.t)||0).toString(36)]=int(o.xp,0,1e9);
+  b.xp=sumXP(b.xpd);
+  if(o.streak&&typeof o.streak==='object')b.streak={n:int(o.streak.n,0,1e5),last:typeof o.streak.last==='string'?o.streak.last.slice(0,10):''};
+  if(o.best&&typeof o.best==='object')for(const k of ['quick','match','mock'])b.best[k]=int(o.best[k],0,1e9);
+  const hsl=L=>Array.isArray(L)?L.filter(e=>e&&typeof e==='object').map(e=>({n:String(e.n??'').slice(0,16),s:int(e.s,0,5e7),w:int(e.w,0,1000),m:String(e.m??'').slice(0,60),d:String(e.d??'').slice(0,10)})).sort((x,y)=>y.s-x.s).slice(0,10):[];
+  if(o.hs)for(const k of ['cadet','pilot','ace'])b.hs[k]=hsl(o.hs[k]);
+  if(o.ths)for(const k of ['trainee','controller','chief'])b.ths[k]=hsl(o.ths[k]);
   if(['trainee','controller','chief'].includes(o.tdiff))b.tdiff=o.tdiff;
   b.mute=!!o.mute;if(['cadet','pilot','ace'].includes(o.diff))b.diff=o.diff;
   // the home top-3 boards start on the level you last played
   b.hlv={defender:b.diff,tower:b.tdiff};if(o.hlv){if(['cadet','pilot','ace'].includes(o.hlv.defender))b.hlv.defender=o.hlv.defender;if(['trainee','controller','chief'].includes(o.hlv.tower))b.hlv.tower=o.hlv.tower;}
   if(o.gmap&&typeof o.gmap==='object')for(const g of ['defender','tower'])if(typeof o.gmap[g]==='string'&&/^[\w~-]{1,40}$/.test(o.gmap[g]))b.gmap[g]=o.gmap[g];
   b.intro=!!o.intro;
-  b.area=/^(all|\d)$/.test(String(o.area))?String(o.area):'all';b.t=+o.t||0;return b;}
-let S=(()=>{try{const r=localStorage.getItem(KEY)||localStorage.getItem(OLDKEY);if(r)return merge(JSON.parse(r));}catch(e){}return blank();})();
-let remote=null,syncText='Progress saves in this browser',saveTimer=null;
-function save(){S.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}clearTimeout(saveTimer);saveTimer=setTimeout(remoteSave,1200);}
-async function remoteSave(){if(!remote)return;try{await remote.set({json:JSON.stringify(S),t:S.t});setSync('Progress synced to your account');}catch(e){setSync('Progress saves on this device');}}
-function setSync(t){syncText=t;const el=document.getElementById('sync');if(el)el.textContent=t;}
+  b.area=/^(all|\d)$/.test(String(o.area))?String(o.area):'all';b.t=+o.t||0;b.rs=+o.rs||0;return b;}
+/* ---------- where progress is kept ----------
+   A guest's progress stays in this browser. A signed-in player's is kept in this browser under their name (only for
+   this tab on a shared computer) and in their account online, so it follows them to any computer or phone.
+   Saves to the account wait for a pause (at most a minute) and go out at once when the page is hidden or closed.
+   Two devices saving at the same time are merged, never overwritten (sync.js, and save_progress in schema.sql).
+   Each copy in this browser also keeps _rid (this browser's id, for its own XP counter), _cv (the account version it
+   matches), _d (changes not saved online yet, sent on the next visit) and _ag (the guest question is still open). */
+const slotKey=acc=>acc?KEY+'@'+acc.name.toLowerCase():KEY;
+const slotStore=acc=>{try{return acc&&acc.shared?window.sessionStorage:window.localStorage;}catch(e){return null;}};
+function readSlot(acc){try{const st=slotStore(acc),r=st&&(st.getItem(slotKey(acc))||(acc?null:st.getItem(OLDKEY)));
+  if(r){const o=JSON.parse(r);return{S:merge(o),cv:Math.max(0,Math.round(+o._cv)||0),rid:typeof o._rid==='string'&&/^[\w-]{6,24}$/.test(o._rid)?o._rid:null,d:!!o._d,ag:!!o._ag};}}catch(e){}return null;}
+function dropGuest(){try{localStorage.removeItem(KEY);localStorage.removeItem(OLDKEY);}catch(e){}}
+const newRid=()=>{try{const a=new Uint8Array(8);crypto.getRandomValues(a);return [...a].map(x=>x.toString(36).padStart(2,'0')).join('').slice(0,14);}
+  catch(e){return Math.random().toString(36).slice(2,12)+Date.now().toString(36).slice(-4);}};
+// the same JSON whatever order the keys come in (the database sorts them)
+const stable=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(x=>[x,v[x]])):v);
+const touched=s=>Object.values(s.items).filter(x=>x.r+x.w>0||x.learned).length;
+const hasProgress=s=>!!s&&(s.xp>0||s.custom.length>0||touched(s)>0);
+const PROG=bridge.online&&bridge.progress?bridge.progress:null;
+const BIG='There is too much progress to save online. It is saved on this device.';
+// blank: this device had no copy of the name, so the account's settings win over anything clicked before it arrives
+const newCloud=()=>({v:0,dirty:false,busy:false,pulling:false,pulled:false,pulledAt:0,timer:0,first:0,fails:0,off:!PROG,why:'',askGuest:false,moveGuest:false,blank:false});
+let acct=(bridge.account&&bridge.account())||null,cloud=newCloud(),S=blank(),rid='',dead=false;
+{const mine=readSlot(acct);
+  if(mine){S=mine.S;rid=mine.rid||newRid();if(acct){cloud.v=mine.cv;cloud.dirty=mine.d;cloud.askGuest=mine.ag;}}
+  else if(acct){const g=readSlot(null);
+    // signed in from before progress moved into accounts (every sign-in since writes its copy at once):
+    // on your own device, this browser's progress is yours
+    if(!acct.shared&&g){S=g.S;rid=g.rid||newRid();cloud.dirty=true;}
+    // on a shared computer it may be someone else's, so the home page asks
+    else{S=blank();rid=newRid();cloud.blank=true;cloud.askGuest=!!acct.shared&&hasProgress(g?.S);}
+    writeLocal();if(!acct.shared&&g)dropGuest();}
+  else rid=newRid();}
+function writeLocal(){if(dead)return;try{slotStore(acct)?.setItem(slotKey(acct),JSON.stringify(acct?{...S,_rid:rid,_cv:cloud.v,_d:cloud.dirty?1:0,_ag:cloud.askGuest?1:0}:{...S,_rid:rid}));}catch(e){}}
+function save(){S.t=Date.now();const on=!!acct&&!cloud.off;if(on)cloud.dirty=true;writeLocal();if(on)schedulePush();}
+// the account copy is sent 20 s after the last change, and at least once a minute while changes keep coming
+function schedulePush(ms){const c=cloud;if(dead||!acct||c.off)return;const now=Date.now();if(!c.first)c.first=now;
+  const at=ms!=null?now+ms:Math.min(now+20000,c.first+60000);clearTimeout(c.timer);c.timer=setTimeout(push,Math.max(0,at-now));}
+const backoff=n=>Math.min(300000,15000*2**Math.min(4,n-1));
+// a failed call that means "stop trying for now": returns true when handled
+function failed(c,e){const code=e&&e.code;
+  const why=code==='missing'||code==='offline'?''   // this database doesn't save progress yet
+    :code==='bad_login'?`Couldn't check ${acct?acct.name:'your name'} online, so progress is saved on this device only.`
+    :code==='too_big'?BIG:code==='progress_full'?"Progress can't be saved online right now. It is saved on this device.":null;
+  if(why==null)return false;c.off=true;c.why=why;clearTimeout(c.timer);return true;}
+// a newer copy from the account: join it with this device's, then keep both copies the same
+function adopt(c,data,v){const theirs=merge(unpack(data)),custom0=JSON.stringify(S.custom),before=stable(pack(S));
+  S=combine(S,theirs,{theirsFirst:c.blank});c.blank=false;c.v=v;
+  if(JSON.stringify(S.custom)!==custom0)rebuild();else fillItems();
+  const now=stable(pack(S));if(now!==stable(pack(theirs)))c.dirty=true;
+  writeLocal();if(now!==before)refreshHome();}
+async function pull(){const c=cloud,who=acct;if(dead||!who||c.off||c.pulling||c.busy)return;c.pulling=true;
+  try{const r=await PROG.load(who,c.v||null);if(dead||c!==cloud)return;c.pulledAt=Date.now();c.fails=0;
+    if(r&&r.data)adopt(c,r.data,r.v);
+    else if(r&&r.v===0){c.v=0;c.blank=false;if(hasProgress(S))c.dirty=true;writeLocal();}
+    c.pulled=true;if(c.dirty)schedulePush(2000);}
+  catch(e){if(dead||c!==cloud)return;if(!failed(c,e)){c.fails++;schedulePush(backoff(c.fails));}}
+  finally{c.pulling=false;if(!dead&&c===cloud)setSync(syncLine());}}
+async function push(){const c=cloud,who=acct;clearTimeout(c.timer);if(dead||!who||c.off)return;
+  if(!c.pulled){pull();return;}   // never write over the account before reading it
+  if(!c.dirty||c.busy||c.pulling)return;   // a save or read already under way reschedules this when it ends
+  if(JSON.stringify(pack(S)).length>48000){failed(c,{code:'too_big'});setSync(syncLine());return;}
+  c.busy=true;c.dirty=false;c.first=0;let retry=null;
+  try{let r=null;
+    // another device saved first: join its copy in and save again (a few rounds at most)
+    for(let i=0;i<3;i++){r=await PROG.save(who,pack(S),c.v);if(dead||c!==cloud)return;if(!r||r.ok||!r.data)break;adopt(c,r.data,r.v);c.dirty=false;}
+    if(r&&r.ok){c.v=r.v;c.fails=0;if(c.moveGuest){c.moveGuest=false;dropGuest();}}
+    else{c.dirty=true;retry=5000;}
+    writeLocal();}
+  catch(e){if(dead||c!==cloud)return;c.dirty=true;writeLocal();if(!failed(c,e)){c.fails++;retry=backoff(c.fails);}}
+  finally{c.busy=false;if(!dead&&c===cloud){setSync(syncLine());if(c.dirty&&!c.off)schedulePush(retry);}}}
+// last changes go out before the page is hidden or closed (the request is sent with keepalive)
+function flush(){const c=cloud;if(!dead&&acct&&c.dirty&&c.pulled&&!c.busy&&!c.off)push();}
+function fillItems(){for(const a of AP)if(!S.items[a.code])S.items[a.code]={box:0,due:0,r:0,w:0,learned:false};S.sel=[...new Set(S.sel.filter(c=>BY[c]))];}
+function syncLine(){if(!acct)return bridge.online?'Progress saves in this browser. Pick a name to keep it on any computer.':'Progress saves in this browser.';
+  const c=cloud;if(c.off)return c.why||'Progress saves in this browser.';
+  if(c.fails)return `Saved on this device. It goes to ${acct.name} when you're back online.`;
+  return c.pulled?`Progress saves to ${acct.name}, on any computer you sign in on.`:`Getting ${acct.name}'s progress…`;}
+function setSync(t){const el=document.getElementById('sync');if(el)el.textContent=t;}
 /* ================= helpers ================= */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -67,7 +154,7 @@ function today(o=0){return new Date(Date.now()-o*864e5).toLocaleDateString('en-C
 function touchDay(){const d=today();if(S.streak.last===d)return;S.streak.n=S.streak.last===today(1)?S.streak.n+1:1;S.streak.last=d;}
 function streakNow(){return (S.streak.last===today()||S.streak.last===today(1))?S.streak.n:0;}
 function levelInfo(xp){const lvl=Math.floor(xp/XP_PER)+1;return{lvl,rank:RANKS[Math.min(RANKS.length-1,lvl-1)],pct:Math.round((xp%XP_PER)/XP_PER*100)};}
-function addXP(n){if(n<=0)return;const before=levelInfo(S.xp).lvl;S.xp+=n;const after=levelInfo(S.xp);if(after.lvl>before)toast(`Level ${after.lvl}: ${after.rank}`);save();}
+function addXP(n){if(n<=0)return;const before=levelInfo(S.xp).lvl;S.xpd[rid]=(S.xpd[rid]||0)+n;S.xp=sumXP(S.xpd);const after=levelInfo(S.xp);if(after.lvl>before)toast(`Level ${after.lvl}: ${after.rank}`);save();}
 function grade(code,ok,kind){const it=S.items[code];if(!it)return;const now=Date.now();touchDay();
   if(ok){it.r++;
     if(kind==='recall')it.box=Math.min(5,it.box+1);
@@ -609,6 +696,7 @@ function home(){
     </section>
   </header>
   <div class="hmain">
+  ${acct&&cloud.askGuest?guestAskHTML():''}
   ${doneN===0&&!S.intro?`<section class="panel welcome" id="intro"><span class="k">First time here?</span><h2>New to airport codes?</h2>
     <p>Every airport has a three-letter code, like the ones on bag tags and departure boards. <b>Flight School</b> shows each one with a memory trick, has you type it once, then checks you from memory. The games keep it fresh after that.</p>
     <button class="link welcome-x" id="introX">Got it, hide this</button></section>`:''}
@@ -642,10 +730,13 @@ function home(){
       <li>The wrong answers are look-alike codes${(()=>{const s=selSet();for(const a of AP){if(!s.has(a.code))continue;const t=twins(a).find(o=>s.has(o.code));if(t)return ` (${a.code} vs ${t.code})`;}return '';})()} so you learn to tell them apart.</li>
     </ul>
   </details>
-  <div class="foot"><span id="sync">${syncText}</span><button class="link" id="reset">Reset progress</button></div>
-  <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div></div></div>`;
+  <div class="foot"><span id="sync">${esc(syncLine())}</span><button class="link" id="reset">Reset progress</button></div>
+  <div class="panel confirm" id="rc" hidden><p>Erase all levels, XP, high scores and your own added codes?${acct&&!cloud.off?` This erases them from <b>${esc(acct.name)}</b> on every device.`:''}</p><div class="row"><button class="btn" id="rcNo">Keep progress</button><button class="btn primary" id="rcYes">Erase</button></div></div></div></div>`;
   $('#cta').onclick=ctaFn;$('#toPick').onclick=()=>go(picker);$('#feat').onclick=()=>go(VIEWS.defender);$('#feat2').onclick=()=>go(VIEWS.tower);
   {const x=$('#introX');if(x)x.onclick=()=>{S.intro=true;save();$('#intro')?.remove();};}
+  {const y=$('#gaskYes'),n=$('#gaskNo');
+    if(y)y.onclick=()=>{const g=readSlot(null);cloud.askGuest=false;if(g&&acct){S=combine(S,g.S,{add:true});rebuild();if(acct.shared)cloud.moveGuest=true;else dropGuest();save();toast(`Added to ${acct.name}`);}keepHome();};
+    if(n)n.onclick=()=>{cloud.askGuest=false;writeLocal();$('#gask')?.remove();};}
   {const m=$('#bmore');if(m)m.onclick=()=>{const b=$('#board'),on=b.classList.toggle('all');m.setAttribute('aria-expanded',on);m.textContent=on?'Show fewer':`Show all ${set.length}`;if(!on)b.scrollIntoView({block:'nearest'});};}
   // 50 Busiest Challenge: pick an area (or all 50), then a game. Plays the 50 Busiest whatever set is being studied.
   main.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>{S.area=b.dataset.area;save();main.querySelectorAll('[data-area]').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',on);});});
@@ -654,13 +745,41 @@ function home(){
   main.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>go(cheat,b.dataset.card));
   $('#reset').onclick=()=>{$('#rc').hidden=false;$('#rc').scrollIntoView({block:'center'});};
   $('#rcNo').onclick=()=>$('#rc').hidden=true;
-  $('#rcYes').onclick=()=>{S=blank();rebuild();save();go(home);toast('Progress erased');};
+  $('#rcYes').onclick=()=>{S=blank();S.rs=Date.now();rebuild();save();if(acct)schedulePush(0);go(home);toast('Progress erased');};
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches,cyc=(set.filter(studied).length?set.filter(studied):set.length?set:AP);
   let taps=0,tapT=0,held=0;
   $('.boarding').addEventListener('click',()=>{clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1200);if(++taps<5)return;taps=0;held=Date.now()+4200;
     $('#bf').innerHTML=flaps('YAY',true);$('#bc').textContent=['Gate 42 · Flight to anywhere','Now boarding: you, first class','Gate B4 · Snacks are free today'][Math.floor(Math.random()*3)];});
   if(!reduce){let k=0;const iv=setInterval(()=>{if(Date.now()<held)return;k=(k+1)%cyc.length;const a=cyc[k];$('#bf').innerHTML=flaps(studied(a)?a.code:'???',true);$('#bc').textContent=a.place;},2600);cleanup=()=>{clearInterval(iv);clearTimeout(tapT);};}
 }
+
+// progress this browser has from before the player signed in: theirs to add, or someone else's on a shared computer
+function guestAskHTML(){const g=readSlot(null)?.S;if(!hasProgress(g)){cloud.askGuest=false;writeLocal();return '';}const n=touched(g);
+  return `<section class="panel guestask" id="gask" aria-label="Progress from before you signed in"><span class="k">Before you signed in</span>
+    <p>This browser has guest progress: <b>${n} ${n===1?'code':'codes'}</b> studied and <b>${g.xp.toLocaleString('en-US')} XP</b>. If it's yours, add it to <b>${esc(acct.name)}</b>. On a shared computer it may be someone else's.</p>
+    <div class="row"><button class="btn primary" id="gaskYes">Add it to ${esc(acct.name)}</button><button class="btn" id="gaskNo">It's not mine</button></div></section>`;}
+function keepHome(){const y=window.scrollY;go(home);window.scrollTo(0,y);}
+// new progress arrived from the account: only the home page is re-drawn, nothing else is interrupted
+function refreshHome(){if(onHome)keepHome();}
+/* signing in, making a name and signing out switch whose progress is on screen.
+   how: 'new' (a name just made here), 'signin' (a name made before), or nothing (signed out) */
+function switchTo(acc,how){const same=(a,b)=>!!a&&!!b&&a.name.toLowerCase()===b.name.toLowerCase()&&!!a.shared===!!b.shared;
+  if(dead||same(acct,acc)||(!acct&&!acc))return;
+  flush();   // the last changes of the name being left go up first
+  const prev=acct,old=cloud,c=newCloud();clearTimeout(old.timer);acct=acc||null;cloud=c;
+  // signed out with everything saved online: that name's copy leaves this browser too, so a lab computer used by
+  // many people doesn't fill up with them (a copy with unsaved changes stays, and goes up when the name signs in again)
+  if(prev&&old.pulled&&!old.dirty&&!old.busy&&!old.off)try{slotStore(prev)?.removeItem(slotKey(prev));}catch(e){}
+  // signed out: this browser's guest progress
+  if(!acct){const g=readSlot(null);S=g?g.S:blank();rid=(g&&g.rid)||newRid();}
+  // a brand-new name on your own device: what you've done here becomes its progress (XP counter and all)
+  else if(how==='new'&&!prev&&!acct.shared){c.dirty=true;writeLocal();dropGuest();}
+  // a name made before, or any name on a shared computer: that name's own copy, and the home page asks about the
+  // guest's. The copy is written at once, so a reload can't mistake this for a sign-in from before saved progress.
+  else{const mine=readSlot(acct);
+    if(mine){S=mine.S;rid=mine.rid||newRid();c.v=mine.cv;c.dirty=mine.d;}else{S=blank();rid=newRid();c.blank=true;}
+    c.askGuest=!prev&&hasProgress(readSlot(null)?.S);writeLocal();}
+  rebuild();if(acct)pull();setSync(syncLine());refreshHome();}
 
 /* ================= picker ================= */
 function picker(){
@@ -694,7 +813,7 @@ function picker(){
     main.querySelectorAll('[data-only]').forEach(b=>b.onclick=()=>{const d=DECKMAP[b.dataset.only];S.sel=d.airports.map(a=>a.code);save();toast(`Now studying ${d.name}`);go(home);});
     main.querySelectorAll('details[data-open]').forEach(el=>el.ontoggle=()=>{el.open?open.add(el.dataset.open):open.delete(el.dataset.open);});
     main.querySelectorAll('[data-code]').forEach(cb=>cb.onchange=()=>{const c=cb.dataset.code;S.sel=cb.checked?[...new Set([...S.sel,c])]:S.sel.filter(x=>x!==c);save();keep(render);});
-    main.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const c=b.dataset.rm;S.custom=S.custom.filter(x=>x.code!==c);S.sel=S.sel.filter(x=>x!==c);rebuild();save();keep(render);toast(`Removed ${c}`);});
+    main.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const c=b.dataset.rm;S.custom=S.custom.filter(x=>x.code!==c);S.cdel[c]=Date.now();S.sel=S.sel.filter(x=>x!==c);rebuild();save();keep(render);toast(`Removed ${c}`);});
     $('#selNone').onclick=()=>{S.sel=[];save();keep(render);};
     $('#selAll').onclick=()=>{S.sel=AP.map(a=>a.code);save();keep(render);};
     const ak=$('#ak');ak.oninput=()=>{ak.value=ak.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);};
@@ -702,7 +821,7 @@ function picker(){
       if(!city){err='Type the city name.';return keep(render);}
       if(!/^[A-Z]{3}$/.test(code)){err='A code is exactly 3 letters.';return keep(render);}
       if(BY[code]){err=`${code} is already in the list (${BY[code].place}).`;return keep(render);}
-      err='';S.custom.push({code,city,tip});S.sel.push(code);rebuild();save();open.add('my');keep(render);toast(`Added ${code} · ${city}`);};
+      err='';S.custom.push({code,city,tip,at:Date.now()});S.sel.push(code);rebuild();save();open.add('my');keep(render);toast(`Added ${code} · ${city}`);};
   }
   function keep(fn){const y=window.scrollY;fn();window.scrollTo(0,y);}
   render();
@@ -788,15 +907,19 @@ function cheat(focus){
   let hide=false;
   function render(){const s=selSet();
     const full=ALLDECKS.filter(d=>d.airports.length&&d.airports.every(a=>s.has(a.code))),shown=full.length?full:ALLDECKS.filter(d=>d.airports.some(a=>s.has(a.code)));
-    main.innerHTML=topbar('Cheat Sheet')+shown.map(d=>`
+    const printed=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    main.innerHTML=topbar('Cheat Sheet')+`<p class="print-only print-sub">${esc(shown.map(d=>d.name).join(', '))} · ${SET().length} codes${hide?' · Quiz: write each code':''} · Airport Code Trainer · ${esc(printed)}</p>`+shown.map(d=>`
       ${ALLDECKS.length>1?`<h2>${esc(d.name)}</h2>`:''}
-      ${d.region?`<div class="mapbox">${mapSVG(d,{all:true})}</div>`:''}`).join('')+`
-    <p class="note">Tap a map to zoom in. Tap again to zoom out.</p>
-    <label class="toggle"><input type="checkbox" id="hide" ${hide?'checked':''}> Hide codes and test myself</label>
-    ${GROUPS.map((g,gi)=>{const list=SET().filter(a=>a.g===gi);if(!list.length)return '';return `<section class="group g${gi}"><header><span class="k">Pattern ${gi+1} of 3</span><h2>${g.name}</h2><p>${g.sub}</p></header>
+      ${d.region?`<div class="mapbox${hide?' no-print':''}">${mapSVG(d,{all:true})}</div>`:''}`).join('')+`
+    <p class="note no-print">Tap a map to zoom in. Tap again to zoom out.</p>
+    <div class="cheat-tools no-print"><label class="toggle"><input type="checkbox" id="hide" ${hide?'checked':''}> Hide codes and test myself</label>
+      <button class="btn" id="print" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>${hide?'Print as a quiz':'Print this sheet'}</button></div>
+    ${GROUPS.map((g,gi)=>{const list=SET().filter(a=>a.g===gi);if(!list.length)return '';return `<section class="group g${gi}${hide?' quiz':''}"><header><span class="k">Pattern ${gi+1} of 3</span><h2>${g.name}</h2><p>${g.sub}</p></header>
       ${list.map(a=>`<article class="card g${gi}" id="card-${a.code}"><div class="card-top">${hide?`<span class="flaps covered" data-rev="${a.code}" role="button" tabindex="0" aria-label="Reveal code">${[0,1,2].map(()=>'<span class="flap">?</span>').join('')}</span>`:flaps(a.code)}<h3>${hl(a)}</h3></div>${alsoHTML(a)}<p>${esc(a.tip)}</p>${knownFor(a.code)?`<p class="kf">${lmkHTML(a.code)}<span><b>Known for</b> ${esc(knownFor(a.code))}</span></p>`:''}</article>`).join('')}</section>`;}).join('')}
     <button class="btn primary big" id="toRecall">Practice with Recall</button>`;
     $('#hide').onchange=e=>{hide=e.target.checked;const y=window.scrollY;render();window.scrollTo(0,y);};
+    // with the codes hidden it prints as a quiz: write each code in, then check against the screen
+    $('#print').onclick=()=>window.print();
     main.querySelectorAll('[data-rev]').forEach(el=>{const f=()=>{el.outerHTML=flaps(el.dataset.rev,true);};el.onclick=f;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}};});
     $('#toRecall').onclick=()=>go(VIEWS.recall);paintLandmarks(main);
   }
@@ -1591,7 +1714,14 @@ function towerRun(R0,dk,opt={}){
 
 function getFamily(k){return k==='display'?'"Barlow Condensed", "Arial Narrow", sans-serif':'"JetBrains Mono", ui-monospace, monospace';}
 
+// account changes come from the React side; the account copy is read when the page opens and when you come back to it
+const offAcct=bridge.onAccount?bridge.onAccount(switchTo):null;
+const onVisSync=()=>{if(!acct)return;if(document.visibilityState==='hidden')flush();else if(Date.now()-cloud.pulledAt>60000)pull();};
+const onOnline=()=>{if(acct&&!cloud.off){cloud.fails=0;schedulePush(1000);}};
+document.addEventListener('visibilitychange',onVisSync);window.addEventListener('pagehide',flush);window.addEventListener('online',onOnline);
+
 rebuild();
 go(home);
-return ()=>{if(cleanup){cleanup();cleanup=null;}clearTimeout(saveTimer);window.removeEventListener('resize',onFit);window.removeEventListener('orientationchange',onFit);window.visualViewport?.removeEventListener('resize',onFit);if(fitRO)fitRO.disconnect();clearInterval(clockTimer);window.removeEventListener('act-theme',onThemeAll);document.removeEventListener('keydown',onKonami);liveDead=true;clearTimeout(liveTimer);cancelAnimationFrame(moQ);root.removeEventListener('click',onLtOpen);INPUTS.forEach(t=>window.removeEventListener(t,onInput));window.removeEventListener('act-home',onActHome);closeMapDlg();if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
+if(acct)pull();
+return ()=>{if(cleanup){cleanup();cleanup=null;}flush();dead=true;clearTimeout(cloud.timer);if(offAcct)offAcct();document.removeEventListener('visibilitychange',onVisSync);window.removeEventListener('pagehide',flush);window.removeEventListener('online',onOnline);window.removeEventListener('resize',onFit);window.removeEventListener('orientationchange',onFit);window.visualViewport?.removeEventListener('resize',onFit);if(fitRO)fitRO.disconnect();clearInterval(clockTimer);window.removeEventListener('act-theme',onThemeAll);document.removeEventListener('keydown',onKonami);liveDead=true;clearTimeout(liveTimer);cancelAnimationFrame(moQ);root.removeEventListener('click',onLtOpen);INPUTS.forEach(t=>window.removeEventListener(t,onInput));window.removeEventListener('act-home',onActHome);closeMapDlg();if(liveUnsub)liveUnsub();if(liveMO)liveMO.disconnect();document.removeEventListener('keydown',mcKey);root.innerHTML='';};
 }

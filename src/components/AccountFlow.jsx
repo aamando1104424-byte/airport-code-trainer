@@ -10,7 +10,7 @@ import { Dice, Key, Shield, UserPlus } from './icons';
 //  confirm -> "Create SkyRider42?" Nothing is created before this, so a typo can't make an account by accident
 //  code    -> the new secret code: copy or download it, tick "I saved it", then continue
 //  back    -> name and code together; this only ever signs in, it never creates anything
-// onAccount(acc) stores the account; onFinish(acc, isNew) runs at the end; onLock(bool) stops the dialog
+// onAccount(acc, how) stores the account (how: 'new' for a name made just now, 'signin' for one made before); onFinish(acc, isNew) runs at the end; onLock(bool) stops the dialog
 // from closing while the new code is on screen.
 const A = ['Sky', 'Jet', 'Aero', 'Cloud', 'Wing', 'Radar', 'Tower', 'Comet', 'Falcon', 'Hawk', 'Swift', 'Orbit', 'Nova', 'Turbo', 'Glide', 'Runway', 'Polar', 'Delta', 'Vector', 'Echo'];
 const B = ['Rider', 'Hopper', 'Runner', 'Spotter', 'Flyer', 'Scout', 'Chaser', 'Pilot', 'Racer', 'Ace', 'Nav', 'Glider', 'Jumper', 'Dash'];
@@ -49,7 +49,7 @@ export default function AccountFlow({ onAccount, onFinish, onLock, doneLabel = '
     try {
       const r = await claimName(name.trim());
       const acc = { name: r.name, code: r.code, shared };
-      onAccount(acc);
+      onAccount(acc, 'new');
       setMade(acc);
       onLock?.(true);
       setStep('code');
@@ -74,7 +74,7 @@ export default function AccountFlow({ onAccount, onFinish, onLock, doneLabel = '
       const r = await signIn(n, c);
       const acc = { name: r.name, code: c, shared };
       markBackedUp(acc.name, shared);
-      onAccount(acc);
+      onAccount(acc, 'signin');
       onFinish?.(acc, false);
     } catch (x) {
       setErr(x.code === 'bad_login'
@@ -201,7 +201,7 @@ export default function AccountFlow({ onAccount, onFinish, onLock, doneLabel = '
 
   return (
     <div className="stack-s">
-      {intro || <p className="lead">Everything works without an account. A name lets you post scores to the world leaderboard. No email, no password.</p>}
+      {intro || <p className="lead">Everything works without an account. A name puts your scores on the world leaderboard and saves your progress, so you can pick up on any computer. No email, no password.</p>}
       <div className="paths">
         <button type="button" className="pathbtn primary" onClick={() => go('new')} autoFocus>
           <span className="pi"><UserPlus /></span>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  boardName, dismissNotices, fmt, getBoards, getLeaderboard, getNotices, isBackedUp, loadAccount, onBoardChange,
-  online, saveAccount, setLiveWanted, startRun, submitScore,
+  boardName, dismissNotices, fmt, getBoards, getLeaderboard, getNotices, isBackedUp, loadAccount, loadProgress, onBoardChange,
+  online, saveAccount, saveProgress, setLiveWanted, startRun, submitScore,
 } from './leaderboard';
 import Trainer from './components/Trainer';
 import AccountBar from './components/AccountBar';
@@ -23,10 +23,15 @@ export default function App() {
 
   const accountRef = useRef(account);
   accountRef.current = account;
+  // the engine listens for account changes, so it can switch to that name's progress
+  const accountFns = useRef(new Set());
 
-  const setAccount = useCallback((a) => {
+  // how: 'new' (a name made just now), 'signin' (a name made before), or nothing
+  const setAccount = useCallback((a, how) => {
     saveAccount(a);
+    accountRef.current = a;
     setAccountState(a);
+    accountFns.current.forEach((fn) => { try { fn(a, how); } catch (e) { /* the engine reports its own errors */ } });
     setBacked(!a || isBackedUp(a.name, a.shared));
     if (!a) setNotices([]);
   }, []);
@@ -77,6 +82,9 @@ export default function App() {
     () => ({
       online,
       user: () => accountRef.current?.name ?? null,
+      account: () => accountRef.current,
+      onAccount: (fn) => { accountFns.current.add(fn); return () => accountFns.current.delete(fn); },
+      progress: online ? { load: (acc, v) => loadProgress(acc, v), save: (acc, data, v) => saveProgress(acc, data, v) } : null,
       onGameOver: (r) => gameOverRef.current(r),
       openLeaderboard: (game, level) => openBoard(game, level),
       topScores: (game, level, n = 5) => getLeaderboard(game, level, n),
@@ -162,7 +170,7 @@ export default function App() {
           onBackedUp={refreshBackup}
           onSignOut={() => {
             setAccount(null);
-            close('Signed out. You can keep playing as a guest.');
+            close(`Signed out. Sign back in as ${account.name} to pick up your progress.`);
           }}
         />
       )}

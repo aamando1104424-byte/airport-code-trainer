@@ -35,10 +35,10 @@ export default function SubmitDialog({ result, onClose, onAccount, onOpenBoard, 
       {phase === 'name' && (
         <>
           <AccountFlow
-            intro={<p className="lead">Put it on the world leaderboard. You only need a name; no email, no password.</p>}
+            intro={<p className="lead">Put it on the world leaderboard. A name also saves your progress for any computer. No email, no password.</p>}
             doneLabel="Post my score"
             onLock={setLocked}
-            onAccount={(a) => { setAcc(a); onAccount(a); }}
+            onAccount={(a, how) => { setAcc(a); onAccount(a, how); }}
             onFinish={(a, isNew) => { if (isNew) onBackedUp?.(); post(a); }}
           />
           {!locked && <button type="button" className="link" onClick={() => onClose()}>Not now</button>}

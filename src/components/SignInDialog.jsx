@@ -12,7 +12,7 @@ export default function SignInDialog({ onClose, onAccount, onBackedUp }) {
         onLock={setLocked}
         onFinish={(acc, isNew) => {
           if (isNew) onBackedUp?.();
-          onClose(isNew ? `You're ${acc.name}. Your scores can go on the world board now.` : `Welcome back, ${acc.name}.`);
+          onClose(isNew ? `You're ${acc.name}. Your scores and progress are saved to it now.` : `Welcome back, ${acc.name}.`);
         }}
       />
     </Modal>

@@ -1,4 +1,4 @@
-import { getSupabase, online } from './supabase';
+import { getSupabase, online, restHeaders, restUrl } from './supabase';
 
 export { online };
 export const GAMES = {
@@ -79,6 +79,8 @@ const MESSAGES = {
   bad_score: 'That score could not be posted.',
   bad_board: "That leaderboard doesn't exist.",
   bad_run: "This round couldn't be posted. Play another round and it will count.",
+  too_big: 'There is too much progress to save online.',
+  progress_full: "Progress can't be saved online right now.",
 };
 function toError(error) {
   const msg = error?.message || '';
@@ -165,6 +167,40 @@ export async function getBoards(keys, n = 5) {
 export const getNotices = (acc) => rpc('my_notices', { p_name: acc.name, p_code: acc.code });
 export const dismissNotices = (acc) => rpc('dismiss_notices', { p_name: acc.name, p_code: acc.code });
 export const getMyScores = (acc) => rpc('my_scores', { p_name: acc.name, p_code: acc.code });
+
+// ---- progress saved to the account, and error reports ----------------------
+// These go straight to the database with fetch: no library to load first, and keepalive lets a save that starts
+// as the page closes still arrive. Browsers refuse keepalive for bodies over 64 KB, so bigger ones are sent normally.
+async function rest(fn, args, { keepalive = false } = {}) {
+  if (!online) throw Object.assign(new Error('The world leaderboard is not set up yet.'), { code: 'offline' });
+  const body = JSON.stringify(args);
+  const small = typeof TextEncoder === 'function' ? new TextEncoder().encode(body).length < 60000 : body.length < 30000;
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), 15000) : 0;
+  let res;
+  try {
+    res = await fetch(restUrl + fn, { method: 'POST', headers: restHeaders, body, keepalive: keepalive && small, credentials: 'omit', signal: ctl?.signal });
+  } catch {
+    throw Object.assign(new Error("Couldn't reach the leaderboard. Check your connection and try again."), { code: 'network' });
+  } finally {
+    clearTimeout(timer);
+  }
+  let data = null;
+  try { data = await res.json(); } catch { data = null; }
+  if (!res.ok) {
+    // a database that hasn't run the newest schema.sql yet
+    if (res.status === 404 || missing(data)) throw Object.assign(new Error('missing'), { code: 'missing' });
+    throw toError(data || { message: 'server' });
+  }
+  return data;
+}
+// {v, data?}: data only when the account has a newer copy than version v
+export const loadProgress = (acc, v) => rest('load_progress', { p_name: acc.name, p_code: acc.code, p_v: v || null });
+// {ok: true, v} or {ok: false, v, data} when another device saved first
+export const saveProgress = (acc, data, v) =>
+  rest('save_progress', { p_name: acc.name, p_code: acc.code, p_data: data, p_v: v || 0 }, { keepalive: true });
+export const reportError = (msg, src, ua, build) =>
+  rest('log_error', { p_msg: msg, p_src: src, p_ua: ua, p_build: build }, { keepalive: true }).catch(() => {});
 
 // ---- live updates -------------------------------------------------------
 // A new top-5 score is announced on a Supabase Realtime broadcast channel so open copies refresh their boards.
